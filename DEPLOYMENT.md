@@ -23,15 +23,15 @@ pnpm install
 
 ```bash
 # 1. 创建持久化数据目录（项目外）
-sudo mkdir -p /data/changdu-web
-sudo chown $USER:$USER /data/changdu-web
+sudo mkdir -p /data/changdu-web-yu
+sudo chown $USER:$USER /data/changdu-web-yu
 
 # 2. 配置环境变量
-echo 'export DAREN_CONFIG_PATH="/data/changdu-web/daren-config.json"' >> ~/.bashrc
+echo 'export DAREN_CONFIG_PATH="/data/changdu-web-yu/daren-config.json"' >> ~/.bashrc
 source ~/.bashrc
 
 # 3. 初始化配置文件
-cp server/data/daren-config.json.example /data/changdu-web/daren-config.json
+cp server/data/daren-config.json.example /data/changdu-web-yu/daren-config.json
 ```
 
 #### 方式 2：使用项目内路径（开发环境）
@@ -102,7 +102,7 @@ pm2 start npm --name "changdu-web" -- start
 
 ```bash
 # 1. 备份配置（可选，因为配置在项目外不会被覆盖）
-cp /data/changdu-web/daren-config.json /data/changdu-web/daren-config.backup.$(date +%Y%m%d_%H%M%S).json
+cp /data/changdu-web-yu/daren-config.json /data/changdu-web-yu/daren-config.backup.$(date +%Y%m%d_%H%M%S).json
 
 # 2. 拉取最新代码
 git pull origin master
@@ -117,7 +117,7 @@ pnpm build
 pm2 restart changdu-web
 ```
 
-**优势**：配置文件在 `/data/changdu-web/` 下，完全不受部署影响！
+**优势**：配置文件在 `/data/changdu-web-yu/` 下，完全不受部署影响！
 
 ### 方式 2：使用项目内路径
 
@@ -160,7 +160,7 @@ pm2 restart changdu-web
 
 ```bash
 # 生产环境（推荐）
-export DAREN_CONFIG_PATH="/data/changdu-web/daren-config.json"
+export DAREN_CONFIG_PATH="/data/changdu-web-yu/daren-config.json"
 
 # 开发环境（默认）
 # 不设置环境变量，自动使用：server/data/daren-config.json
@@ -172,7 +172,7 @@ export DAREN_CONFIG_PATH="/data/changdu-web/daren-config.json"
 - **管理方式**：通过网站"达人设置"页面管理
 - **版本控制**：项目内路径已加入 `.gitignore`，不纳入 Git 管理
 - **持久化策略**：
-  - **外部路径**（`/data/changdu-web/`）：完全不受部署影响，永久保存
+  - **外部路径**（`/data/changdu-web-yu/`）：完全不受部署影响，永久保存
   - **项目内路径**（`server/data/`）：受 `.gitignore` 保护，但重新部署时需注意备份
 
 ### 如果配置文件丢失
@@ -183,7 +183,7 @@ export DAREN_CONFIG_PATH="/data/changdu-web/daren-config.json"
 # 检查是否设置了环境变量
 echo $DAREN_CONFIG_PATH
 
-# 如果有输出（如 /data/changdu-web/daren-config.json）
+# 如果有输出（如 /data/changdu-web-yu/daren-config.json）
 ls -la $DAREN_CONFIG_PATH
 
 # 如果无输出（使用项目内路径）
@@ -196,9 +196,9 @@ ls -la server/data/daren-config.json
 
 ```bash
 # 查看备份文件
-ls -la /data/changdu-web/daren-config.backup.*
+ls -la /data/changdu-web-yu/daren-config.backup.*
 # 恢复最新备份
-cp /data/changdu-web/daren-config.backup.YYYYMMDD_HHMMSS.json /data/changdu-web/daren-config.json
+cp /data/changdu-web-yu/daren-config.backup.YYYYMMDD_HHMMSS.json /data/changdu-web-yu/daren-config.json
 ```
 
 **项目内路径**：
@@ -214,7 +214,7 @@ cp daren-config.backup.YYYYMMDD_HHMMSS.json daren-config.json
 **外部路径**：
 
 ```bash
-cp server/data/daren-config.json.example /data/changdu-web/daren-config.json
+cp server/data/daren-config.json.example /data/changdu-web-yu/daren-config.json
 ```
 
 **项目内路径**：
@@ -238,19 +238,19 @@ cp daren-config.json.example daren-config.json
 
 ```bash
 # ~/.bashrc 或 ~/.zshrc
-export DAREN_CONFIG_PATH="/data/changdu-web-dev/daren-config.json"
+export DAREN_CONFIG_PATH="/data/changdu-web-yu-dev/daren-config.json"
 ```
 
 **测试环境**：
 
 ```bash
-export DAREN_CONFIG_PATH="/data/changdu-web-test/daren-config.json"
+export DAREN_CONFIG_PATH="/data/changdu-web-yu-test/daren-config.json"
 ```
 
 **生产环境**：
 
 ```bash
-export DAREN_CONFIG_PATH="/data/changdu-web-prod/daren-config.json"
+export DAREN_CONFIG_PATH="/data/changdu-web-yu-prod/daren-config.json"
 ```
 
 ### PM2 环境变量配置
@@ -266,7 +266,7 @@ module.exports = {
       args: 'start',
       env: {
         NODE_ENV: 'production',
-        DAREN_CONFIG_PATH: '/data/changdu-web-prod/daren-config.json',
+        DAREN_CONFIG_PATH: '/data/changdu-web-yu-prod/daren-config.json',
       },
     },
   ],
@@ -278,14 +278,14 @@ module.exports = {
 1. 在各环境服务器创建独立数据目录
 
    ```bash
-   sudo mkdir -p /data/changdu-web-{dev,test,prod}
-   sudo chown $USER:$USER /data/changdu-web-{dev,test,prod}
+   sudo mkdir -p /data/changdu-web-yu-{dev,test,prod}
+   sudo chown $USER:$USER /data/changdu-web-yu-{dev,test,prod}
    ```
 
 2. 各自初始化配置文件
 
    ```bash
-   cp server/data/daren-config.json.example /data/changdu-web-prod/daren-config.json
+   cp server/data/daren-config.json.example /data/changdu-web-yu-prod/daren-config.json
    ```
 
 3. 各自通过设置页面配置达人信息
@@ -302,7 +302,7 @@ module.exports = {
 
 ```bash
 # 添加到 crontab，每天备份
-0 2 * * * cp /data/changdu-web/daren-config.json /data/changdu-web/daren-config.backup.$(date +\%Y\%m\%d).json
+0 2 * * * cp /data/changdu-web-yu/daren-config.json /data/changdu-web-yu/daren-config.backup.$(date +\%Y\%m\%d).json
 ```
 
 **项目内路径**：
@@ -317,8 +317,8 @@ module.exports = {
 **外部路径**：
 
 ```bash
-chmod 600 /data/changdu-web/daren-config.json
-chown your-app-user:your-app-group /data/changdu-web/daren-config.json
+chmod 600 /data/changdu-web-yu/daren-config.json
+chown your-app-user:your-app-group /data/changdu-web-yu/daren-config.json
 ```
 
 **项目内路径**：
@@ -334,7 +334,7 @@ chown your-app-user:your-app-group server/data/daren-config.json
 
 ```bash
 # 只保留最近 30 天的备份
-find /data/changdu-web -name "daren-config.backup.*" -mtime +30 -delete
+find /data/changdu-web-yu -name "daren-config.backup.*" -mtime +30 -delete
 ```
 
 **项目内路径**：
@@ -368,7 +368,7 @@ ls -la server/data/daren-config.json
 
 # 3. 如果不存在，恢复备份或重新初始化
 # 外部路径
-cp /data/changdu-web/daren-config.backup.latest.json /data/changdu-web/daren-config.json
+cp /data/changdu-web-yu/daren-config.backup.latest.json /data/changdu-web-yu/daren-config.json
 # 项目内路径
 cp server/data/daren-config.backup.latest.json server/data/daren-config.json
 # 或重新初始化

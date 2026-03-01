@@ -11,12 +11,12 @@ const __dirname = path.dirname(__filename)
 /**
  * 配置文件路径 - 散柔专用
  * 优先使用环境变量 DOUYIN_MATERIAL_CONFIG_SANROU_PATH 指定的路径
- * 生产环境：/data/changdu-web/douyin-material-config_sanrou.json
+ * 生产环境：/data/changdu-web-yu/douyin-material-config_sanrou.json
  * 开发环境：降级到项目内路径
  */
 let CONFIG_FILE_PATH =
   process.env.DOUYIN_MATERIAL_CONFIG_SANROU_PATH ||
-  '/data/changdu-web/douyin-material-config_sanrou.json'
+  '/data/changdu-web-yu/douyin-material-config_sanrou.json'
 
 // 检测是否在开发环境（/data 目录不存在或无权限）
 const isProduction = process.env.NODE_ENV === 'production'

@@ -11,10 +11,10 @@ const __dirname = path.dirname(__filename)
 /**
  * 配置文件路径
  * 优先使用环境变量 DAREN_CONFIG_PATH 指定的路径
- * 生产环境：/data/changdu-web/daren-config.json（与 deploy.sh 一致）
+ * 生产环境：/data/changdu-web-yu/daren-config.json（与 deploy.sh 一致）
  * 开发环境：降级到项目内路径
  */
-let CONFIG_FILE_PATH = process.env.DAREN_CONFIG_PATH || '/data/changdu-web/daren-config.json'
+let CONFIG_FILE_PATH = process.env.DAREN_CONFIG_PATH || '/data/changdu-web-yu/daren-config.json'
 
 // 检测是否在开发环境（/data 目录不存在或无权限）
 const isProduction = process.env.NODE_ENV === 'production'

@@ -114,7 +114,7 @@ jobs:
 
       - name: Create deployment package
         run: |
-          tar -czf changdu-web-${GITHUB_SHA}.tar.gz \
+          tar -czf changdu-web-yu-${GITHUB_SHA}.tar.gz \
             dist/ \
             server/ \
             server.js \
@@ -126,7 +126,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: deployment-package-aliyun
-          path: changdu-web-*.tar.gz
+          path: changdu-web-yu-*.tar.gz
           retention-days: 1
 
       - name: Download deployment package
@@ -159,14 +159,14 @@ jobs:
           script: |
             set -e
 
-            APP_NAME="changdu-web"
-            APP_DIR="/home/web/changdu-web"
+            APP_NAME="changdu-web-yu"
+            APP_DIR="/home/web/changdu-web-yu"
             RELEASES_DIR="$APP_DIR/releases"
             SHARED_DIR="$APP_DIR/shared"
             CURRENT_LINK="$APP_DIR/current"
             TIMESTAMP=$(date +%Y%m%d-%H%M%S)
             RELEASE_DIR="$RELEASES_DIR/$TIMESTAMP"
-            PACKAGE_NAME="changdu-web-${{ github.sha }}.tar.gz"
+            PACKAGE_NAME="changdu-web-yu-${{ github.sha }}.tar.gz"
 
             echo "🚀 开始部署到 Aliyun..."
             echo "📦 部署包: $PACKAGE_NAME"
@@ -202,7 +202,7 @@ jobs:
 
             # 初始化配置目录和文件
             echo "📋 初始化配置目录..."
-            DATA_DIR="/data/changdu-web"
+            DATA_DIR="/data/changdu-web-yu"
             DAREN_CONFIG_FILE="$DATA_DIR/daren-config.json"
             DOUYIN_MATERIAL_CONFIG_FILE="$DATA_DIR/douyin-material-config.json"
             PM2_CONFIG_FILE="$DATA_DIR/ecosystem.config.js"
@@ -233,13 +233,15 @@ jobs:
             const fs = require('fs');
             const config = {
               apps: [{
-                name: 'changdu-web',
-                cwd: '/home/web/changdu-web/current',
+                name: 'changdu-web-yu',
+                cwd: '/home/web/changdu-web-yu/current',
                 script: 'server.js',
                 env: {
                   NODE_ENV: 'production',
-                  DAREN_CONFIG_PATH: '/data/changdu-web/daren-config.json',
-                  DOUYIN_MATERIAL_CONFIG_PATH: '/data/changdu-web/douyin-material-config.json'
+                  PORT: 3002,
+                  AUTH_CONFIG_PATH: '/data/changdu-web-yu/auth.json',
+                  DAREN_CONFIG_PATH: '/data/changdu-web-yu/daren-config.json',
+                  DOUYIN_MATERIAL_CONFIG_PATH: '/data/changdu-web-yu/douyin-material-config.json'
                 }
               }]
             };
@@ -271,13 +273,13 @@ jobs:
             # 健康检查
             echo "🏥 健康检查..."
             sleep 5
-            if curl -f http://localhost:3000/health > /dev/null 2>&1; then
+            if curl -f http://localhost:3002/health > /dev/null 2>&1; then
               echo "✅ 健康检查通过！"
             else
               echo "❌ 健康检查失败，重启中..."
               pm2 restart "$APP_NAME"
               sleep 5
-              if curl -f http://localhost:3000/health > /dev/null 2>&1; then
+              if curl -f http://localhost:3002/health > /dev/null 2>&1; then
                 echo "✅ 重启后通过！"
               else
                 echo "❌ 重启后仍失败，查看日志"
@@ -302,7 +304,7 @@ jobs:
         run: |
           if [ "${{ job.status }}" = "success" ]; then
             echo "✅ Aliyun 部署成功！"
-            echo "🌐 http://${{ secrets.ALIYUN_HOST }}"
+            echo "🌐 https://yu.cxyy.top"
           else
             echo "❌ Aliyun 部署失败，请查看日志"
           fi

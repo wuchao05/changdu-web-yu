@@ -5,8 +5,8 @@
 set -e
 
 # 配置变量
-APP_NAME="changdu-web"
-APP_DIR="/home/web/changdu-web"
+APP_NAME="changdu-web-yu"
+APP_DIR="/home/web/changdu-web-yu"
 RELEASES_DIR="$APP_DIR/releases"
 SHARED_DIR="$APP_DIR/shared"
 CURRENT_LINK="$APP_DIR/current"
@@ -14,9 +14,10 @@ TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 RELEASE_DIR="$RELEASES_DIR/$TIMESTAMP"
 
 # 配置文件路径（项目外，永久保存）
-DATA_DIR="/data/changdu-web"
+DATA_DIR="/data/changdu-web-yu"
 DAREN_CONFIG_FILE="$DATA_DIR/daren-config.json"
 DOUYIN_MATERIAL_CONFIG_FILE="$DATA_DIR/douyin-material-config.json"
+AUTH_CONFIG_FILE="$DATA_DIR/auth.json"
 PM2_CONFIG_FILE="$DATA_DIR/ecosystem.config.js"
 
 # 检查是否为本地部署
@@ -92,10 +93,10 @@ else
     echo "📥 下载代码..."
     if [ -n "$GITHUB_TOKEN" ]; then
         echo "使用Token认证..."
-        git clone "https://${GITHUB_TOKEN}@github.com/wuchao05/changdu-web.git" .
+        git clone "https://${GITHUB_TOKEN}@github.com/wuchao05/changdu-web-yu.git" .
     else
         echo "使用公开访问（如果是私有仓库，请设置GITHUB_TOKEN环境变量）..."
-        git clone "https://github.com/wuchao05/changdu-web.git" .
+        git clone "https://github.com/wuchao05/changdu-web-yu.git" .
     fi
 
     # 3. 安装依赖
@@ -159,6 +160,8 @@ module.exports = {
     script: 'server.js',
     env: {
       NODE_ENV: 'production',
+      PORT: 3002,
+      AUTH_CONFIG_PATH: '$AUTH_CONFIG_FILE',
       DAREN_CONFIG_PATH: '$DAREN_CONFIG_FILE',
       DOUYIN_MATERIAL_CONFIG_PATH: '$DOUYIN_MATERIAL_CONFIG_FILE'
     }
@@ -206,13 +209,13 @@ EOF
     echo "🏥 健康检查..."
     sleep 5
 
-    if curl -f http://localhost:3000/health > /dev/null 2>&1; then
+    if curl -f http://localhost:3002/health > /dev/null 2>&1; then
         echo "✅ 健康检查通过！"
     else
         echo "❌ 健康检查失败，尝试重启服务..."
         pm2 restart "$APP_NAME"
         sleep 5
-        if curl -f http://localhost:3000/health > /dev/null 2>&1; then
+        if curl -f http://localhost:3002/health > /dev/null 2>&1; then
             echo "✅ 重启后健康检查通过！"
         else
             echo "❌ 服务启动失败，请检查日志："
@@ -242,7 +245,7 @@ EOF
     echo "📊 服务状态:"
     pm2 status "$APP_NAME"
     echo ""
-    echo "🌐 访问地址: http://$(curl -s ifconfig.me 2>/dev/null || echo 'localhost')"
+    echo "🌐 访问地址: https://yu.cxyy.top"
     echo ""
     echo "💡 提示："
     echo "   - 达人配置文件位于: $DAREN_CONFIG_FILE"

@@ -6,12 +6,12 @@
 
 ### 生产环境（推荐）
 
-配置文件存储在服务器的 `/data/changdu-web/` 目录：
+配置文件存储在服务器的 `/data/changdu-web-yu/` 目录：
 
 ```
-/data/changdu-web/daren-config.json              # 达人配置
-/data/changdu-web/douyin-material-config.json    # 抖音号素材匹配配置
-/data/changdu-web/auth.json                      # 认证配置（Cookie、XT Token 等）
+/data/changdu-web-yu/daren-config.json              # 达人配置
+/data/changdu-web-yu/douyin-material-config.json    # 抖音号素材匹配配置
+/data/changdu-web-yu/auth.json                      # 认证配置（Cookie、XT Token 等）
 ```
 
 **优点**：
@@ -42,8 +42,8 @@ export AUTH_CONFIG_PATH=/custom/path/auth.json
 
 ```bash
 # 在服务器上执行
-mkdir -p /data/changdu-web
-cp /path/to/project/server/data/daren-config.json.example /data/changdu-web/daren-config.json
+mkdir -p /data/changdu-web-yu
+cp /path/to/project/server/data/daren-config.json.example /data/changdu-web-yu/daren-config.json
 ```
 
 或者使用 `deploy.sh` 脚本，它会自动创建目录和配置文件。
@@ -73,17 +73,17 @@ cp /path/to/project/server/data/daren-config.json.example /data/changdu-web/dare
 
 - **用途**：集中管理所有账号的认证信息（Cookie、XT Token 等敏感配置）
 - **管理方式**：通过 API 接口或直接编辑配置文件
-- **存储位置**：`/data/changdu-web/auth.json`（生产环境）
+- **存储位置**：`/data/changdu-web-yu/auth.json`（生产环境）
 
 ### 首次部署
 
 ```bash
 # 在服务器上执行
-mkdir -p /data/changdu-web
-cp /path/to/project/server/data/auth.json.example /data/changdu-web/auth.json
+mkdir -p /data/changdu-web-yu
+cp /path/to/project/server/data/auth.json.example /data/changdu-web-yu/auth.json
 
 # 编辑配置文件，填入真实的 Cookie 和 Token
-vi /data/changdu-web/auth.json
+vi /data/changdu-web-yu/auth.json
 ```
 
 ### 数据结构
@@ -155,12 +155,12 @@ Body: { cookie: "ocean_cookie_value" }
 
 ```bash
 # 更新欣雅账号的 Ocean Cookie
-curl -X PUT http://localhost:3000/api/auth/config/ocean/xinya \
+curl -X PUT http://localhost:3002/api/auth/config/ocean/xinya \
   -H "Content-Type: application/json" \
   -d '{"cookie": "your_ocean_cookie_here"}'
 
 # 更新超琦账号的 Ocean Cookie
-curl -X PUT http://localhost:3000/api/auth/config/ocean/chaoqi \
+curl -X PUT http://localhost:3002/api/auth/config/ocean/chaoqi \
   -H "Content-Type: application/json" \
   -d '{"cookie": "your_ocean_cookie_here"}'
 ```
@@ -185,7 +185,7 @@ apiConfigStore.updateFromAuthConfig(data.accounts)
 - 此文件包含敏感信息，**不要提交到代码仓库**
 - 已在 `.gitignore` 中忽略
 - 定期更新 Cookie（过期后需手动更新）
-- 限制服务器文件访问权限：`chmod 600 /data/changdu-web/auth.json`
+- 限制服务器文件访问权限：`chmod 600 /data/changdu-web-yu/auth.json`
 
 ## 抖音号素材匹配配置 (`douyin-material-config.json`)
 
@@ -199,8 +199,8 @@ apiConfigStore.updateFromAuthConfig(data.accounts)
 
 ```bash
 # 在服务器上执行
-mkdir -p /data/changdu-web
-cp /path/to/project/server/data/douyin-material-config.json.example /data/changdu-web/douyin-material-config.json
+mkdir -p /data/changdu-web-yu
+cp /path/to/project/server/data/douyin-material-config.json.example /data/changdu-web-yu/douyin-material-config.json
 ```
 
 或者使用 `deploy.sh` 脚本，它会自动创建。
@@ -230,7 +230,7 @@ cp /path/to/project/server/data/douyin-material-config.json.example /data/changd
 
 ```bash
 # 脚本会自动：
-# 1. 创建 /data/changdu-web/ 目录
+# 1. 创建 /data/changdu-web-yu/ 目录
 # 2. 初始化配置文件（如果不存在）
 # 3. 通过环境变量传递配置路径
 ./deploy.sh
@@ -240,15 +240,15 @@ cp /path/to/project/server/data/douyin-material-config.json.example /data/changd
 
 ```bash
 # 1. 确保目录存在
-sudo mkdir -p /data/changdu-web
-sudo chown <app_user>:<app_group> /data/changdu-web
+sudo mkdir -p /data/changdu-web-yu
+sudo chown <app_user>:<app_group> /data/changdu-web-yu
 
 # 2. 从模板创建配置
-cp server/data/*.json.example /data/changdu-web/
+cp server/data/*.json.example /data/changdu-web-yu/
 
 # 3. 启动应用并传递环境变量
-DAREN_CONFIG_PATH=/data/changdu-web/daren-config.json \
-DOUYIN_MATERIAL_CONFIG_PATH=/data/changdu-web/douyin-material-config.json \
+DAREN_CONFIG_PATH=/data/changdu-web-yu/daren-config.json \
+DOUYIN_MATERIAL_CONFIG_PATH=/data/changdu-web-yu/douyin-material-config.json \
 pm2 start app
 ```
 
@@ -261,7 +261,7 @@ pm2 start app
 # 脚本会：
 # 1. 下载最新代码
 # 2. 构建项目
-# 3. 保持 /data/changdu-web/ 目录不变
+# 3. 保持 /data/changdu-web-yu/ 目录不变
 # 4. 通过软链接切换版本
 # 5. 重启应用并传递配置路径
 ```
@@ -270,20 +270,20 @@ pm2 start app
 
 ```bash
 # 手动备份
-cp /data/changdu-web/daren-config.json \
-   /data/changdu-web/daren-config.backup.$(date +%Y%m%d).json
-cp /data/changdu-web/douyin-material-config.json \
-   /data/changdu-web/douyin-material-config.backup.$(date +%Y%m%d).json
+cp /data/changdu-web-yu/daren-config.json \
+   /data/changdu-web-yu/daren-config.backup.$(date +%Y%m%d).json
+cp /data/changdu-web-yu/douyin-material-config.json \
+   /data/changdu-web-yu/douyin-material-config.backup.$(date +%Y%m%d).json
 
 # 定时备份（crontab）
-0 2 * * * cp /data/changdu-web/*.json /data/changdu-web/backups/$(date +\%Y\%m\%d)/
+0 2 * * * cp /data/changdu-web-yu/*.json /data/changdu-web-yu/backups/$(date +\%Y\%m\%d)/
 ```
 
 ### 故障恢复
 
 ```bash
 # 从备份恢复
-cp /data/changdu-web/backups/20260110/daren-config.json /data/changdu-web/
+cp /data/changdu-web-yu/backups/20260110/daren-config.json /data/changdu-web-yu/
 
 # 或使用 deploy.sh 重新部署，它会自动创建空配置
 ./deploy.sh
@@ -291,7 +291,7 @@ cp /data/changdu-web/backups/20260110/daren-config.json /data/changdu-web/
 
 ## 安全建议
 
-- ✅ 定期备份 `/data/changdu-web/` 目录
+- ✅ 定期备份 `/data/changdu-web-yu/` 目录
 - ✅ 限制目录访问权限
 - ✅ 不要将生产配置提交到代码仓库
 - ✅ 使用 `deploy.sh` 脚本统一管理配置
@@ -301,17 +301,17 @@ cp /data/changdu-web/backups/20260110/daren-config.json /data/changdu-web/
 
 **Q: 发版后配置会丢失吗？**
 
-A: 不会。配置存储在 `/data/changdu-web/` 目录，与项目代码完全分离。`deploy.sh` 脚本使用软链接切换版本，不会影响配置文件。
+A: 不会。配置存储在 `/data/changdu-web-yu/` 目录，与项目代码完全分离。`deploy.sh` 脚本使用软链接切换版本，不会影响配置文件。
 
 **Q: 如何验证配置文件路径？**
 
 A: 查看应用启动日志：
 
 ```
-📁 达人配置文件路径: /data/changdu-web/daren-config.json
-📁 抖音号素材匹配配置文件路径: /data/changdu-web/douyin-material-config.json
+📁 达人配置文件路径: /data/changdu-web-yu/daren-config.json
+📁 抖音号素材匹配配置文件路径: /data/changdu-web-yu/douyin-material-config.json
 ```
 
-**Q: 为什么路径是 `/data/changdu-web/` 而不是 `/data/`？**
+**Q: 为什么路径是 `/data/changdu-web-yu/` 而不是 `/data/`？**
 
 A: 为了支持多个项目共存，每个项目有独立的配置目录，避免冲突。

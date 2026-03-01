@@ -45,13 +45,13 @@ function toBeijingTime(isoString) {
 const isProduction = process.env.NODE_ENV === 'production'
 const DOUYIN_MATERIAL_CONFIG_FILES = {
   daily: isProduction
-    ? '/data/changdu-web/douyin-material-config.json'
+    ? '/data/changdu-web-yu/douyin-material-config.json'
     : path.join(__dirname, '../data/douyin-material-config.json'),
   sanrou: isProduction
-    ? '/data/changdu-web/douyin-material-config_sanrou.json'
+    ? '/data/changdu-web-yu/douyin-material-config_sanrou.json'
     : path.join(__dirname, '../data/douyin-material-config_sanrou.json'),
   qianlong: isProduction
-    ? '/data/changdu-web/douyin-material-config_qianlong.json'
+    ? '/data/changdu-web-yu/douyin-material-config_qianlong.json'
     : path.join(__dirname, '../data/douyin-material-config_qianlong.json'),
 }
 
@@ -80,13 +80,13 @@ async function safeJsonParse(response, context = '') {
 function getStateFilePath(subject) {
   const fileName = `auto-submit-scheduler-state-${subject}.json`
   return isProduction
-    ? `/data/changdu-web/${fileName}`
+    ? `/data/changdu-web-yu/${fileName}`
     : path.join(__dirname, `../data/${fileName}`)
 }
 
 // 旧状态文件路径（用于迁移）
 const OLD_STATE_FILE_PATH = isProduction
-  ? '/data/changdu-web/auto-submit-scheduler-state.json'
+  ? '/data/changdu-web-yu/auto-submit-scheduler-state.json'
   : path.join(__dirname, '../data/auto-submit-scheduler-state.json')
 
 // 创建默认状态对象

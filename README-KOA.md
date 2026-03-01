@@ -25,18 +25,18 @@
 ### 安装依赖
 
 ```bash
-npm install
+pnpm install
 ```
 
 ### 启动开发环境
 
 ```bash
 # 同时启动前端和后端服务器
-npm run dev:full
+pnpm run dev:full
 
 # 或者分别启动
-npm run dev          # 启动前端 (端口 5173)
-npm run server:dev   # 启动后端 (端口 3000)
+pnpm run dev          # 启动前端 (端口 5173)
+pnpm run server:dev   # 启动后端 (端口 3000)
 ```
 
 ### 访问地址

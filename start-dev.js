@@ -21,7 +21,7 @@ const serverProcess = spawn('node', ['server.js'], {
 })
 
 // 启动 Vite 开发服务器
-const viteProcess = spawn('npm', ['run', 'dev'], {
+const viteProcess = spawn('pnpm', ['run', 'dev'], {
   cwd: __dirname,
   stdio: 'inherit',
   shell: true,

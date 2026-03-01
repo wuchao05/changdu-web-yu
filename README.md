@@ -147,14 +147,14 @@ export const CREATORS: Creator[] = [
 
 ```bash
 # 1. 创建持久化目录
-sudo mkdir -p /data/changdu-web
-sudo chown $USER:$USER /data/changdu-web
+sudo mkdir -p /data/changdu-web-yu
+sudo chown $USER:$USER /data/changdu-web-yu
 
 # 2. 设置环境变量
-export DAREN_CONFIG_PATH="/data/changdu-web/daren-config.json"
+export DAREN_CONFIG_PATH="/data/changdu-web-yu/daren-config.json"
 
 # 3. 初始化配置
-cp server/data/daren-config.json.example /data/changdu-web/daren-config.json
+cp server/data/daren-config.json.example /data/changdu-web-yu/daren-config.json
 ```
 
 更多详情请查看 [DEPLOYMENT.md](./DEPLOYMENT.md)。

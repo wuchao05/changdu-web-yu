@@ -29,7 +29,7 @@ const __dirname = path.dirname(__filename)
 // 状态文件路径
 const isProduction = process.env.NODE_ENV === 'production'
 const STATE_FILE_PATH = isProduction
-  ? '/data/changdu-web/daily-build-scheduler-state.json'
+  ? '/data/changdu-web-yu/daily-build-scheduler-state.json'
   : path.join(__dirname, '../data/daily-build-scheduler-state.json')
 
 // 调度器状态
