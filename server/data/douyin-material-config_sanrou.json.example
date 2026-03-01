@@ -1,0 +1,20 @@
+{
+  "matches": [
+    {
+      "id": "1705478400000",
+      "douyinAccount": "斯娜看剧",
+      "douyinAccountId": "34996393230",
+      "materialRange": "01-06",
+      "createdAt": "2024-01-17T10:00:00.000Z",
+      "updatedAt": "2024-01-17T10:00:00.000Z"
+    },
+    {
+      "id": "1705478460000",
+      "douyinAccount": "小红看剧",
+      "douyinAccountId": "25655660267",
+      "materialRange": "07-10",
+      "createdAt": "2024-01-17T10:01:00.000Z",
+      "updatedAt": "2024-01-17T10:01:00.000Z"
+    }
+  ]
+}

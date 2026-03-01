@@ -1,0 +1,94 @@
+{
+  "enabled": true,
+  "intervalMinutes": 60,
+  "nextRunTime": "2026-02-16T06:37:56.876Z",
+  "lastRunTime": "2026-02-16T05:37:56.876Z",
+  "running": false,
+  "subject": "daily",
+  "onlyRedFlag": true,
+  "stats": {
+    "totalProcessed": 0,
+    "successCount": 0,
+    "failCount": 0,
+    "skipCount": 0
+  },
+  "currentTask": null,
+  "progress": {
+    "current": 0,
+    "total": 0,
+    "currentDate": "",
+    "currentDrama": ""
+  },
+  "taskHistory": [
+    {
+      "status": "error",
+      "error": "fetch failed",
+      "timestamp": "2026-02-16T05:37:56.876Z"
+    },
+    {
+      "status": "error",
+      "error": "fetch failed",
+      "timestamp": "2026-02-16T03:51:22.828Z"
+    },
+    {
+      "status": "error",
+      "error": "fetch failed",
+      "timestamp": "2026-02-16T02:33:26.856Z"
+    },
+    {
+      "status": "error",
+      "error": "fetch failed",
+      "timestamp": "2026-02-16T01:05:07.794Z"
+    },
+    {
+      "status": "error",
+      "error": "fetch failed",
+      "timestamp": "2026-02-15T23:41:48.918Z"
+    },
+    {
+      "status": "error",
+      "error": "fetch failed",
+      "timestamp": "2026-02-15T22:41:38.311Z"
+    },
+    {
+      "status": "error",
+      "error": "fetch failed",
+      "timestamp": "2026-02-15T21:41:21.028Z"
+    },
+    {
+      "status": "error",
+      "error": "fetch failed",
+      "timestamp": "2026-02-15T19:55:49.607Z"
+    },
+    {
+      "status": "error",
+      "error": "获取新剧列表: 响应为空 (HTTP 200)",
+      "timestamp": "2026-02-15T18:34:02.870Z"
+    },
+    {
+      "status": "error",
+      "error": "获取新剧列表: 响应为空 (HTTP 200)",
+      "timestamp": "2026-02-15T17:18:06.476Z"
+    },
+    {
+      "status": "error",
+      "error": "fetch failed",
+      "timestamp": "2026-02-15T15:37:44.883Z"
+    },
+    {
+      "status": "error",
+      "error": "获取新剧列表: 响应为空 (HTTP 200)",
+      "timestamp": "2026-02-15T14:12:01.326Z"
+    },
+    {
+      "status": "error",
+      "error": "获取新剧列表: 响应为空",
+      "timestamp": "2026-02-15T14:09:29.147Z"
+    },
+    {
+      "status": "error",
+      "error": "获取新剧列表: 响应为空",
+      "timestamp": "2026-02-15T14:02:38.965Z"
+    }
+  ]
+}
