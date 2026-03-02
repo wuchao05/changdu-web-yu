@@ -315,23 +315,6 @@
   @apply w-4 h-4 transition-transform duration-200;
 }
 
-/* 待下载进度提示样式 */
-.pending-download-progress {
-  @apply mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg;
-}
-
-.progress-content {
-  @apply flex items-center gap-3 w-full;
-}
-
-.progress-icon {
-  @apply w-5 h-5 text-blue-600;
-}
-
-.progress-text {
-  @apply text-blue-700 font-medium;
-}
-
 .auto-download-bar {
   @apply mb-4 p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3;
   @apply bg-gradient-to-r from-indigo-50 to-blue-50 border border-blue-200 rounded-xl;
@@ -387,31 +370,6 @@
 
 .auto-download-message {
   @apply text-xs text-slate-700;
-}
-
-/* 未找到剧集样式 */
-.not-found-dramas {
-  @apply mb-4 p-4 bg-orange-50 border border-orange-200 rounded-lg;
-}
-
-.not-found-header {
-  @apply flex items-center gap-2 mb-3;
-}
-
-.not-found-icon {
-  @apply w-5 h-5 text-orange-600;
-}
-
-.not-found-title {
-  @apply text-orange-700 font-medium;
-}
-
-.not-found-list {
-  @apply text-orange-600 text-sm leading-relaxed;
-}
-
-.not-found-item {
-  @apply inline;
 }
 
 /* 加载状态的旋转动画优化 */
