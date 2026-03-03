@@ -1333,8 +1333,8 @@ async function handleDateConfirm(selectedDate: string) {
           // 格式化抖音号素材配置
           const douyinMaterial = formatDouyinMaterialConfig()
 
-          // 状态统一为"待剪辑"
-          const clipStatus = '待剪辑'
+          // 按需求固定写入飞书状态为"待下载"
+          const clipStatus = '待下载'
 
           // 创建剪辑记录，包含剧名、上架时间、账户和主体
           await feishuApi.createClipRecord(
