@@ -2,7 +2,6 @@
 import { ref, nextTick } from 'vue'
 import TOS from '@volcengine/tos-sdk'
 import {
-  getTosKey,
   getChunkConfig,
   generateFilePath,
   getMd5FileName,
@@ -311,9 +310,8 @@ export function useTosUpload(options: UseTosUploadOptions = {}) {
 
   // 初始化TOS客户端
   const initTosClient = async (force = false) => {
-    if (!tosClient.value || force) {
-      tosClient.value = await getTosKey()
-    }
+    void force
+    throw new Error('TOS 上传功能已禁用')
   }
 
   // 更新并发数

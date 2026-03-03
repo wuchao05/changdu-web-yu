@@ -2,7 +2,6 @@
 import { ref, computed, watch } from 'vue'
 import { NModal, NButton, NAlert, NSpin, useMessage } from 'naive-ui'
 import { feishuApi } from '@/api/feishu'
-import { FEISHU_CONFIG } from '@/config/feishu'
 import * as dailyBuildApi from '@/api/dailyBuild'
 import { useDouyinMaterialStore, type DouyinMaterialMatch } from '@/stores/douyinMaterial'
 import { filterMaterials, sortMaterialsBySequence, type Material } from '@/utils/materialFilter'
@@ -148,7 +147,6 @@ async function handleStartBuild() {
     // 1. 获取待搭建剧集（每日主体，状态为"待搭建"）
     isFetchingDramas.value = true
     const result = await feishuApi.getPendingSetupDramas(
-      undefined,
       selectedDate.value,
       undefined,
       true, // 使用每日主体表格
@@ -314,12 +312,7 @@ async function executeBuildProcess(): Promise<void> {
       // 3. 更新飞书状态为"已完成"，同时更新搭建时间
       try {
         const buildTime = Date.now() // 当前13位时间戳
-        await feishuApi.updateDramaStatus(
-          drama.record_id,
-          '已完成',
-          FEISHU_CONFIG.daily_table_ids.drama_status,
-          buildTime
-        )
+        await feishuApi.updateDramaStatus(drama.record_id, '已完成', buildTime)
         console.log(
           `✅ 剧集 ${drama.fields['剧名']?.[0]?.text} 状态已更新为"已完成"，搭建时间: ${buildTime}`
         )

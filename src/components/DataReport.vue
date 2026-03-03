@@ -112,7 +112,6 @@ import { useDataStore } from '@/stores/data'
 import { useSettingsStore } from '@/stores/settings'
 import { useAccountStore } from '@/stores/account'
 import { useDarenStore } from '@/stores/daren'
-import { useUserAuth } from '@/composables/useUserAuth'
 import { getReport } from '@/api'
 import type { DailyData, ReportParams } from '@/api/types'
 import type { ExtendedError } from '@/api/http'
@@ -132,7 +131,6 @@ const dataStore = useDataStore()
 const settingsStore = useSettingsStore()
 const accountStore = useAccountStore()
 const darenStore = useDarenStore()
-const { isAdmin } = useUserAuth()
 
 // 使用全局日期范围管理
 const { sanrouDateRange, setSanrouDateRange, sanrouDefaultRange } = useGlobalDateRange()
@@ -362,13 +360,8 @@ async function fetchReportData() {
     }
 
     // 达人账号：添加抖音号过滤（注意：报表数据过滤可能不准确，建议使用订单明细）
-    // 只有在以下情况才过滤：
-    // 1. 达人用户（非管理员）
-    // 2. 管理员选择了具体达人（selectedDarenUserId 不为空）
-    const shouldFilterByDouyin =
-      accountStore.currentAccount === 'daren' &&
-      darenStore.douyinAccountsParam &&
-      (!isAdmin.value || (darenStore.selectedDarenUserId && darenStore.selectedDarenUserId !== ''))
+    // 抖音号过滤已禁用
+    const shouldFilterByDouyin = false
 
     if (shouldFilterByDouyin) {
       params.daren_douyin_accounts = darenStore.douyinAccountsParam

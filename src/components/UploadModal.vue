@@ -381,7 +381,6 @@ import { useTosUpload } from '@/composables/useTosUpload'
 import { getVideoInfo } from '@/utils/videoHelper'
 import { getFileFromPath, getFileWithMd5FromPath } from '@/utils/tosUpload'
 import { useSettingsStore } from '@/stores/settings'
-import { useApiConfigStore } from '@/stores/apiConfig'
 import { useDramaSubjectStore } from '@/stores/dramaSubject'
 
 interface Drama {
@@ -493,7 +492,6 @@ const emit = defineEmits<{
 // Message实例
 const message = useMessage()
 const settingsStore = useSettingsStore()
-const apiConfigStore = useApiConfigStore()
 const dramaSubjectStore = useDramaSubjectStore()
 
 // 响应式数据
@@ -824,12 +822,7 @@ const fetchMaterialsForDate = async (date: string) => {
   try {
     const formattedDate = formatDateForUpload(date)
     const url = `/api/xt/video-materials?date=${encodeURIComponent(formattedDate)}`
-    const userId = apiConfigStore.effectiveUserId
-    const headers: HeadersInit = {}
-    if (userId) {
-      headers['x-user-id'] = userId
-    }
-    const response = await fetch(url, { headers })
+    const response = await fetch(url)
     if (!response.ok) {
       return []
     }
@@ -1768,43 +1761,8 @@ const cleanupDramaDirectory = async (dramaName: string) => {
     return
   }
 
-  const token = apiConfigStore.config.xtToken
-  if (!token) {
-    console.warn('缺少 XT token，跳过删除本地目录')
-    return
-  }
-
-  cleaningDramaDirs.add(key)
-
-  try {
-    const res = await fetch('/api/xt/drama-dir', {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Xt-Token': token,
-      },
-      body: JSON.stringify({ date, dramaName }),
-    })
-
-    if (!res.ok) {
-      const text = await res.text()
-      console.error(`删除剧集目录失败: ${dramaName}`, res.status, text)
-      return
-    }
-
-    const result = await res.json()
-    if (!result.success) {
-      console.error(`删除剧集目录失败: ${dramaName}`, result.message || result.error)
-      return
-    }
-
-    cleanedDramaDirs.add(key)
-    console.log(`已删除本地剧集目录: ${date} -> ${dramaName}`)
-  } catch (error) {
-    console.error(`删除剧集目录请求失败: ${dramaName}`, error)
-  } finally {
-    cleaningDramaDirs.delete(key)
-  }
+  console.warn('删除本地目录功能已禁用')
+  return
 }
 
 // 监听剧集状态变化并通知飞书API
@@ -1948,12 +1906,7 @@ const loadVideoMaterials = async (
     const formattedDate = formatDateForUpload(date)
     const url = `/api/xt/video-materials?date=${encodeURIComponent(formattedDate)}`
     console.log('请求URL:', url)
-    const userId = apiConfigStore.effectiveUserId
-    const headers: HeadersInit = {}
-    if (userId) {
-      headers['x-user-id'] = userId
-    }
-    const response = await fetch(url, { headers })
+    const response = await fetch(url)
     console.log('响应状态:', response.status)
     const result = await response.json()
     console.log('响应结果:', result)

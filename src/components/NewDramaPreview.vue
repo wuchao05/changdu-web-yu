@@ -1580,8 +1580,7 @@ async function handleAddDownload(drama: NewDramaItem | RankingDramaItem) {
     syncingDramaId.value = drama.book_id
     isAnyDramaSyncing.value = true
 
-    // 使用当前主体配置的账户表（达人会自动使用自己配置的表ID）
-    // 注意：不传 accountTableId 参数，让 feishuApi 内部自动判断使用哪个表ID
+    // 使用设置页配置的统一账户表
     const hasAvailableAccount = await feishuApi.checkAvailableHuyuAccounts()
     if (!hasAvailableAccount) {
       showSuccessToast('无可用账户，请及时联系管理员添加并完成录户')

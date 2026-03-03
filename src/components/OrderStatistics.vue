@@ -229,15 +229,8 @@
 
       <!-- 数据展示区域 -->
       <div class="data-display-area">
-        <!-- 达人总充值金额卡片（达人账号下显示） -->
-        <div
-          v-if="
-            statisticsType === 'orders' &&
-            accountStore.currentAccount === 'daren' &&
-            (isDarenUser || (isAdmin && darenStore.selectedDarenUserId))
-          "
-          class="mb-6"
-        >
+        <!-- 达人总充值金额卡片（已禁用） -->
+        <div v-if="false" class="mb-6">
           <n-card :bordered="false" class="bg-gradient-to-br from-cyan-50 to-blue-50">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
@@ -621,7 +614,7 @@ const dataStore = useDataStore()
 const settingsStore = useSettingsStore()
 const accountStore = useAccountStore()
 const darenStore = useDarenStore()
-const { isAdmin, isDarenUser } = useUserAuth()
+const { isAdmin } = useUserAuth()
 
 // 使用全局日期范围管理
 const { sanrouDateRange, setSanrouDateRange, sanrouDefaultRange } = useGlobalDateRange()
@@ -824,10 +817,7 @@ const filteredTableData = computed(() => {
 
 const paginatedTableData = computed(() => {
   // 达人过滤或合作者模式：使用前端分页
-  if (
-    isCollaboratorMode.value ||
-    (accountStore.currentAccount === 'daren' && darenStore.douyinAccountsParam)
-  ) {
+  if (isCollaboratorMode.value || false) {
     const startIndex = (currentPage.value - 1) * pageSize.value
     return filteredTableData.value.slice(startIndex, startIndex + pageSize.value)
   }
@@ -837,10 +827,7 @@ const paginatedTableData = computed(() => {
 
 const paginationTotal = computed(() => {
   // 达人过滤或合作者模式：使用前端数据的总数
-  if (
-    isCollaboratorMode.value ||
-    (accountStore.currentAccount === 'daren' && darenStore.douyinAccountsParam)
-  ) {
+  if (isCollaboratorMode.value || false) {
     return filteredTableData.value.length
   }
   // 其他情况：使用后端返回的 total
@@ -1574,11 +1561,8 @@ async function fetchOrderData() {
     }
 
     // 根据统计类型设置页面大小
-    // 判断是否达人过滤模式（需要前端分页）
-    const isDarenFilter =
-      accountStore.currentAccount === 'daren' &&
-      darenStore.douyinAccountsParam &&
-      (!isAdmin.value || (darenStore.selectedDarenUserId && darenStore.selectedDarenUserId !== ''))
+    // 达人过滤模式已禁用
+    const isDarenFilter = false
 
     const actualPageSize = collaboratorMode
       ? COLLABORATOR_PAGE_SIZE
@@ -1608,17 +1592,14 @@ async function fetchOrderData() {
     // 达人账号：添加抖音号过滤
     // 只有在以下情况才过滤：
     // 1. 达人用户（非管理员）
-    // 2. 管理员选择了具体达人（selectedDarenUserId 不为空）
-    const shouldFilterByDouyin =
-      accountStore.currentAccount === 'daren' &&
-      darenStore.douyinAccountsParam &&
-      (!isAdmin.value || (darenStore.selectedDarenUserId && darenStore.selectedDarenUserId !== ''))
+    // 抖音号过滤已禁用
+    const shouldFilterByDouyin = false
 
     if (shouldFilterByDouyin) {
       params.daren_douyin_accounts = darenStore.douyinAccountsParam
       console.log('🔍 [达人过滤] 抖音号参数:', darenStore.douyinAccountsParam)
-    } else if (accountStore.currentAccount === 'daren') {
-      console.log('🔍 [达人tab] 查看全部数据，不过滤')
+    } else {
+      console.log('🔍 查看全部数据，不过滤')
     }
 
     const data = await getOrders(params)
@@ -1673,16 +1654,16 @@ async function handleStatisticsTypeChange() {
 }
 
 function handlePageChange() {
-  // 达人过滤或合作者模式：使用前端分页，不重新请求
-  const isDarenFilter = accountStore.currentAccount === 'daren' && darenStore.douyinAccountsParam
+  // 达人过滤已禁用
+  const isDarenFilter = false
   if (isCollaboratorMode.value || isDarenFilter) return
   fetchOrderData()
 }
 
 function handlePageSizeChange() {
   currentPage.value = 1
-  // 达人过滤或合作者模式：使用前端分页，不重新请求
-  const isDarenFilter = accountStore.currentAccount === 'daren' && darenStore.douyinAccountsParam
+  // 达人过滤已禁用
+  const isDarenFilter = false
   if (isCollaboratorMode.value || isDarenFilter) return
   fetchOrderData()
 }
@@ -2007,14 +1988,8 @@ watch(
 watch(
   () => darenStore.douyinAccountsParam,
   (newParam, oldParam) => {
-    // 达人用户（非管理员）：当抖音号参数从空变为有值时，自动加载数据
-    if (
-      accountStore.currentAccount === 'daren' &&
-      !isAdmin.value &&
-      !oldParam &&
-      newParam &&
-      accountStore.isSanrouLikeAccount
-    ) {
+    // 达人功能已禁用
+    if (false && !isAdmin.value && !oldParam && newParam && accountStore.isSanrouLikeAccount) {
       console.log('🎯 [达人用户] 抖音号配置已加载，自动获取订单数据')
       fetchOrderData()
     }
@@ -2025,12 +2000,8 @@ watch(
 watch(
   () => darenStore.selectedDarenUserId,
   newUserId => {
-    // 管理员在达人tab切换选择时，重新加载数据
-    if (
-      accountStore.currentAccount === 'daren' &&
-      isAdmin.value &&
-      accountStore.isSanrouLikeAccount
-    ) {
+    // 达人功能已禁用
+    if (false && isAdmin.value && accountStore.isSanrouLikeAccount) {
       console.log('🎯 [管理员] 达人选择变化，重新获取订单数据:', newUserId || '全部')
       currentPage.value = 1 // 重置到第一页
       fetchOrderData()
@@ -2054,25 +2025,8 @@ onMounted(() => {
 
   // 只有散柔类账号和牵龙账号才加载订单数据
   if (accountStore.isSanrouLikeAccount || accountStore.isQianlongAccount) {
-    if (accountStore.currentAccount === 'daren') {
-      // 达人账号：区分管理员和达人用户
-      if (isAdmin.value) {
-        // 管理员：直接获取数据（可能是全部，也可能已选择具体达人）
-        console.log('🎯 [管理员-达人tab] 立即获取订单数据')
-        fetchOrderData()
-      } else {
-        // 达人用户：需要等待抖音号配置
-        if (darenStore.douyinAccountsParam) {
-          console.log('🎯 [达人用户] 抖音号配置已就绪，立即获取订单数据')
-          fetchOrderData()
-        } else {
-          console.log('⏳ [达人用户] 等待抖音号配置加载...')
-        }
-      }
-    } else {
-      // 非达人账号：立即获取数据
-      fetchOrderData()
-    }
+    // 达人功能已禁用，直接获取数据
+    fetchOrderData()
   }
 })
 

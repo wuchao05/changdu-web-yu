@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { useApiConfigStore } from './apiConfig'
 import {
   getDarenConfig,
   addDaren as addDarenApi,
@@ -28,8 +27,6 @@ export type { DarenInfo }
  * 管理达人相关的全局状态，包括达人列表、选中的达人和抖音号配置
  */
 export const useDarenStore = defineStore('daren', () => {
-  const apiConfigStore = useApiConfigStore()
-
   // 当前选中的达人userId（管理员可切换，普通达人用户自动使用自己的ID）
   const selectedDarenUserId = ref<string | null>(null)
 
@@ -39,10 +36,10 @@ export const useDarenStore = defineStore('daren', () => {
   /**
    * 获取当前应该使用的用户ID
    * 如果管理员选择了特定达人，使用选中的达人ID
-   * 否则使用当前登录用户的ID
+   * 否则返回 undefined
    */
   const effectiveUserId = computed(() => {
-    return selectedDarenUserId.value || apiConfigStore.effectiveUserId
+    return selectedDarenUserId.value || undefined
   })
 
   /**
@@ -64,8 +61,8 @@ export const useDarenStore = defineStore('daren', () => {
   const currentDouyinAccounts = computed(() => {
     // 确定要查找的用户ID
     // 1. 优先使用管理员选择的达人ID
-    // 2. 否则使用当前登录用户的ID
-    const targetUserId = selectedDarenUserId.value || apiConfigStore.effectiveUserId
+    // 2. 否则返回空数组
+    const targetUserId = selectedDarenUserId.value
 
     // 如果没有有效的用户ID，返回空数组
     if (!targetUserId) {
@@ -93,7 +90,7 @@ export const useDarenStore = defineStore('daren', () => {
    */
   const currentDouyinMaterialText = computed(() => {
     // 确定要查找的用户ID
-    const targetUserId = selectedDarenUserId.value || apiConfigStore.effectiveUserId
+    const targetUserId = selectedDarenUserId.value
 
     // 如果没有有效的用户ID，返回空字符串
     if (!targetUserId) {

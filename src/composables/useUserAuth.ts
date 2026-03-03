@@ -1,5 +1,4 @@
 import { computed, ref } from 'vue'
-import { useApiConfigStore } from '@/stores/apiConfig'
 import { useDarenStore } from '@/stores/daren'
 
 /**
@@ -7,10 +6,9 @@ import { useDarenStore } from '@/stores/daren'
  * 负责管理用户身份相关的状态和逻辑
  */
 export function useUserAuth() {
-  const apiConfigStore = useApiConfigStore()
   const darenStore = useDarenStore()
 
-  const currentUserId = computed(() => apiConfigStore.effectiveUserId)
+  const currentUserId = computed(() => undefined as string | undefined)
 
   // 管理员用户 ID（从服务器配置读取，有默认值）
   const adminUserId = ref('2peWAuMpDOqXGj8')
@@ -34,11 +32,13 @@ export function useUserAuth() {
 
   // 计算属性：是否为达人用户（在达人列表中）
   const isDarenUser = computed(() => {
+    if (!currentUserId.value) return false
     return darenStore.findDarenByUserId(currentUserId.value) !== undefined
   })
 
   // 计算属性：当前达人信息
   const currentDaren = computed(() => {
+    if (!currentUserId.value) return undefined
     return darenStore.findDarenByUserId(currentUserId.value)
   })
 

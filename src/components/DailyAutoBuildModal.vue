@@ -16,7 +16,6 @@ import {
 import type { DataTableColumns } from 'naive-ui'
 import { Icon } from '@iconify/vue'
 import { feishuApi } from '@/api/feishu'
-import { FEISHU_CONFIG } from '@/config/feishu'
 import * as dailyBuildApi from '@/api/dailyBuild'
 import { filterMaterials, sortMaterialsBySequence, type Material } from '@/utils/materialFilter'
 import {
@@ -465,13 +464,7 @@ async function loadPendingDramas() {
     buildError.value = null
 
     console.log('========== 查询待搭建剧集 ==========')
-    const result = await feishuApi.getPendingSetupDramas(
-      undefined,
-      undefined,
-      undefined,
-      true,
-      true
-    )
+    const result = await feishuApi.getPendingSetupDramas(undefined, undefined, true, true)
     const items = result.data?.items || []
 
     // 按日期排序（日期早的排在前面）
@@ -530,7 +523,6 @@ async function executePollingCycle() {
     console.log('========== 开始轮询周期 ==========')
     isLoadingDramas.value = true
     const result = await feishuApi.getPendingSetupDramas(
-      undefined,
       undefined,
       undefined,
       true, // 使用每日主体表格
@@ -1023,12 +1015,7 @@ async function executeBuildProcess() {
       // 更新飞书状态为"已完成"
       try {
         const buildTime = Date.now()
-        await feishuApi.updateDramaStatus(
-          drama.record_id,
-          '已完成',
-          drama._tableId || FEISHU_CONFIG.daily_table_ids.drama_status,
-          buildTime
-        )
+        await feishuApi.updateDramaStatus(drama.record_id, '已完成', buildTime)
         console.log(`✅ 剧集 ${record.dramaName} 状态已更新为"已完成"，搭建时间: ${buildTime}`)
       } catch (statusError) {
         console.error('❌ 更新飞书状态失败:', statusError)
@@ -1049,11 +1036,7 @@ async function executeBuildProcess() {
 
         // 更新飞书状态为"跳过搭建"
         try {
-          await feishuApi.updateDramaStatus(
-            drama.record_id,
-            '跳过搭建',
-            drama._tableId || FEISHU_CONFIG.daily_table_ids.drama_status
-          )
+          await feishuApi.updateDramaStatus(drama.record_id, '跳过搭建')
           console.log(`✅ 剧集 ${record.dramaName} 状态已更新为"跳过搭建"`)
         } catch (statusError) {
           console.error('❌ 更新飞书状态失败:', statusError)
@@ -1076,11 +1059,7 @@ async function executeBuildProcess() {
 
       // 更新飞书状态为"搭建失败"
       try {
-        await feishuApi.updateDramaStatus(
-          drama.record_id,
-          '搭建失败',
-          drama._tableId || FEISHU_CONFIG.daily_table_ids.drama_status
-        )
+        await feishuApi.updateDramaStatus(drama.record_id, '搭建失败')
         console.log(`✅ 剧集 ${record.dramaName} 状态已更新为"搭建失败"`)
       } catch (statusError) {
         console.error('❌ 更新飞书状态失败:', statusError)
@@ -1116,12 +1095,7 @@ async function executeSingleDramaBuild(
     // 更新飞书状态为"已完成"
     try {
       const buildTime = Date.now()
-      await feishuApi.updateDramaStatus(
-        drama.record_id,
-        '已完成',
-        drama._tableId || FEISHU_CONFIG.daily_table_ids.drama_status,
-        buildTime
-      )
+      await feishuApi.updateDramaStatus(drama.record_id, '已完成', buildTime)
       console.log(`✅ 剧集 ${record.dramaName} 状态已更新为"已完成"，搭建时间: ${buildTime}`)
     } catch (statusError) {
       console.error('❌ 更新飞书状态失败:', statusError)
@@ -1150,11 +1124,7 @@ async function executeSingleDramaBuild(
 
     // 更新飞书状态
     try {
-      await feishuApi.updateDramaStatus(
-        drama.record_id,
-        statusText,
-        drama._tableId || FEISHU_CONFIG.daily_table_ids.drama_status
-      )
+      await feishuApi.updateDramaStatus(drama.record_id, statusText)
       console.log(`✅ 剧集 ${record.dramaName} 状态已更新为"${statusText}"`)
     } catch (statusError) {
       console.error('❌ 更新飞书状态失败:', statusError)

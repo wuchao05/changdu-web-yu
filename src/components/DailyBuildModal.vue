@@ -3,7 +3,6 @@ import { ref, watch, computed } from 'vue'
 import { NModal, NSteps, NStep, NAlert, NButton, NSpin, useMessage } from 'naive-ui'
 import { Icon } from '@iconify/vue'
 import { feishuApi } from '@/api/feishu'
-import { FEISHU_CONFIG } from '@/config/feishu'
 import * as dailyBuildApi from '@/api/dailyBuild'
 import { parsePromotionUrl, copyToClipboard } from '@/utils/dailyBuild'
 import { generateMicroAppLink, extractAppIdFromParams } from '@/utils/microAppLink'
@@ -110,7 +109,7 @@ async function fetchDramas() {
     isBuilding.value = true
 
     // 不传递日期参数，获取所有待资产化的剧集
-    const result = await feishuApi.getPendingBuildDramas(undefined, undefined, undefined, true)
+    const result = await feishuApi.getPendingBuildDramas(undefined, undefined, true, true)
     dramas.value = result.data?.items || []
 
     if (dramas.value.length === 0) {
@@ -144,11 +143,7 @@ async function executeBuildProcess(startIndex: number = 0) {
 
       // 资产化成功后，更新飞书状态为"待搭建"
       try {
-        await feishuApi.updateDramaStatus(
-          drama.record_id,
-          '待搭建',
-          FEISHU_CONFIG.daily_table_ids.drama_status
-        )
+        await feishuApi.updateDramaStatus(drama.record_id, '待搭建')
         console.log(`剧集 ${drama.fields['剧名']?.[0]?.text} 状态已更新为"待搭建"`)
       } catch (statusError: unknown) {
         console.error('更新飞书状态失败:', statusError)
@@ -412,11 +407,7 @@ async function handleRefreshMicroApp() {
         // 当前剧集资产化成功
         // 更新飞书状态为"待搭建"
         try {
-          await feishuApi.updateDramaStatus(
-            drama.record_id,
-            '待搭建',
-            FEISHU_CONFIG.daily_table_ids.drama_status
-          )
+          await feishuApi.updateDramaStatus(drama.record_id, '待搭建')
           console.log(`剧集 ${drama.fields['剧名']?.[0]?.text} 状态已更新为"待搭建"`)
         } catch (statusError: unknown) {
           console.error('更新飞书状态失败:', statusError)

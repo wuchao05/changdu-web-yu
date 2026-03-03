@@ -1,49 +1,7 @@
 import Router from '@koa/router'
+import { FEISHU_CONFIG, getFeishuConfig } from '../config/feishu.js'
 
 const router = new Router()
-
-// 飞书配置 - 吴超
-// const FEISHU_CONFIG = {
-//   app_id: 'cli_a839f03393785013',
-//   app_secret: '63orqvu6Wyyb9iEelFqvndl2AKiAFN38',
-//   api_base_url: 'https://open.feishu.cn/open-apis',
-//   token_endpoint: '/auth/v3/tenant_access_token/internal',
-// }
-
-// 飞书配置 - 小红
-const FEISHU_CONFIG = {
-  app_id: 'cli_a870f7611b7b1013',
-  app_secret: 'NTwHbZG8rpOQyMEnXGPV6cNQ84KEqE8z',
-  api_base_url: 'https://open.feishu.cn/open-apis',
-  app_token: 'WdWvbGUXXaokk8sAS94c00IZnsf',
-  token_endpoint: '/auth/v3/tenant_access_token/internal',
-  table_ids: {
-    // 剧集清单 - 散柔（超琦）主体
-    drama_list: 'tblvuZhBd4drW26n',
-    // 剧集状态 - 散柔（超琦）主体
-    drama_status: 'tblDOyi2Lzs80sv0',
-    // 超琦账户表（默认）
-    chaoqi_account: 'tbl0PVvAOHKGcWLs',
-  },
-  // 牵龙（欣雅）主体表格 ID 配置
-  qianlong_table_ids: {
-    // 剧集清单 - 牵龙剧集清单表ID
-    drama_list: 'tblGDNtOIvJ9fNjK',
-    // 剧集状态 - 牵龙剧集状态表ID
-    drama_status: 'tblZB1ujNLN7Onpl',
-    // 欣雅账户表
-    account: 'tblh9obuLh1g7hOS',
-  },
-  // 每日账号表格 ID 配置
-  daily_table_ids: {
-    // 剧集清单
-    drama_list: 'tblYEW4YqqSmnsB5',
-    // 剧集状态
-    drama_status: 'tblJcLhLpEkmFkga',
-    // 账户表
-    account: 'tblrlxmzydVtPcbW',
-  },
-}
 
 // 飞书获取 tenant_access_token 代理API
 router.post('/token', async ctx => {
@@ -90,8 +48,9 @@ router.post('/token', async ctx => {
 // 飞书更新文件md5字段代理API
 router.put('/bitable/records/:recordId/file-md5', async ctx => {
   try {
+    const config = await getFeishuConfig()
     const { recordId } = ctx.params
-    const { fileMd5, table_id } = ctx.request.body
+    const { fileMd5 } = ctx.request.body
 
     if (!recordId || !fileMd5) {
       ctx.status = 400
@@ -140,9 +99,9 @@ router.put('/bitable/records/:recordId/file-md5', async ctx => {
     }
 
     // 调用飞书更新记录 API
-    const targetTableId = table_id || FEISHU_CONFIG.table_ids.drama_status
+    const targetTableId = config.table_ids.drama_status
     const response = await fetch(
-      `https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_CONFIG.app_token}/tables/${targetTableId}/records/${recordId}`,
+      `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${targetTableId}/records/${recordId}`,
       {
         method: 'PUT',
         headers: {
@@ -231,11 +190,12 @@ router.post('/bitable/create', async ctx => {
 // 飞书多维表格搜索
 router.post('/bitable/search', async ctx => {
   try {
-    const { searchValue, tableId } = ctx.request.body
+    const config = await getFeishuConfig()
+    const { searchValue } = ctx.request.body
 
-    if (!searchValue || !tableId) {
+    if (!searchValue) {
       ctx.status = 400
-      ctx.body = { error: 'Missing required parameters: searchValue, tableId' }
+      ctx.body = { error: 'Missing required parameter: searchValue' }
       return
     }
 
@@ -290,7 +250,7 @@ router.post('/bitable/search', async ctx => {
 
     // 调用飞书搜索API
     const response = await fetch(
-      `https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_CONFIG.app_token}/tables/${tableId}/records/search`,
+      `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${config.table_ids.drama_list}/records/search`,
       {
         method: 'POST',
         headers: {
@@ -328,7 +288,8 @@ router.post('/bitable/search', async ctx => {
 // 飞书多维表格新增记录
 router.post('/bitable/records', async ctx => {
   try {
-    const { dramaName, publishTime, table_id, bookId, rating } = ctx.request.body
+    const config = await getFeishuConfig()
+    const { dramaName, publishTime, bookId, rating } = ctx.request.body
     console.log('调用飞书新增剧集清单记录 API', JSON.stringify(ctx.request.body))
 
     if (!dramaName) {
@@ -401,9 +362,9 @@ router.post('/bitable/records', async ctx => {
     }
 
     // 调用飞书新增记录API
-    const targetTableId = table_id || FEISHU_CONFIG.table_ids.drama_list
+    const targetTableId = config.table_ids.drama_list
     const response = await fetch(
-      `https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_CONFIG.app_token}/tables/${targetTableId}/records`,
+      `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${targetTableId}/records`,
       {
         method: 'POST',
         headers: {
@@ -442,9 +403,9 @@ router.post('/bitable/records', async ctx => {
 // 飞书账户查询代理API（支持动态账户表）
 router.post('/bitable/huyu-accounts', async ctx => {
   try {
+    const config = await getFeishuConfig()
     // 从请求体获取账户表 ID，默认使用超琦账户表
-    const { accountTableId } = ctx.request.body || {}
-    const targetTableId = accountTableId || FEISHU_CONFIG.table_ids.chaoqi_account
+    const targetTableId = config.table_ids.account
 
     // 首先获取 tenant_access_token
     const tokenResponse = await fetch(
@@ -487,7 +448,7 @@ router.post('/bitable/huyu-accounts', async ctx => {
 
     // 调用飞书账户查询API
     const response = await fetch(
-      `https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_CONFIG.app_token}/tables/${targetTableId}/records/search?ignore_consistency_check=true`,
+      `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${targetTableId}/records/search?ignore_consistency_check=true`,
       {
         method: 'POST',
         headers: {
@@ -525,8 +486,9 @@ router.post('/bitable/huyu-accounts', async ctx => {
 // 飞书更新剧集账户信息代理API
 router.put('/bitable/records/:recordId/account', async ctx => {
   try {
+    const config = await getFeishuConfig()
     const { recordId } = ctx.params
-    const { account, publishTime, table_id } = ctx.request.body
+    const { account, publishTime } = ctx.request.body
 
     if (!recordId || !account) {
       ctx.status = 400
@@ -589,9 +551,9 @@ router.put('/bitable/records/:recordId/account', async ctx => {
     }
 
     // 调用飞书更新记录API
-    const targetTableId = table_id || FEISHU_CONFIG.table_ids.drama_list
+    const targetTableId = config.table_ids.drama_list
     const response = await fetch(
-      `https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_CONFIG.app_token}/tables/${targetTableId}/records/${recordId}`,
+      `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${targetTableId}/records/${recordId}`,
       {
         method: 'PUT',
         headers: {
@@ -629,10 +591,10 @@ router.put('/bitable/records/:recordId/account', async ctx => {
 // 飞书更新账户是否已用状态代理API（支持动态账户表）
 router.put('/bitable/huyu-accounts/:recordId/used', async ctx => {
   try {
+    const config = await getFeishuConfig()
     const { recordId } = ctx.params
     // 从请求体获取账户表 ID，默认使用超琦账户表
-    const { accountTableId } = ctx.request.body || {}
-    const targetTableId = accountTableId || FEISHU_CONFIG.table_ids.chaoqi_account
+    const targetTableId = config.table_ids.account
 
     if (!recordId) {
       ctx.status = 400
@@ -682,7 +644,7 @@ router.put('/bitable/huyu-accounts/:recordId/used', async ctx => {
 
     // 调用飞书更新账户记录API
     const response = await fetch(
-      `https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_CONFIG.app_token}/tables/${targetTableId}/records/${recordId}?ignore_consistency_check=true`,
+      `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${targetTableId}/records/${recordId}?ignore_consistency_check=true`,
       {
         method: 'PUT',
         headers: {
@@ -720,10 +682,10 @@ router.put('/bitable/huyu-accounts/:recordId/used', async ctx => {
 // 飞书更新账户是否已用状态为"否"代理API（支持动态账户表）
 router.put('/bitable/huyu-accounts/:recordId/unused', async ctx => {
   try {
+    const config = await getFeishuConfig()
     const { recordId } = ctx.params
     // 从请求体获取账户表 ID，默认使用超琦账户表
-    const { accountTableId } = ctx.request.body || {}
-    const targetTableId = accountTableId || FEISHU_CONFIG.table_ids.chaoqi_account
+    const targetTableId = config.table_ids.account
 
     if (!recordId) {
       ctx.status = 400
@@ -773,7 +735,7 @@ router.put('/bitable/huyu-accounts/:recordId/unused', async ctx => {
 
     // 调用飞书更新账户记录API
     const response = await fetch(
-      `https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_CONFIG.app_token}/tables/${targetTableId}/records/${recordId}?ignore_consistency_check=true`,
+      `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${targetTableId}/records/${recordId}?ignore_consistency_check=true`,
       {
         method: 'PUT',
         headers: {
@@ -811,7 +773,7 @@ router.put('/bitable/huyu-accounts/:recordId/unused', async ctx => {
 // 飞书剧集清单查询代理API - 获取剧名和是否已下载状态
 router.post('/bitable/drama-list', async ctx => {
   try {
-    const { table_id } = ctx.request.body
+    const config = await getFeishuConfig()
 
     // 首先获取 tenant_access_token
     const tokenResponse = await fetch(
@@ -853,9 +815,9 @@ router.post('/bitable/drama-list', async ctx => {
     }
 
     // 调用飞书剧集清单查询API
-    const targetTableId = table_id || FEISHU_CONFIG.table_ids.drama_list
+    const targetTableId = config.table_ids.drama_list
     const response = await fetch(
-      `https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_CONFIG.app_token}/tables/${targetTableId}/records/search`,
+      `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${targetTableId}/records/search`,
       {
         method: 'POST',
         headers: {
@@ -893,7 +855,8 @@ router.post('/bitable/drama-list', async ctx => {
 // 飞书剧集状态表查询接口 - 按剧名和日期查询
 router.post('/bitable/drama-status/search', async ctx => {
   try {
-    const { dramaName, timestamp, table_id } = ctx.request.body
+    const config = await getFeishuConfig()
+    const { dramaName, timestamp } = ctx.request.body
 
     if (!dramaName || !timestamp) {
       ctx.status = 400
@@ -956,9 +919,9 @@ router.post('/bitable/drama-status/search', async ctx => {
     }
 
     // 调用飞书剧集状态表查询API
-    const targetTableId = table_id || FEISHU_CONFIG.table_ids.drama_status
+    const targetTableId = config.table_ids.drama_status
     const response = await fetch(
-      `https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_CONFIG.app_token}/tables/${targetTableId}/records/search`,
+      `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${targetTableId}/records/search`,
       {
         method: 'POST',
         headers: {
@@ -995,6 +958,7 @@ router.post('/bitable/drama-status/search', async ctx => {
 // 飞书剧集状态表新增记录
 router.post('/bitable/drama-status', async ctx => {
   try {
+    const config = await getFeishuConfig()
     const {
       dramaName,
       timestamp,
@@ -1002,7 +966,6 @@ router.post('/bitable/drama-status', async ctx => {
       account,
       publishTime,
       subject,
-      table_id,
       douyinMaterial,
       rating,
     } = ctx.request.body
@@ -1084,9 +1047,9 @@ router.post('/bitable/drama-status', async ctx => {
       }
     }
 
-    const targetTableId = table_id || FEISHU_CONFIG.table_ids.drama_status
+    const targetTableId = config.table_ids.drama_status
     const response = await fetch(
-      `https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_CONFIG.app_token}/tables/${targetTableId}/records`,
+      `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${targetTableId}/records`,
       {
         method: 'POST',
         headers: {
@@ -1125,7 +1088,8 @@ router.post('/bitable/drama-status', async ctx => {
 // 飞书剧集状态表查询待下载剧集接口
 router.post('/bitable/drama-status/pending-download', async ctx => {
   try {
-    const { field_names, page_size, filter, table_id } = ctx.request.body
+    const config = await getFeishuConfig()
+    const { field_names, page_size, filter } = ctx.request.body
 
     // 首先获取 tenant_access_token
     const tokenResponse = await fetch(
@@ -1177,10 +1141,10 @@ router.post('/bitable/drama-status/pending-download', async ctx => {
     }
 
     // 调用飞书剧集状态表查询API
-    const targetTableId = table_id || FEISHU_CONFIG.table_ids.drama_status
+    const targetTableId = config.table_ids.drama_status
 
     const response = await fetch(
-      `https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_CONFIG.app_token}/tables/${targetTableId}/records/search`,
+      `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${targetTableId}/records/search`,
       {
         method: 'POST',
         headers: {
@@ -1217,7 +1181,8 @@ router.post('/bitable/drama-status/pending-download', async ctx => {
 // 飞书剧集状态表查询待上传剧集接口
 router.post('/bitable/drama-status/pending-upload', async ctx => {
   try {
-    const { field_names, page_size, filter, table_id } = ctx.request.body
+    const config = await getFeishuConfig()
+    const { field_names, page_size, filter } = ctx.request.body
 
     const tokenResponse = await fetch(
       `${FEISHU_CONFIG.api_base_url}${FEISHU_CONFIG.token_endpoint}`,
@@ -1266,9 +1231,9 @@ router.post('/bitable/drama-status/pending-upload', async ctx => {
       },
     }
 
-    const targetTableId = table_id || FEISHU_CONFIG.table_ids.drama_status
+    const targetTableId = config.table_ids.drama_status
     const response = await fetch(
-      `https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_CONFIG.app_token}/tables/${targetTableId}/records/search`,
+      `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${targetTableId}/records/search`,
       {
         method: 'POST',
         headers: {
@@ -1304,7 +1269,8 @@ router.post('/bitable/drama-status/pending-upload', async ctx => {
 // 飞书剧集状态表查询待搭建剧集接口
 router.post('/bitable/drama-status/pending-build', async ctx => {
   try {
-    const { field_names, page_size, filter, table_id, use_daily } = ctx.request.body
+    const config = await getFeishuConfig()
+    const { field_names, page_size, filter, use_daily } = ctx.request.body
 
     console.log('========== pending-build 接收参数 ==========')
     console.log('use_daily:', use_daily)
@@ -1357,23 +1323,20 @@ router.post('/bitable/drama-status/pending-build', async ctx => {
       },
     }
 
-    // 根据 use_daily 参数选择使用哪个表格配置
-    const defaultTableId = use_daily
-      ? FEISHU_CONFIG.daily_table_ids.drama_status
-      : FEISHU_CONFIG.table_ids.drama_status
-    const targetTableId = table_id || defaultTableId
+    // 统一使用设置页保存的飞书状态表配置
+    const targetTableId = config.table_ids.drama_status
 
     // 打印日志
     console.log('========== 每日搭建 - 查询飞书状态表 ==========')
     console.log('use_daily:', use_daily)
-    console.log('使用的表格配置:', use_daily ? '每日状态表' : '散柔状态表')
+    console.log('使用的表格配置:', '统一配置')
     console.log('表格 ID:', targetTableId)
     console.log('查询字段:', field_names)
     console.log('过滤条件:', filter)
     console.log('==========================================')
 
     const response = await fetch(
-      `https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_CONFIG.app_token}/tables/${targetTableId}/records/search`,
+      `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${targetTableId}/records/search`,
       {
         method: 'POST',
         headers: {
@@ -1424,7 +1387,7 @@ router.post('/bitable/drama-status/pending-build', async ctx => {
 // 飞书剧集清单查询接口 - 获取所有剧名（用于看板）
 router.post('/bitable/drama-list/all', async ctx => {
   try {
-    const { table_id } = ctx.request.body
+    const config = await getFeishuConfig()
 
     // 首先获取 tenant_access_token
     const tokenResponse = await fetch(
@@ -1466,9 +1429,9 @@ router.post('/bitable/drama-list/all', async ctx => {
     }
 
     // 调用飞书剧集清单查询API
-    const targetTableId = table_id || FEISHU_CONFIG.table_ids.drama_list
+    const targetTableId = config.table_ids.drama_list
     const response = await fetch(
-      `https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_CONFIG.app_token}/tables/${targetTableId}/records/search`,
+      `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${targetTableId}/records/search`,
       {
         method: 'POST',
         headers: {
@@ -1506,7 +1469,8 @@ router.post('/bitable/drama-list/all', async ctx => {
 // 飞书剧集状态查询接口 - 根据日期和状态筛选
 router.post('/bitable/drama-status/filter', async ctx => {
   try {
-    const { date, status, table_id, field_names } = ctx.request.body
+    const config = await getFeishuConfig()
+    const { date, status, field_names } = ctx.request.body
 
     if (!date || !status) {
       ctx.status = 400
@@ -1579,9 +1543,9 @@ router.post('/bitable/drama-status/filter', async ctx => {
     }
 
     // 调用飞书剧集状态查询API
-    const targetTableId = table_id || FEISHU_CONFIG.table_ids.drama_status
+    const targetTableId = config.table_ids.drama_status
     const response = await fetch(
-      `https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_CONFIG.app_token}/tables/${targetTableId}/records/search`,
+      `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${targetTableId}/records/search`,
       {
         method: 'POST',
         headers: {
@@ -1618,7 +1582,7 @@ router.post('/bitable/drama-status/filter', async ctx => {
 // 飞书剧集状态查询接口 - 获取所有状态数据（用于看板）
 router.post('/bitable/drama-status/all', async ctx => {
   try {
-    const { table_id } = ctx.request.body || {}
+    const config = await getFeishuConfig()
     // 首先获取 tenant_access_token
     const tokenResponse = await fetch(
       `${FEISHU_CONFIG.api_base_url}${FEISHU_CONFIG.token_endpoint}`,
@@ -1678,9 +1642,9 @@ router.post('/bitable/drama-status/all', async ctx => {
     }
 
     // 调用飞书剧集状态查询API
-    const targetTableId = table_id || FEISHU_CONFIG.table_ids.drama_status
+    const targetTableId = config.table_ids.drama_status
     const response = await fetch(
-      `https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_CONFIG.app_token}/tables/${targetTableId}/records/search`,
+      `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${targetTableId}/records/search`,
       {
         method: 'POST',
         headers: {
@@ -1718,17 +1682,9 @@ router.post('/bitable/drama-status/all', async ctx => {
 // 飞书剧集状态表创建剪辑记录接口
 router.post('/bitable/drama-status/clip', async ctx => {
   try {
-    const {
-      dramaName,
-      timestamp,
-      account,
-      publishTime,
-      subject,
-      table_id,
-      douyinMaterial,
-      rating,
-      status,
-    } = ctx.request.body
+    const config = await getFeishuConfig()
+    const { dramaName, timestamp, account, publishTime, subject, douyinMaterial, rating, status } =
+      ctx.request.body
     console.log('调用飞书创建剪辑记录 API', JSON.stringify(ctx.request.body))
 
     if (!dramaName || !timestamp) {
@@ -1808,9 +1764,9 @@ router.post('/bitable/drama-status/clip', async ctx => {
       }
     }
 
-    const targetTableId = table_id || FEISHU_CONFIG.table_ids.drama_status
+    const targetTableId = config.table_ids.drama_status
     const response = await fetch(
-      `https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_CONFIG.app_token}/tables/${targetTableId}/records`,
+      `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${targetTableId}/records`,
       {
         method: 'POST',
         headers: {
@@ -1847,8 +1803,8 @@ router.post('/bitable/drama-status/clip', async ctx => {
 // 飞书剧集状态表获取剪辑记录详情接口
 router.get('/bitable/drama-status/clip/:recordId', async ctx => {
   try {
+    const config = await getFeishuConfig()
     const { recordId } = ctx.params
-    const { table_id } = ctx.query
 
     if (!recordId) {
       ctx.status = 400
@@ -1890,9 +1846,9 @@ router.get('/bitable/drama-status/clip/:recordId', async ctx => {
     const accessToken = tokenJson.tenant_access_token
 
     // 调用飞书API获取剪辑记录详情
-    const targetTableId = table_id || FEISHU_CONFIG.table_ids.drama_status
+    const targetTableId = config.table_ids.drama_status
     const response = await fetch(
-      `https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_CONFIG.app_token}/tables/${targetTableId}/records/${recordId}`,
+      `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${targetTableId}/records/${recordId}`,
       {
         method: 'GET',
         headers: {
@@ -1928,8 +1884,8 @@ router.get('/bitable/drama-status/clip/:recordId', async ctx => {
 // 飞书剧集状态表删除剪辑记录接口
 router.delete('/bitable/drama-status/clip/:recordId', async ctx => {
   try {
+    const config = await getFeishuConfig()
     const { recordId } = ctx.params
-    const { table_id } = ctx.query
 
     if (!recordId) {
       ctx.status = 400
@@ -1971,9 +1927,9 @@ router.delete('/bitable/drama-status/clip/:recordId', async ctx => {
     const accessToken = tokenJson.tenant_access_token
 
     // 调用飞书API删除剪辑记录
-    const targetTableId = table_id || FEISHU_CONFIG.table_ids.drama_status
+    const targetTableId = config.table_ids.drama_status
     const response = await fetch(
-      `https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_CONFIG.app_token}/tables/${targetTableId}/records/${recordId}`,
+      `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${targetTableId}/records/${recordId}`,
       {
         method: 'DELETE',
         headers: {
@@ -2009,8 +1965,9 @@ router.delete('/bitable/drama-status/clip/:recordId', async ctx => {
 // 飞书更新剧集状态代理API
 router.put('/bitable/records/:recordId/status', async ctx => {
   try {
+    const config = await getFeishuConfig()
     const { recordId } = ctx.params
-    const { status, table_id } = ctx.request.body
+    const { status } = ctx.request.body
 
     if (!recordId || !status) {
       ctx.status = 400
@@ -2064,9 +2021,9 @@ router.put('/bitable/records/:recordId/status', async ctx => {
     }
 
     // 调用飞书更新记录API
-    const targetTableId = table_id || FEISHU_CONFIG.table_ids.drama_status
+    const targetTableId = config.table_ids.drama_status
     const response = await fetch(
-      `https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_CONFIG.app_token}/tables/${targetTableId}/records/${recordId}`,
+      `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${targetTableId}/records/${recordId}`,
       {
         method: 'PUT',
         headers: {
@@ -2104,17 +2061,12 @@ router.put('/bitable/records/:recordId/status', async ctx => {
 // 飞书批量创建每日账户记录代理API
 router.post('/bitable/daily-accounts/batch-create', async ctx => {
   try {
-    const { accounts, tableId } = ctx.request.body
+    const config = await getFeishuConfig()
+    const { accounts } = ctx.request.body
 
     if (!accounts || !Array.isArray(accounts) || accounts.length === 0) {
       ctx.status = 400
       ctx.body = { error: 'Missing required parameter: accounts (non-empty array)' }
-      return
-    }
-
-    if (!tableId) {
-      ctx.status = 400
-      ctx.body = { error: 'Missing required parameter: tableId' }
       return
     }
 
@@ -2165,7 +2117,7 @@ router.post('/bitable/daily-accounts/batch-create', async ctx => {
 
     // 调用飞书批量创建记录API
     const response = await fetch(
-      `https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_CONFIG.app_token}/tables/${tableId}/records/batch_create`,
+      `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${config.table_ids.account}/records/batch_create`,
       {
         method: 'POST',
         headers: {
@@ -2205,8 +2157,9 @@ router.post('/bitable/daily-accounts/batch-create', async ctx => {
  */
 router.put('/bitable/drama-status/:recordId/status', async ctx => {
   try {
+    const config = await getFeishuConfig()
     const { recordId } = ctx.params
-    const { status, table_id, build_time } = ctx.request.body
+    const { status, build_time } = ctx.request.body
 
     if (!recordId || !status) {
       ctx.status = 400
@@ -2260,9 +2213,9 @@ router.put('/bitable/drama-status/:recordId/status', async ctx => {
     }
 
     // 调用飞书更新记录API
-    const targetTableId = table_id || FEISHU_CONFIG.table_ids.drama_status
+    const targetTableId = config.table_ids.drama_status
     const response = await fetch(
-      `https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_CONFIG.app_token}/tables/${targetTableId}/records/${recordId}`,
+      `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${targetTableId}/records/${recordId}`,
       {
         method: 'PUT',
         headers: {

@@ -358,25 +358,15 @@ import {
   type DramaStatusRow,
 } from '@/services/dramaStatusService'
 import { feishuApi } from '@/api/feishu'
-import { getOrders, getQianlongOrders } from '@/api'
-import { checkProductExists } from '@/api/productLib'
-import { parsePromotionName } from '@/utils/qianlong'
-import {
-  searchSplayAlbums,
-  getSplayMiniProgramUrl,
-  createSplayProduct,
-  findMatchingAlbum,
-} from '@/api/splay'
+import { getOrders } from '@/api'
 import { editJiliangAccountRemark } from '@/api/jiliang'
 import { useCreatorStore } from '@/stores/creator'
 import { useAccountStore } from '@/stores/account'
-import { useApiConfigStore } from '@/stores/apiConfig'
 import { useDramaSubjectStore } from '@/stores/dramaSubject'
 import { useGlobalDateRange } from '@/composables/useGlobalDateRange'
 import { useUserAuth } from '@/composables/useUserAuth'
-import { getProductLibraryConfigBySubject } from '@/config/productLibrary'
 import { dateToTimestamp, normalizeToDayStart, normalizeToDayEnd } from '@/utils/format'
-import type { OrderItem, SplayCreateProductParams } from '@/api/types'
+import type { OrderItem } from '@/api/types'
 import StatusBadge from './StatusBadge.vue'
 import StatusTag from './StatusTag.vue'
 import UploadModal from './UploadModal.vue'
@@ -451,7 +441,6 @@ const searchKeyword = ref<string>('')
 // Store 实例
 const creatorStore = useCreatorStore()
 const accountStore = useAccountStore()
-const apiConfigStore = useApiConfigStore()
 const dramaSubjectStore = useDramaSubjectStore()
 const { isDarenUser } = useUserAuth()
 
@@ -732,121 +721,6 @@ function hasPendingStatus(row: DramaStatusRow): boolean {
   return Object.values(row.statusByDate).some(status => status === '待下载')
 }
 
-// ============ 商品相关常量和函数 ============
-
-// 默认商品分类配置（都市-其他，其他频）
-const DEFAULT_PRODUCT_CONFIG = {
-  firstCategoryId: '2019',
-  firstCategoryName: '短剧',
-  subCategoryId: '201901',
-  subCategoryName: '都市',
-  thirdCategoryId: '20190133',
-  thirdCategoryName: '其他',
-  playletGender: '3' as const,
-}
-
-// 商品创建重试延迟配置
-const PRODUCT_CREATE_INITIAL_DELAY = 1000
-const PRODUCT_CREATE_MAX_DELAY = 8000
-const SPLAY_AD_CARRIER = '字节小程序'
-
-// 等待函数
-function wait(duration: number) {
-  return new Promise(resolve => setTimeout(resolve, duration))
-}
-
-// 重试创建商品
-async function createProductWithRetry(
-  payload: SplayCreateProductParams,
-  token: string,
-  dramaName: string
-) {
-  let delay = PRODUCT_CREATE_INITIAL_DELAY
-
-  while (true) {
-    const response = await createSplayProduct(payload, token)
-    const result = response.data?.[0]
-
-    if (result && !result.result && result.product_id) {
-      return result
-    }
-
-    if (result?.result?.includes('系统请求频率超限')) {
-      await wait(delay)
-      delay = Math.min(delay * 2, PRODUCT_CREATE_MAX_DELAY)
-      continue
-    }
-
-    throw new Error(result?.result || `新增商品失败：${dramaName}`)
-  }
-}
-
-// 为单个剧集新增商品
-async function addProductForDrama(
-  dramaName: string,
-  token: string,
-  subject?: string
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    // 根据用户 ID 和主体获取对应的商品库配置
-    const productLibConfig = getProductLibraryConfigBySubject(
-      apiConfigStore.effectiveUserId,
-      subject
-    )
-
-    // 1. 查询番茄后台剧集
-    const albumResponse = await searchSplayAlbums(dramaName, token)
-    if (albumResponse.code !== 0 || !albumResponse.data) {
-      throw new Error(albumResponse.message || '番茄后台查询剧集失败')
-    }
-
-    // 2. 查找匹配的专辑
-    const album = await findMatchingAlbum(albumResponse.data.list || [], dramaName, token)
-    if (!album) {
-      throw new Error(`番茄后台未找到符合条件的剧：${dramaName}`)
-    }
-
-    // 3. 获取小程序链接
-    const miniProgramResponse = await getSplayMiniProgramUrl(album.id, token)
-    if (miniProgramResponse.code !== 0 || !miniProgramResponse.data) {
-      throw new Error(miniProgramResponse.message || '获取小程序链接失败')
-    }
-
-    // 4. 构建商品数据
-    const productPayload: SplayCreateProductParams = {
-      product_list: [
-        {
-          mini_program_info: miniProgramResponse.data,
-          playlet_gender: DEFAULT_PRODUCT_CONFIG.playletGender,
-          name: dramaName,
-          ad_carrier: SPLAY_AD_CARRIER,
-          album_id: album.id,
-          image_url: album.cover || '',
-          first_category: DEFAULT_PRODUCT_CONFIG.firstCategoryName,
-          sub_category: DEFAULT_PRODUCT_CONFIG.subCategoryName,
-          third_category: DEFAULT_PRODUCT_CONFIG.thirdCategoryName,
-          first_category_id: DEFAULT_PRODUCT_CONFIG.firstCategoryId,
-          sub_category_id: DEFAULT_PRODUCT_CONFIG.subCategoryId,
-          third_category_id: DEFAULT_PRODUCT_CONFIG.thirdCategoryId,
-        },
-      ],
-      ad_account_id: productLibConfig.adAccountId,
-      is_free: 0,
-      product_platform_id: productLibConfig.productPlatformId,
-    }
-
-    // 5. 创建商品（带重试）
-    await createProductWithRetry(productPayload, token, dramaName)
-
-    return { success: true }
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : '新增商品失败，请稍后重试'
-    return { success: false, error: errorMessage }
-  }
-}
-
-// ============ 商品相关函数结束 ============
-
 // 处理单元格点击事件
 async function handleCellClick(row: DramaStatusRow, date: string) {
   const cellKey = `${row.dramaName}-${date}`
@@ -986,37 +860,6 @@ async function handleCellClick(row: DramaStatusRow, date: string) {
               }
             }
 
-            // 创建剪辑记录成功后，检查并新增商品
-            const xtToken = apiConfigStore.config.xtToken
-            if (xtToken) {
-              try {
-                const exists = await checkProductExists(
-                  row.dramaName,
-                  xtToken,
-                  undefined,
-                  dramaSubjectStore.subjectFieldValue
-                )
-                if (!exists) {
-                  console.log('商品不存在，开始新增商品:', row.dramaName)
-                  const productResult = await addProductForDrama(
-                    row.dramaName,
-                    xtToken,
-                    dramaSubjectStore.subjectFieldValue
-                  )
-                  if (productResult.success) {
-                    console.log('新增商品成功:', row.dramaName)
-                  } else {
-                    console.warn('新增商品失败:', row.dramaName, productResult.error)
-                  }
-                } else {
-                  console.log('商品已存在，跳过新增:', row.dramaName)
-                }
-              } catch (productError) {
-                console.error('检查/新增商品失败:', productError)
-                // 不中断主流程，只记录错误
-              }
-            }
-
             // 选中操作后不立即刷新数据，保持选中状态
             // 只在删除操作后刷新数据
           }
@@ -1104,22 +947,9 @@ async function fetchOrderData() {
       pay_status: 0, // 只获取已支付的订单
     }
 
-    // 根据主体选择不同的API
-    if (dramaSubjectStore.currentSubject === '牵龙') {
-      // 牵龙主体：使用 getQianlongOrders，然后过滤出小红的订单
-      const data = await getQianlongOrders(params)
-      const allOrders = data.data || []
-
-      // 过滤出小红的订单
-      orderData.value = allOrders.filter(order => {
-        const parsedInfo = parsePromotionName(order.promotion_name)
-        return parsedInfo?.creatorName === '小红'
-      })
-    } else {
-      // 散柔和每日主体：使用原有的 getOrders
-      const data = await getOrders(params)
-      orderData.value = data.data || []
-    }
+    // 使用原有的 getOrders
+    const data = await getOrders(params)
+    orderData.value = data.data || []
   } catch (error) {
     console.error('获取订单数据失败:', error)
     orderData.value = []

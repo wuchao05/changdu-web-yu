@@ -1,6 +1,4 @@
-import TOS from '@volcengine/tos-sdk'
 import md5 from 'crypto-js/md5'
-import { useApiConfigStore } from '@/stores/apiConfig'
 
 // 分片大小配置（字节）
 export const CHUNK_SIZE = {
@@ -71,58 +69,7 @@ export const getMd5FileName = (originalName: string): string => {
 
 // 获取 TOS 临时凭证
 export async function getTosKey() {
-  try {
-    const apiConfigStore = useApiConfigStore()
-    const token = apiConfigStore.config.xtToken
-    const userId = apiConfigStore.effectiveUserId
-    if (!token) {
-      throw new Error('请在设置中配置 XT token')
-    }
-
-    const response = await fetch('/api/xt/getTosKey', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Xt-Token': token,
-        ...(userId ? { 'x-user-id': userId } : {}),
-      },
-    })
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-
-    const result = await response.json()
-
-    if (!result.success) {
-      throw new Error(result.message || '获取TOS凭证失败')
-    }
-
-    // 根据实际返回的数据结构解析凭证
-    const resultData = result.data?.data?.Result || result.data?.Result || result.data
-    const credentials = resultData?.Credentials
-    if (!credentials) {
-      throw new Error('TOS凭证数据格式不正确')
-    }
-
-    const { AccessKeyId, SecretAccessKey, SessionToken } = credentials
-    console.log('TOS AccessKeyId', AccessKeyId)
-
-    // 创建 TOS 客户端实例
-    const client = new TOS({
-      accessKeyId: AccessKeyId,
-      accessKeySecret: SecretAccessKey,
-      stsToken: SessionToken,
-      region: 'cn-beijing',
-      endpoint: 'tos-cn-beijing.volces.com',
-      bucket: 'ylc-material-beijing',
-      secure: true,
-    })
-    return client
-  } catch (error) {
-    console.error('获取TOS凭证失败:', error)
-    throw error
-  }
+  throw new Error('TOS 上传功能已禁用')
 }
 
 // 从本地路径获取文件
