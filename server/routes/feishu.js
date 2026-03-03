@@ -1,5 +1,6 @@
 import Router from '@koa/router'
 import { FEISHU_CONFIG, getFeishuConfig } from '../config/feishu.js'
+import { readAuthConfig } from './auth.js'
 
 const router = new Router()
 
@@ -2209,12 +2210,23 @@ router.put('/bitable/records/:recordId/status', async ctx => {
 // 飞书批量创建每日账户记录代理API
 router.post('/bitable/daily-accounts/batch-create', async ctx => {
   try {
-    const config = await getFeishuConfig()
+    const authConfig = await readAuthConfig()
     const { accounts } = ctx.request.body
+    const configuredAppToken = authConfig.feishu?.app_token
+    const configuredAccountTableId = authConfig.feishu?.table_ids?.account
 
     if (!accounts || !Array.isArray(accounts) || accounts.length === 0) {
       ctx.status = 400
       ctx.body = { error: 'Missing required parameter: accounts (non-empty array)' }
+      return
+    }
+
+    if (!configuredAppToken || !configuredAccountTableId) {
+      ctx.status = 400
+      ctx.body = {
+        code: -1,
+        msg: '请先在设置页配置飞书 App Token 和账户表 ID',
+      }
       return
     }
 
@@ -2265,7 +2277,7 @@ router.post('/bitable/daily-accounts/batch-create', async ctx => {
 
     // 调用飞书批量创建记录API
     const response = await fetch(
-      `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${config.table_ids.account}/records/batch_create`,
+      `https://open.feishu.cn/open-apis/bitable/v1/apps/${configuredAppToken}/tables/${configuredAccountTableId}/records/batch_create`,
       {
         method: 'POST',
         headers: {

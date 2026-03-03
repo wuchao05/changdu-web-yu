@@ -1,7 +1,7 @@
 {
-  "enabled": true,
+  "enabled": false,
   "intervalMinutes": 60,
-  "nextRunTime": "2026-03-03T13:39:07.944Z",
+  "nextRunTime": null,
   "lastRunTime": "2026-03-03T12:39:07.944Z",
   "running": false,
   "stats": {

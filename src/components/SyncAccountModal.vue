@@ -123,7 +123,7 @@ const columns: DataTableColumns<JiliangAccountItem> = [
 // 计算属性：检查是否所有账户都有备注
 const allAccountsHaveRemark = computed(() => {
   if (matchedAccounts.value.length === 0) return false
-  return matchedAccounts.value.every(account => account.advertiser_remark === '小红')
+  return matchedAccounts.value.every(account => account.advertiser_remark === '小鱼')
 })
 
 // 拉取账户的核心函数
@@ -152,7 +152,7 @@ async function fetchAccounts() {
       // 过滤符合条件的账户
       const filtered = response.data.data_list.filter(item => {
         return (
-          item.advertiser_name?.includes('山宥麦') &&
+          item.advertiser_name?.includes('泰州晴天') &&
           item.advertiser_status_name === '审核通过' &&
           !item.advertiser_remark // 备注字段不存在或为空
         )
@@ -211,13 +211,13 @@ async function addRemarks() {
       try {
         const result = await editJiliangAccountRemark({
           account_id: account.advertiser_id.toString(),
-          remark: '小红',
+          remark: '小鱼',
         })
 
         if (result.code === 0) {
           success = true
           successCount++
-          account.advertiser_remark = '小红' // 更新本地显示
+          account.advertiser_remark = '小鱼' // 更新本地显示
         } else {
           retryCount++
         }

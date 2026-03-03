@@ -10,8 +10,8 @@
               <Icon icon="mdi:chart-line" class="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 class="text-lg sm:text-xl font-bold text-gray-900">每日业务模板</h1>
-              <p class="text-xs text-gray-500 hidden sm:block">单主体通用版本</p>
+              <h1 class="text-lg sm:text-xl font-bold text-gray-900">内部运营平台</h1>
+              <p class="text-xs text-gray-500 hidden sm:block">小鱼挂载</p>
             </div>
           </div>
 
