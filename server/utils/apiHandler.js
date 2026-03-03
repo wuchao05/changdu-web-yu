@@ -83,6 +83,31 @@ export default async function apiHandler(ctx, config) {
     // 使用统一的请求头配置
     const headers = buildHeaders(ctx)
 
+    // 打印 application_overview_list 接口的实际请求参数和请求头
+    const isApplicationOverviewApi = targetPath.includes(
+      '/novelsale/distributor/application_overview_list/v1'
+    )
+    if (isApplicationOverviewApi) {
+      const requestUrl = new URL(targetUrl)
+      const actualParams = {}
+      requestUrl.searchParams.forEach((value, key) => {
+        if (Object.prototype.hasOwnProperty.call(actualParams, key)) {
+          const previous = actualParams[key]
+          actualParams[key] = Array.isArray(previous) ? [...previous, value] : [previous, value]
+        } else {
+          actualParams[key] = value
+        }
+      })
+
+      console.log('\n========== 【application_overview_list/v1 实际请求】 ==========')
+      console.log('⏰ 时间:', new Date().toLocaleString('zh-CN'))
+      console.log('🌐 请求URL:', targetUrl)
+      console.log('📋 请求方法:', ctx.method)
+      console.log('📥 请求参数:', actualParams)
+      console.log('📦 请求头:', headers)
+      console.log('============================================================\n')
+    }
+
     // 📊 打印 data_overview 接口的请求前日志
     // if (isDataOverviewApi) {
     //   console.log('\n========== 【apiHandler 发起请求】 ==========')
