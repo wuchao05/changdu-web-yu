@@ -42,7 +42,7 @@ class FeishuApiService {
       })
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        await this.throwResponseError(response)
       }
 
       const result: FeishuTokenResponse = await response.json()
@@ -74,6 +74,49 @@ class FeishuApiService {
   }
 
   /**
+   * 读取后端错误响应并抛出更可读的错误信息
+   */
+  private async throwResponseError(
+    response: Response,
+    fallbackMessage = '请求失败'
+  ): Promise<never> {
+    let detail = ''
+
+    try {
+      const text = await response.text()
+      if (text) {
+        try {
+          const parsed = JSON.parse(text)
+          if (typeof parsed?.message === 'string') {
+            detail = parsed.message
+          } else if (typeof parsed?.msg === 'string') {
+            detail = parsed.msg
+          } else if (typeof parsed?.error === 'string') {
+            detail = parsed.error
+          } else if (typeof parsed?.error?.message === 'string') {
+            detail = parsed.error.message
+          } else if (parsed?.details) {
+            detail = JSON.stringify(parsed.details)
+          } else {
+            detail = text
+          }
+        } catch {
+          detail = text
+        }
+      }
+    } catch {
+      detail = ''
+    }
+
+    const statusInfo = `HTTP ${response.status}${response.statusText ? ` ${response.statusText}` : ''}`
+    const message = detail
+      ? `${fallbackMessage}（${statusInfo}）：${detail}`
+      : `${fallbackMessage}（${statusInfo}）`
+
+    throw new Error(message)
+  }
+
+  /**
    * 通用请求方法
    */
   private async request<T>(url: string, options: RequestInit = {}): Promise<T> {
@@ -88,7 +131,7 @@ class FeishuApiService {
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      await this.throwResponseError(response, '飞书请求失败')
     }
 
     const result: FeishuApiResponse<T> = await response.json()
@@ -154,7 +197,7 @@ class FeishuApiService {
       })
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        await this.throwResponseError(response)
       }
 
       return await response.json()
@@ -242,7 +285,7 @@ class FeishuApiService {
       })
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        await this.throwResponseError(response)
       }
 
       return await response.json()
@@ -296,7 +339,7 @@ class FeishuApiService {
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      await this.throwResponseError(response)
     }
 
     const result = await response.json()
@@ -319,7 +362,7 @@ class FeishuApiService {
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      await this.throwResponseError(response)
     }
 
     const result = await response.json()
@@ -347,7 +390,7 @@ class FeishuApiService {
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      await this.throwResponseError(response)
     }
 
     const result = await response.json()
@@ -384,7 +427,7 @@ class FeishuApiService {
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      await this.throwResponseError(response)
     }
 
     const result = await response.json()
@@ -427,7 +470,7 @@ class FeishuApiService {
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      await this.throwResponseError(response)
     }
 
     const result = await response.json()
@@ -451,7 +494,7 @@ class FeishuApiService {
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      await this.throwResponseError(response)
     }
 
     const result = await response.json()
@@ -475,7 +518,7 @@ class FeishuApiService {
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      await this.throwResponseError(response)
     }
 
     const result = await response.json()
@@ -502,7 +545,7 @@ class FeishuApiService {
     )
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      await this.throwResponseError(response)
     }
 
     const result = await response.json()
@@ -526,7 +569,7 @@ class FeishuApiService {
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      await this.throwResponseError(response)
     }
 
     const result = await response.json()
@@ -555,7 +598,7 @@ class FeishuApiService {
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      await this.throwResponseError(response)
     }
 
     const result = await response.json()
@@ -614,7 +657,7 @@ class FeishuApiService {
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      await this.throwResponseError(response)
     }
 
     const result: FeishuCreateRecordResponse = await response.json()
@@ -645,7 +688,7 @@ class FeishuApiService {
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      await this.throwResponseError(response)
     }
 
     const result: FeishuSearchRecordResponse = await response.json()
@@ -680,7 +723,7 @@ class FeishuApiService {
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      await this.throwResponseError(response)
     }
 
     const result: FeishuSearchRecordResponse = await response.json()
@@ -720,7 +763,7 @@ class FeishuApiService {
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      await this.throwResponseError(response)
     }
 
     const result: FeishuSearchRecordResponse = await response.json()
@@ -756,7 +799,7 @@ class FeishuApiService {
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      await this.throwResponseError(response)
     }
 
     const result: FeishuSearchRecordResponse = await response.json()
@@ -778,7 +821,7 @@ class FeishuApiService {
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      await this.throwResponseError(response)
     }
 
     const result = await response.json()
@@ -800,7 +843,7 @@ class FeishuApiService {
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      await this.throwResponseError(response)
     }
 
     const result = await response.json()
@@ -846,7 +889,7 @@ class FeishuApiService {
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      await this.throwResponseError(response)
     }
 
     const result: FeishuCreateRecordResponse = await response.json()
@@ -869,7 +912,7 @@ class FeishuApiService {
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      await this.throwResponseError(response)
     }
 
     const result = await response.json()
@@ -892,7 +935,7 @@ class FeishuApiService {
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      await this.throwResponseError(response)
     }
 
     const result = await response.json()
@@ -962,7 +1005,7 @@ class FeishuApiService {
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      await this.throwResponseError(response)
     }
 
     const result: FeishuSearchRecordResponse = await response.json()
@@ -1039,7 +1082,7 @@ class FeishuApiService {
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      await this.throwResponseError(response)
     }
 
     const result: FeishuSearchRecordResponse = await response.json()
@@ -1075,7 +1118,7 @@ class FeishuApiService {
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      await this.throwResponseError(response)
     }
 
     const result: FeishuApiResponse<any> = await response.json()
