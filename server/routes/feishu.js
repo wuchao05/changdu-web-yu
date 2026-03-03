@@ -3,6 +3,30 @@ import { FEISHU_CONFIG, getFeishuConfig } from '../config/feishu.js'
 
 const router = new Router()
 
+/**
+ * 记录飞书上游请求失败日志，便于排查 4xx/5xx 问题
+ */
+function logFeishuUpstreamError(scene, options = {}) {
+  const { status, code, msg, url, tableId, appToken, requestData, responseData, responseText } =
+    options
+
+  const safeResponseText =
+    typeof responseText === 'string' ? responseText.slice(0, 2000) : responseText
+
+  console.error(`[飞书上游失败][${scene}]`, {
+    status,
+    code,
+    msg,
+    url,
+    appToken,
+    tableId,
+    requestData,
+    responseData,
+    responseText: safeResponseText,
+    timestamp: new Date().toISOString(),
+  })
+}
+
 // 飞书获取 tenant_access_token 代理API
 router.post('/token', async ctx => {
   try {
@@ -358,17 +382,15 @@ router.post('/bitable/records', async ctx => {
 
     // 调用飞书新增记录API
     const targetTableId = config.table_ids.drama_list
-    const response = await fetch(
-      `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${targetTableId}/records`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(createRequestBody),
-      }
-    )
+    const upstreamUrl = `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${targetTableId}/records`
+    const response = await fetch(upstreamUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(createRequestBody),
+    })
     console.log('调用飞书新增剧集清单记录 API', JSON.stringify(createRequestBody))
 
     const data = await response.text()
@@ -382,10 +404,24 @@ router.post('/bitable/records', async ctx => {
       return
     }
 
+    if (!response.ok || jsonData.code !== 0) {
+      logFeishuUpstreamError('create-drama-list-record', {
+        status: response.status,
+        code: jsonData.code,
+        msg: jsonData.msg,
+        url: upstreamUrl,
+        appToken: config.app_token,
+        tableId: targetTableId,
+        requestData: createRequestBody,
+        responseData: jsonData,
+        responseText: data,
+      })
+    }
+
     ctx.status = response.status
     ctx.body = jsonData
   } catch (error) {
-    // Error logging removed
+    console.error('[飞书路由异常][create-drama-list-record]', error)
     ctx.status = 500
     ctx.body = {
       error: 'Internal Server Error',
@@ -996,6 +1032,14 @@ router.post('/bitable/drama-status', async ctx => {
     }
 
     if (tokenJson.code !== 0) {
+      logFeishuUpstreamError('create-drama-status-record:get-token', {
+        status: tokenResponse.status,
+        code: tokenJson.code,
+        msg: tokenJson.msg,
+        url: `${FEISHU_CONFIG.api_base_url}${FEISHU_CONFIG.token_endpoint}`,
+        responseData: tokenJson,
+        responseText: tokenData,
+      })
       ctx.status = 400
       ctx.body = tokenJson
       return
@@ -1037,17 +1081,15 @@ router.post('/bitable/drama-status', async ctx => {
     }
 
     const targetTableId = config.table_ids.drama_status
-    const response = await fetch(
-      `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${targetTableId}/records`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify(requestData),
-      }
-    )
+    const upstreamUrl = `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${targetTableId}/records`
+    const response = await fetch(upstreamUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(requestData),
+    })
     console.log('调用飞书新增剧集状态记录 API', JSON.stringify(requestData))
 
     const data = await response.text()
@@ -1061,10 +1103,24 @@ router.post('/bitable/drama-status', async ctx => {
       return
     }
 
+    if (!response.ok || jsonData.code !== 0) {
+      logFeishuUpstreamError('create-drama-status-record', {
+        status: response.status,
+        code: jsonData.code,
+        msg: jsonData.msg,
+        url: upstreamUrl,
+        appToken: config.app_token,
+        tableId: targetTableId,
+        requestData: requestData,
+        responseData: jsonData,
+        responseText: data,
+      })
+    }
+
     ctx.status = response.status
     ctx.body = jsonData
   } catch (error) {
-    // Error logging removed
+    console.error('[飞书路由异常][create-drama-status-record]', error)
     ctx.status = 500
     ctx.body = {
       error: 'Internal Server Error',
@@ -1707,6 +1763,14 @@ router.post('/bitable/drama-status/clip', async ctx => {
     }
 
     if (tokenJson.code !== 0) {
+      logFeishuUpstreamError('create-drama-clip-record:get-token', {
+        status: tokenResponse.status,
+        code: tokenJson.code,
+        msg: tokenJson.msg,
+        url: `${FEISHU_CONFIG.api_base_url}${FEISHU_CONFIG.token_endpoint}`,
+        responseData: tokenJson,
+        responseText: tokenData,
+      })
       ctx.status = 400
       ctx.body = tokenJson
       return
@@ -1748,17 +1812,15 @@ router.post('/bitable/drama-status/clip', async ctx => {
     }
 
     const targetTableId = config.table_ids.drama_status
-    const response = await fetch(
-      `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${targetTableId}/records`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify(requestData),
-      }
-    )
+    const upstreamUrl = `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${targetTableId}/records`
+    const response = await fetch(upstreamUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(requestData),
+    })
 
     const data = await response.text()
     let jsonData
@@ -1770,10 +1832,24 @@ router.post('/bitable/drama-status/clip', async ctx => {
       return
     }
 
+    if (!response.ok || jsonData.code !== 0) {
+      logFeishuUpstreamError('create-drama-clip-record', {
+        status: response.status,
+        code: jsonData.code,
+        msg: jsonData.msg,
+        url: upstreamUrl,
+        appToken: config.app_token,
+        tableId: targetTableId,
+        requestData: requestData,
+        responseData: jsonData,
+        responseText: data,
+      })
+    }
+
     ctx.status = response.status
     ctx.body = jsonData
   } catch (error) {
-    // Error logging removed
+    console.error('[飞书路由异常][create-drama-clip-record]', error)
     ctx.status = 500
     ctx.body = {
       error: 'Internal Server Error',
