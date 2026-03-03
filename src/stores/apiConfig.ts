@@ -87,8 +87,8 @@ export const useApiConfigStore = defineStore('apiConfig', () => {
       const result = await response.json()
       if (result.code === 0 && result.data) {
         const authData = result.data
-        if (authData.platforms?.changdu?.mr?.cookie) {
-          configs.value.daily.cookie = authData.platforms.changdu.mr.cookie
+        if (typeof authData.changduCookie === 'string' && authData.changduCookie) {
+          configs.value.daily.cookie = authData.changduCookie
         }
         console.log('[apiConfig] 已从服务器加载认证配置')
       }
@@ -119,17 +119,12 @@ export const useApiConfigStore = defineStore('apiConfig', () => {
     }
   }
 
-  function updateFromAuthConfig(authData: {
-    platforms?: { changdu?: Record<string, Partial<ApiConfig>> }
-  }) {
+  function updateFromAuthConfig(authData: { changduCookie?: string }) {
     try {
-      const cd = authData.platforms?.changdu || {}
-
-      if (cd.mr) {
+      if (typeof authData.changduCookie === 'string' && authData.changduCookie) {
         configs.value.daily = {
           ...configs.value.daily,
-          cookie: cd.mr.cookie ?? configs.value.daily.cookie,
-          distributorId: cd.mr.distributorId || configs.value.daily.distributorId,
+          cookie: authData.changduCookie,
         }
         saveToStorage('daily')
       }

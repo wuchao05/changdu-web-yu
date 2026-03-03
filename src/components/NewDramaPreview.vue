@@ -2348,8 +2348,8 @@ onMounted(async () => {
     const response = await fetch('/api/auth/config')
     if (response.ok) {
       const { data } = await response.json()
-      if (data && data.platforms?.changdu) {
-        apiConfigStore.updateFromAuthConfig({ platforms: data.platforms })
+      if (data) {
+        apiConfigStore.updateFromAuthConfig(data)
       }
     } else {
       console.warn('获取认证配置失败，使用本地配置')
