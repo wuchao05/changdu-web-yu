@@ -4,16 +4,24 @@ import { ACCOUNT_API_DEFAULTS } from '@/config/accountApiDefaults'
 
 export interface ApiConfig {
   cookie: string
+  appId?: string
+  appType?: string
   autoDownloadEnabled?: boolean
   autoDownloadIntervalMinutes?: number
   distributorId?: string
+  adUserId?: string
+  rootAdUserId?: string
 }
 
 const DEFAULT_API_CONFIG: ApiConfig = {
   cookie: '',
+  appId: '40011566',
+  appType: '7',
   autoDownloadEnabled: false,
   autoDownloadIntervalMinutes: 20,
-  distributorId: '',
+  distributorId: '1844565955364887',
+  adUserId: '1291245239407612',
+  rootAdUserId: '600762415841560',
 }
 
 const ACCOUNT_DEFAULTS: Record<'daily', ApiConfig> = {
@@ -90,6 +98,15 @@ export const useApiConfigStore = defineStore('apiConfig', () => {
         if (typeof authData.changduCookie === 'string' && authData.changduCookie) {
           configs.value.daily.cookie = authData.changduCookie
         }
+        if (authData.headers && typeof authData.headers === 'object') {
+          configs.value.daily.appId = authData.headers.appid || configs.value.daily.appId
+          configs.value.daily.appType = authData.headers.apptype || configs.value.daily.appType
+          configs.value.daily.distributorId =
+            authData.headers.distributorId || configs.value.daily.distributorId
+          configs.value.daily.adUserId = authData.headers.adUserId || configs.value.daily.adUserId
+          configs.value.daily.rootAdUserId =
+            authData.headers.rootAdUserId || configs.value.daily.rootAdUserId
+        }
         console.log('[apiConfig] 已从服务器加载认证配置')
       }
     } catch (error) {
@@ -119,13 +136,37 @@ export const useApiConfigStore = defineStore('apiConfig', () => {
     }
   }
 
-  function updateFromAuthConfig(authData: { changduCookie?: string }) {
+  function updateFromAuthConfig(authData: {
+    changduCookie?: string
+    headers?: {
+      appid?: string
+      apptype?: string
+      distributorId?: string
+      adUserId?: string
+      rootAdUserId?: string
+    }
+  }) {
     try {
-      if (typeof authData.changduCookie === 'string' && authData.changduCookie) {
-        configs.value.daily = {
-          ...configs.value.daily,
-          cookie: authData.changduCookie,
-        }
+      configs.value.daily = {
+        ...configs.value.daily,
+        ...(typeof authData.changduCookie === 'string' && authData.changduCookie
+          ? { cookie: authData.changduCookie }
+          : {}),
+        ...(authData.headers
+          ? {
+              appId: authData.headers.appid || configs.value.daily.appId,
+              appType: authData.headers.apptype || configs.value.daily.appType,
+              distributorId: authData.headers.distributorId || configs.value.daily.distributorId,
+              adUserId: authData.headers.adUserId || configs.value.daily.adUserId,
+              rootAdUserId: authData.headers.rootAdUserId || configs.value.daily.rootAdUserId,
+            }
+          : {}),
+      }
+
+      if (
+        (typeof authData.changduCookie === 'string' && authData.changduCookie) ||
+        authData.headers
+      ) {
         saveToStorage('daily')
       }
 

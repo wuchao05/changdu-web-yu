@@ -53,6 +53,48 @@
           </div>
         </n-card>
 
+        <!-- 常读请求头配置 -->
+        <n-card class="shadow-sm border border-gray-200" :bordered="false">
+          <template #header>
+            <div class="flex items-center space-x-3">
+              <Icon icon="mdi:format-list-bulleted-square" class="w-5 h-5 text-gray-600" />
+              <div>
+                <h3 class="text-lg font-semibold text-gray-900">常读请求头配置</h3>
+                <p class="text-sm text-gray-500">配置 Appid、Apptype、DistributorId 等请求头</p>
+              </div>
+            </div>
+          </template>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-gray-700">Appid</label>
+              <n-input v-model:value="form.headers.appid" placeholder="请输入 Appid" />
+            </div>
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-gray-700">Apptype</label>
+              <n-input v-model:value="form.headers.apptype" placeholder="请输入 Apptype" />
+            </div>
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-gray-700">DistributorId</label>
+              <n-input
+                v-model:value="form.headers.distributorId"
+                placeholder="请输入 DistributorId"
+              />
+            </div>
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-gray-700">AdUserId</label>
+              <n-input v-model:value="form.headers.adUserId" placeholder="请输入 AdUserId" />
+            </div>
+            <div class="space-y-2 md:col-span-2">
+              <label class="text-sm font-medium text-gray-700">RootAdUserId</label>
+              <n-input
+                v-model:value="form.headers.rootAdUserId"
+                placeholder="请输入 RootAdUserId"
+              />
+            </div>
+          </div>
+        </n-card>
+
         <!-- 飞书表格配置 -->
         <n-card class="shadow-sm border border-gray-200" :bordered="false">
           <template #header>
@@ -128,6 +170,13 @@ const saving = ref(false)
 const form = reactive<AppConfig>({
   changduCookie: '',
   juliangCookie: '',
+  headers: {
+    appid: '40011566',
+    apptype: '7',
+    distributorId: '1844565955364887',
+    adUserId: '1291245239407612',
+    rootAdUserId: '600762415841560',
+  },
   feishu: {
     app_token: '',
     table_ids: {
@@ -144,6 +193,11 @@ async function loadConfig() {
     if (result.code === 0 && result.data) {
       form.changduCookie = result.data.changduCookie || ''
       form.juliangCookie = result.data.juliangCookie || ''
+      form.headers.appid = result.data.headers?.appid || '40011566'
+      form.headers.apptype = result.data.headers?.apptype || '7'
+      form.headers.distributorId = result.data.headers?.distributorId || '1844565955364887'
+      form.headers.adUserId = result.data.headers?.adUserId || '1291245239407612'
+      form.headers.rootAdUserId = result.data.headers?.rootAdUserId || '600762415841560'
       form.feishu.app_token = result.data.feishu?.app_token || ''
       form.feishu.table_ids.drama_list = result.data.feishu?.table_ids?.drama_list || ''
       form.feishu.table_ids.drama_status = result.data.feishu?.table_ids?.drama_status || ''

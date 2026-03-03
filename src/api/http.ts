@@ -9,16 +9,14 @@ export interface ExtendedError extends Error {
 
 const { message } = createDiscreteApi(['message'])
 
-const DAILY_HEADERS = {
+const DEFAULT_DAILY_HEADERS = {
   Appid: '40011566',
   Apptype: '7',
   Distributorid: '1844565955364887',
 } as const
 
-const DAILY_DOWNLOAD_HEADERS = {
-  Appid: '40011566',
-  Apptype: '7',
-  Distributorid: '1844565955364887',
+const DEFAULT_DAILY_DOWNLOAD_HEADERS = {
+  ...DEFAULT_DAILY_HEADERS,
   Aduserid: '1291245239407612',
   Rootaduserid: '600762415841560',
 } as const
@@ -57,12 +55,30 @@ function isDownloadApi(url?: string): boolean {
   return url.includes('/download_center/task_list') || url.includes('/download_center/get_url')
 }
 
+function getRequestHeaders(url?: string) {
+  const apiConfigStore = useApiConfigStore()
+  const dailyConfig = apiConfigStore.getConfigByAccount('daily')
+
+  const dailyHeaders = {
+    Appid: dailyConfig.appId || DEFAULT_DAILY_HEADERS.Appid,
+    Apptype: dailyConfig.appType || DEFAULT_DAILY_HEADERS.Apptype,
+    Distributorid: dailyConfig.distributorId || DEFAULT_DAILY_HEADERS.Distributorid,
+  }
+
+  if (!isDownloadApi(url)) {
+    return dailyHeaders
+  }
+
+  return {
+    ...dailyHeaders,
+    Aduserid: dailyConfig.adUserId || DEFAULT_DAILY_DOWNLOAD_HEADERS.Aduserid,
+    Rootaduserid: dailyConfig.rootAdUserId || DEFAULT_DAILY_DOWNLOAD_HEADERS.Rootaduserid,
+  }
+}
+
 httpInstance.interceptors.request.use(
   config => {
-    Object.assign(
-      config.headers,
-      isDownloadApi(config.url) ? DAILY_DOWNLOAD_HEADERS : DAILY_HEADERS
-    )
+    Object.assign(config.headers, getRequestHeaders(config.url))
 
     const cookie = getCookie()
     if (cookie) {

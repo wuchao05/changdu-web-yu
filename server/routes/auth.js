@@ -27,6 +27,13 @@ const DEFAULT_ADMIN_USER_ID = '2peWAuMpDOqXGj8'
 const DEFAULT_SIMPLE_CONFIG = {
   changduCookie: '',
   juliangCookie: '',
+  headers: {
+    appid: '40011566',
+    apptype: '7',
+    distributorId: '1844565955364887',
+    adUserId: '1291245239407612',
+    rootAdUserId: '600762415841560',
+  },
   feishu: {
     app_token: '',
     table_ids: {
@@ -59,12 +66,35 @@ const DEFAULT_PLATFORM_CONFIG = {
 }
 
 function normalizeSimpleConfig(config = {}) {
+  const headers = config.headers && typeof config.headers === 'object' ? config.headers : {}
   const feishu = config.feishu && typeof config.feishu === 'object' ? config.feishu : {}
   const tableIds = feishu.table_ids && typeof feishu.table_ids === 'object' ? feishu.table_ids : {}
 
   return {
     changduCookie: typeof config.changduCookie === 'string' ? config.changduCookie : '',
     juliangCookie: typeof config.juliangCookie === 'string' ? config.juliangCookie : '',
+    headers: {
+      appid:
+        typeof headers.appid === 'string' && headers.appid
+          ? headers.appid
+          : DEFAULT_SIMPLE_CONFIG.headers.appid,
+      apptype:
+        typeof headers.apptype === 'string' && headers.apptype
+          ? headers.apptype
+          : DEFAULT_SIMPLE_CONFIG.headers.apptype,
+      distributorId:
+        typeof headers.distributorId === 'string' && headers.distributorId
+          ? headers.distributorId
+          : DEFAULT_SIMPLE_CONFIG.headers.distributorId,
+      adUserId:
+        typeof headers.adUserId === 'string' && headers.adUserId
+          ? headers.adUserId
+          : DEFAULT_SIMPLE_CONFIG.headers.adUserId,
+      rootAdUserId:
+        typeof headers.rootAdUserId === 'string' && headers.rootAdUserId
+          ? headers.rootAdUserId
+          : DEFAULT_SIMPLE_CONFIG.headers.rootAdUserId,
+    },
     feishu: {
       app_token: typeof feishu.app_token === 'string' ? feishu.app_token : '',
       table_ids: {
@@ -78,6 +108,7 @@ function normalizeSimpleConfig(config = {}) {
 
 function buildRuntimeConfig(rawConfig = {}) {
   const simple = normalizeSimpleConfig(rawConfig)
+  const headerConfig = simple.headers
   const tokens = rawConfig.tokens && typeof rawConfig.tokens === 'object' ? rawConfig.tokens : {}
   const users = rawConfig.users && typeof rawConfig.users === 'object' ? rawConfig.users : {}
   const platforms =
@@ -93,6 +124,7 @@ function buildRuntimeConfig(rawConfig = {}) {
     users: {
       admin: typeof users.admin === 'string' && users.admin ? users.admin : DEFAULT_ADMIN_USER_ID,
     },
+    headers: headerConfig,
     platforms: {
       changdu: {
         cookie:
@@ -114,6 +146,9 @@ function buildRuntimeConfig(rawConfig = {}) {
           ...DEFAULT_PLATFORM_CONFIG.changdu.mr,
           ...(platforms.changdu?.mr || {}),
           cookie: platforms.changdu?.mr?.cookie || simple.changduCookie,
+          distributorId: platforms.changdu?.mr?.distributorId || headerConfig.distributorId,
+          adUserId: platforms.changdu?.mr?.adUserId || headerConfig.adUserId,
+          rootAdUserId: platforms.changdu?.mr?.rootAdUserId || headerConfig.rootAdUserId,
         },
         dr: {
           ...DEFAULT_PLATFORM_CONFIG.changdu.dr,
@@ -233,6 +268,59 @@ router.put('/config', async ctx => {
       ...(Object.prototype.hasOwnProperty.call(payload, 'juliangCookie')
         ? {
             juliangCookie: typeof payload.juliangCookie === 'string' ? payload.juliangCookie : '',
+          }
+        : {}),
+      ...(Object.prototype.hasOwnProperty.call(payload, 'headers')
+        ? {
+            headers: {
+              ...currentSimple.headers,
+              ...(payload.headers && typeof payload.headers === 'object'
+                ? {
+                    ...(Object.prototype.hasOwnProperty.call(payload.headers, 'appid')
+                      ? {
+                          appid:
+                            typeof payload.headers.appid === 'string' && payload.headers.appid
+                              ? payload.headers.appid
+                              : currentSimple.headers.appid,
+                        }
+                      : {}),
+                    ...(Object.prototype.hasOwnProperty.call(payload.headers, 'apptype')
+                      ? {
+                          apptype:
+                            typeof payload.headers.apptype === 'string' && payload.headers.apptype
+                              ? payload.headers.apptype
+                              : currentSimple.headers.apptype,
+                        }
+                      : {}),
+                    ...(Object.prototype.hasOwnProperty.call(payload.headers, 'distributorId')
+                      ? {
+                          distributorId:
+                            typeof payload.headers.distributorId === 'string' &&
+                            payload.headers.distributorId
+                              ? payload.headers.distributorId
+                              : currentSimple.headers.distributorId,
+                        }
+                      : {}),
+                    ...(Object.prototype.hasOwnProperty.call(payload.headers, 'adUserId')
+                      ? {
+                          adUserId:
+                            typeof payload.headers.adUserId === 'string' && payload.headers.adUserId
+                              ? payload.headers.adUserId
+                              : currentSimple.headers.adUserId,
+                        }
+                      : {}),
+                    ...(Object.prototype.hasOwnProperty.call(payload.headers, 'rootAdUserId')
+                      ? {
+                          rootAdUserId:
+                            typeof payload.headers.rootAdUserId === 'string' &&
+                            payload.headers.rootAdUserId
+                              ? payload.headers.rootAdUserId
+                              : currentSimple.headers.rootAdUserId,
+                        }
+                      : {}),
+                  }
+                : {}),
+            },
           }
         : {}),
       ...(Object.prototype.hasOwnProperty.call(payload, 'feishu')

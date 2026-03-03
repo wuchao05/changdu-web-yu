@@ -5,6 +5,13 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 export interface AppConfig {
   changduCookie: string
   juliangCookie: string
+  headers: {
+    appid: string
+    apptype: string
+    distributorId: string
+    adUserId: string
+    rootAdUserId: string
+  }
   feishu: {
     app_token: string
     table_ids: {
