@@ -27,7 +27,6 @@ import douyinMaterialRoutes from './server/routes/douyinMaterial.js'
 import authRoutes from './server/routes/auth.js'
 import autoSubmitRoutes from './server/routes/autoSubmit.js'
 import adxRoutes from './server/routes/adx.js'
-import configRoutes from './server/routes/config.js'
 import { initScheduler } from './server/services/dailyBuildScheduler.js'
 import { initScheduler as initAutoSubmitScheduler } from './server/services/autoSubmitScheduler.js'
 
@@ -105,7 +104,6 @@ router.use('/api/djdata', djdataRoutes.routes(), djdataRoutes.allowedMethods())
 router.use('/api/daren', darenRoutes.routes(), darenRoutes.allowedMethods())
 router.use('/api/auth', authRoutes.routes(), authRoutes.allowedMethods())
 router.use('/api/adx', adxRoutes.routes(), adxRoutes.allowedMethods())
-router.use('/api/config', configRoutes.routes(), configRoutes.allowedMethods())
 router.use(
   '/api/douyin-material',
   douyinMaterialRoutes.routes(),

@@ -2,6 +2,7 @@ import Router from '@koa/router'
 import fs from 'fs/promises'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { clearFeishuConfigCache } from '../config/feishu.js'
 
 const router = new Router()
 
@@ -10,148 +11,187 @@ const __dirname = path.dirname(__filename)
 
 /**
  * 配置文件路径
- * 优先使用环境变量 AUTH_CONFIG_PATH 指定的路径
+ * 优先使用环境变量 AUTH_CONFIG_PATH
  * 生产环境：/data/changdu-web-yu/auth.json
- * 开发环境：降级到项目内路径
+ * 开发环境：server/config/auth.json（与旧 /api/config 一致）
  */
 let CONFIG_FILE_PATH = process.env.AUTH_CONFIG_PATH || '/data/changdu-web-yu/auth.json'
-
-// 检测是否在开发环境
 const isProduction = process.env.NODE_ENV === 'production'
+
 if (!isProduction) {
-  // 开发环境使用项目内路径
-  CONFIG_FILE_PATH = path.join(__dirname, '../data/auth.json')
+  CONFIG_FILE_PATH = path.join(__dirname, '../config/auth.json')
 }
 
-// 启动时打印配置文件路径
-console.log('🔐 认证配置文件路径:', CONFIG_FILE_PATH)
-console.log('🔐 环境: ', isProduction ? '生产环境' : '开发环境')
-console.log('🔐 环境变量 AUTH_CONFIG_PATH:', process.env.AUTH_CONFIG_PATH || '未设置')
+const DEFAULT_ADMIN_USER_ID = '2peWAuMpDOqXGj8'
 
-/**
- * 默认配置结构（v2: tokens + platforms + users）
- */
-const DEFAULT_CONFIG = {
-  tokens: {
-    xh: '', // 散柔+牵龙共用的形天 token
-    daren: '', // 达人的形天 token
-  },
-  users: {
-    admin: '2peWAuMpDOqXGj8', // 管理员用户 ID（小红）
-  },
-  platforms: {
-    changdu: {
-      cookie: '',
-      sr: { cookie: '', distributorId: '1842865091654731', adUserId: '', rootAdUserId: '' },
-      ql: { cookie: '', distributorId: '1841142223098969', adUserId: '', rootAdUserId: '' },
-      mr: { cookie: '', distributorId: '1844565955364887', adUserId: '', rootAdUserId: '' },
-      dr: { cookie: '', distributorId: '1841149910426777' },
-    },
-    jiliang: {
-      cookie: '',
-    },
-    ocean: {
-      sr: '', // 散柔 Ocean Cookie
-      ql: '', // 牵龙 Ocean Cookie
-      mr: '', // 每日 Ocean Cookie
-    },
-    adx: {
-      cookie: '',
+const DEFAULT_SIMPLE_CONFIG = {
+  changduCookie: '',
+  juliangCookie: '',
+  feishu: {
+    app_token: '',
+    table_ids: {
+      drama_list: '',
+      drama_status: '',
+      account: '',
     },
   },
-  lastUpdated: new Date().toISOString(),
-  version: '2.0.0',
 }
 
-/**
- * 读取认证配置
- */
-async function readAuthConfig() {
+const DEFAULT_PLATFORM_CONFIG = {
+  changdu: {
+    cookie: '',
+    sr: { cookie: '', distributorId: '1842865091654731', adUserId: '', rootAdUserId: '' },
+    ql: { cookie: '', distributorId: '1841142223098969', adUserId: '', rootAdUserId: '' },
+    mr: { cookie: '', distributorId: '1844565955364887', adUserId: '', rootAdUserId: '' },
+    dr: { cookie: '', distributorId: '1841149910426777' },
+  },
+  jiliang: {
+    cookie: '',
+  },
+  ocean: {
+    sr: '',
+    ql: '',
+    mr: '',
+  },
+  adx: {
+    cookie: '',
+  },
+}
+
+function normalizeSimpleConfig(config = {}) {
+  const feishu = config.feishu && typeof config.feishu === 'object' ? config.feishu : {}
+  const tableIds = feishu.table_ids && typeof feishu.table_ids === 'object' ? feishu.table_ids : {}
+
+  return {
+    changduCookie: typeof config.changduCookie === 'string' ? config.changduCookie : '',
+    juliangCookie: typeof config.juliangCookie === 'string' ? config.juliangCookie : '',
+    feishu: {
+      app_token: typeof feishu.app_token === 'string' ? feishu.app_token : '',
+      table_ids: {
+        drama_list: typeof tableIds.drama_list === 'string' ? tableIds.drama_list : '',
+        drama_status: typeof tableIds.drama_status === 'string' ? tableIds.drama_status : '',
+        account: typeof tableIds.account === 'string' ? tableIds.account : '',
+      },
+    },
+  }
+}
+
+function buildRuntimeConfig(rawConfig = {}) {
+  const simple = normalizeSimpleConfig(rawConfig)
+  const tokens = rawConfig.tokens && typeof rawConfig.tokens === 'object' ? rawConfig.tokens : {}
+  const users = rawConfig.users && typeof rawConfig.users === 'object' ? rawConfig.users : {}
+  const platforms =
+    rawConfig.platforms && typeof rawConfig.platforms === 'object' ? rawConfig.platforms : {}
+
+  return {
+    ...rawConfig,
+    ...simple,
+    tokens: {
+      xh: typeof tokens.xh === 'string' ? tokens.xh : '',
+      daren: typeof tokens.daren === 'string' ? tokens.daren : '',
+    },
+    users: {
+      admin: typeof users.admin === 'string' && users.admin ? users.admin : DEFAULT_ADMIN_USER_ID,
+    },
+    platforms: {
+      changdu: {
+        cookie:
+          platforms.changdu?.cookie ||
+          platforms.changdu?.mr?.cookie ||
+          platforms.changdu?.sr?.cookie ||
+          simple.changduCookie,
+        sr: {
+          ...DEFAULT_PLATFORM_CONFIG.changdu.sr,
+          ...(platforms.changdu?.sr || {}),
+          cookie: platforms.changdu?.sr?.cookie || simple.changduCookie,
+        },
+        ql: {
+          ...DEFAULT_PLATFORM_CONFIG.changdu.ql,
+          ...(platforms.changdu?.ql || {}),
+          cookie: platforms.changdu?.ql?.cookie || simple.changduCookie,
+        },
+        mr: {
+          ...DEFAULT_PLATFORM_CONFIG.changdu.mr,
+          ...(platforms.changdu?.mr || {}),
+          cookie: platforms.changdu?.mr?.cookie || simple.changduCookie,
+        },
+        dr: {
+          ...DEFAULT_PLATFORM_CONFIG.changdu.dr,
+          ...(platforms.changdu?.dr || {}),
+          cookie: platforms.changdu?.dr?.cookie || simple.changduCookie,
+        },
+      },
+      jiliang: {
+        ...DEFAULT_PLATFORM_CONFIG.jiliang,
+        ...(platforms.jiliang || {}),
+        cookie: platforms.jiliang?.cookie || platforms.ocean?.mr || simple.juliangCookie,
+      },
+      ocean: {
+        ...DEFAULT_PLATFORM_CONFIG.ocean,
+        ...(platforms.ocean || {}),
+        sr: platforms.ocean?.sr || simple.juliangCookie,
+        ql: platforms.ocean?.ql || simple.juliangCookie,
+        mr: platforms.ocean?.mr || simple.juliangCookie,
+      },
+      adx: {
+        ...DEFAULT_PLATFORM_CONFIG.adx,
+        ...(platforms.adx || {}),
+      },
+    },
+  }
+}
+
+async function readConfigFile() {
   try {
     const data = await fs.readFile(CONFIG_FILE_PATH, 'utf-8')
     const config = JSON.parse(data)
-    // 确保配置结构完整（深度合并默认值）
-    return {
-      ...DEFAULT_CONFIG,
-      ...config,
-      tokens: {
-        ...DEFAULT_CONFIG.tokens,
-        ...config.tokens,
-      },
-      users: {
-        ...DEFAULT_CONFIG.users,
-        ...config.users,
-      },
-      platforms: {
-        changdu: {
-          cookie:
-            config.platforms?.changdu?.cookie ||
-            config.platforms?.changdu?.mr?.cookie ||
-            config.platforms?.changdu?.sr?.cookie ||
-            DEFAULT_CONFIG.platforms.changdu.cookie,
-          sr: { ...DEFAULT_CONFIG.platforms.changdu.sr, ...config.platforms?.changdu?.sr },
-          ql: { ...DEFAULT_CONFIG.platforms.changdu.ql, ...config.platforms?.changdu?.ql },
-          mr: { ...DEFAULT_CONFIG.platforms.changdu.mr, ...config.platforms?.changdu?.mr },
-          dr: { ...DEFAULT_CONFIG.platforms.changdu.dr, ...config.platforms?.changdu?.dr },
-        },
-        jiliang: {
-          ...DEFAULT_CONFIG.platforms.jiliang,
-          ...config.platforms?.jiliang,
-          cookie:
-            config.platforms?.jiliang?.cookie ||
-            config.platforms?.ocean?.mr ||
-            DEFAULT_CONFIG.platforms.jiliang.cookie,
-        },
-        ocean: {
-          ...DEFAULT_CONFIG.platforms.ocean,
-          ...config.platforms?.ocean,
-        },
-        adx: {
-          ...DEFAULT_CONFIG.platforms.adx,
-          ...config.platforms?.adx,
-        },
-      },
-    }
+    return config && typeof config === 'object' ? config : { ...DEFAULT_SIMPLE_CONFIG }
   } catch (error) {
-    // 如果文件不存在，返回默认配置
     if (error.code === 'ENOENT') {
-      console.log('🔐 配置文件不存在，创建默认配置')
-      await writeAuthConfig(DEFAULT_CONFIG)
-      return DEFAULT_CONFIG
+      await writeConfigFile(DEFAULT_SIMPLE_CONFIG)
+      return { ...DEFAULT_SIMPLE_CONFIG }
     }
     throw error
   }
 }
 
-/**
- * 写入认证配置
- */
-async function writeAuthConfig(config) {
-  // 确保目录存在
+async function writeConfigFile(config) {
   const dir = path.dirname(CONFIG_FILE_PATH)
   await fs.mkdir(dir, { recursive: true })
-
-  // 添加更新时间
-  const configWithTimestamp = {
-    ...config,
-    lastUpdated: new Date().toISOString(),
-  }
-
-  // 写入文件，格式化为易读的 JSON
-  await fs.writeFile(CONFIG_FILE_PATH, JSON.stringify(configWithTimestamp, null, 2), 'utf-8')
+  await fs.writeFile(CONFIG_FILE_PATH, JSON.stringify(config, null, 2), 'utf-8')
 }
 
 /**
- * 获取认证配置
+ * 读取认证配置（服务端内部使用）
+ */
+async function readAuthConfig() {
+  const rawConfig = await readConfigFile()
+  return buildRuntimeConfig(rawConfig)
+}
+
+/**
+ * 写入认证配置（服务端内部使用）
+ */
+async function writeAuthConfig(config) {
+  const current = await readConfigFile()
+  const nextConfig = {
+    ...current,
+    ...(config && typeof config === 'object' ? config : {}),
+  }
+  await writeConfigFile(nextConfig)
+}
+
+/**
+ * 获取配置
  * GET /api/auth/config
  */
 router.get('/config', async ctx => {
   try {
-    const config = await readAuthConfig()
+    const rawConfig = await readConfigFile()
     ctx.body = {
       code: 0,
       message: 'success',
-      data: config,
+      data: normalizeSimpleConfig(rawConfig),
     }
   } catch (error) {
     console.error('读取认证配置失败:', error)
@@ -165,16 +205,13 @@ router.get('/config', async ctx => {
 })
 
 /**
- * 更新认证配置
+ * 更新配置
  * PUT /api/auth/config
- * Body: { tokens: { ... }, platforms: { ... } }
  */
 router.put('/config', async ctx => {
   try {
-    const newConfig = ctx.request.body
-
-    // 验证请求体
-    if (!newConfig || typeof newConfig !== 'object') {
+    const payload = ctx.request.body
+    if (!payload || typeof payload !== 'object') {
       ctx.status = 400
       ctx.body = {
         code: -1,
@@ -183,63 +220,67 @@ router.put('/config', async ctx => {
       return
     }
 
-    // 读取现有配置
-    const currentConfig = await readAuthConfig()
+    const current = await readConfigFile()
+    const currentSimple = normalizeSimpleConfig(current)
 
-    // 合并配置（深度合并 tokens、users 和 platforms）
-    const updatedConfig = {
-      ...currentConfig,
-      ...newConfig,
-      tokens: {
-        ...currentConfig.tokens,
-        ...(newConfig.tokens || {}),
-      },
-      users: {
-        ...currentConfig.users,
-        ...(newConfig.users || {}),
-      },
-      platforms: {
-        changdu: {
-          cookie: newConfig.platforms?.changdu?.cookie ?? currentConfig.platforms.changdu.cookie,
-          sr: {
-            ...currentConfig.platforms.changdu.sr,
-            ...(newConfig.platforms?.changdu?.sr || {}),
-          },
-          ql: {
-            ...currentConfig.platforms.changdu.ql,
-            ...(newConfig.platforms?.changdu?.ql || {}),
-          },
-          mr: {
-            ...currentConfig.platforms.changdu.mr,
-            ...(newConfig.platforms?.changdu?.mr || {}),
-          },
-          dr: {
-            ...currentConfig.platforms.changdu.dr,
-            ...(newConfig.platforms?.changdu?.dr || {}),
-          },
-        },
-        jiliang: {
-          ...currentConfig.platforms.jiliang,
-          ...(newConfig.platforms?.jiliang || {}),
-        },
-        ocean: {
-          ...currentConfig.platforms.ocean,
-          ...(newConfig.platforms?.ocean || {}),
-        },
-        adx: {
-          ...currentConfig.platforms.adx,
-          ...(newConfig.platforms?.adx || {}),
-        },
-      },
+    const nextSimple = {
+      ...currentSimple,
+      ...(Object.prototype.hasOwnProperty.call(payload, 'changduCookie')
+        ? {
+            changduCookie: typeof payload.changduCookie === 'string' ? payload.changduCookie : '',
+          }
+        : {}),
+      ...(Object.prototype.hasOwnProperty.call(payload, 'juliangCookie')
+        ? {
+            juliangCookie: typeof payload.juliangCookie === 'string' ? payload.juliangCookie : '',
+          }
+        : {}),
+      ...(Object.prototype.hasOwnProperty.call(payload, 'feishu')
+        ? {
+            feishu: normalizeSimpleConfig({ feishu: payload.feishu }).feishu,
+          }
+        : {}),
     }
 
-    // 写入配置
-    await writeAuthConfig(updatedConfig)
+    // 保留历史扩展字段，避免覆盖其它功能的配置
+    const nextConfig = {
+      ...current,
+      ...nextSimple,
+      ...(payload.tokens && typeof payload.tokens === 'object'
+        ? {
+            tokens: {
+              ...(current.tokens && typeof current.tokens === 'object' ? current.tokens : {}),
+              ...payload.tokens,
+            },
+          }
+        : {}),
+      ...(payload.users && typeof payload.users === 'object'
+        ? {
+            users: {
+              ...(current.users && typeof current.users === 'object' ? current.users : {}),
+              ...payload.users,
+            },
+          }
+        : {}),
+      ...(payload.platforms && typeof payload.platforms === 'object'
+        ? {
+            platforms: {
+              ...(current.platforms && typeof current.platforms === 'object'
+                ? current.platforms
+                : {}),
+              ...payload.platforms,
+            },
+          }
+        : {}),
+    }
+
+    await writeConfigFile(nextConfig)
+    clearFeishuConfigCache()
 
     ctx.body = {
       code: 0,
       message: '配置更新成功',
-      data: updatedConfig,
+      data: normalizeSimpleConfig(nextConfig),
     }
   } catch (error) {
     console.error('更新认证配置失败:', error)
@@ -252,126 +293,5 @@ router.put('/config', async ctx => {
   }
 })
 
-/**
- * 更新单个常读平台账号配置
- * PUT /api/auth/config/:account
- * account: sr | ql | mr
- * Body: { cookie, distributorId, adUserId, rootAdUserId }
- */
-router.put('/config/:account', async ctx => {
-  try {
-    const { account } = ctx.params
-    const accountData = ctx.request.body
-
-    // 验证账号名称
-    const validAccounts = ['sr', 'ql', 'mr', 'dr']
-    if (!validAccounts.includes(account)) {
-      ctx.status = 400
-      ctx.body = {
-        code: -1,
-        message: `无效的账号名称，必须是: ${validAccounts.join(', ')}`,
-      }
-      return
-    }
-
-    // 验证请求体
-    if (!accountData || typeof accountData !== 'object') {
-      ctx.status = 400
-      ctx.body = {
-        code: -1,
-        message: '无效的账号配置数据',
-      }
-      return
-    }
-
-    // 读取现有配置
-    const config = await readAuthConfig()
-
-    // 更新指定账号的配置
-    config.platforms.changdu[account] = {
-      ...config.platforms.changdu[account],
-      ...accountData,
-    }
-
-    // 写入配置
-    await writeAuthConfig(config)
-
-    ctx.body = {
-      code: 0,
-      message: `${account} 账号配置更新成功`,
-      data: config.platforms.changdu[account],
-    }
-  } catch (error) {
-    console.error('更新账号配置失败:', error)
-    ctx.status = 500
-    ctx.body = {
-      code: -1,
-      message: '更新账号配置失败',
-      error: error.message,
-    }
-  }
-})
-
-/**
- * 更新 Ocean 配置
- * PUT /api/auth/config/ocean/:account
- * account: sr | ql | mr
- * Body: { cookie: "ocean_cookie_value" }
- */
-router.put('/config/ocean/:account', async ctx => {
-  try {
-    const { account } = ctx.params
-    const { cookie } = ctx.request.body
-
-    // 验证账号名称
-    const validAccounts = ['sr', 'ql', 'mr', 'dr']
-    if (!validAccounts.includes(account)) {
-      ctx.status = 400
-      ctx.body = {
-        code: -1,
-        message: `无效的 Ocean 账号名称，必须是: ${validAccounts.join(', ')}`,
-      }
-      return
-    }
-
-    // 验证请求体
-    if (typeof cookie !== 'string') {
-      ctx.status = 400
-      ctx.body = {
-        code: -1,
-        message: '无效的 Cookie 数据',
-      }
-      return
-    }
-
-    // 读取现有配置
-    const config = await readAuthConfig()
-
-    // 更新指定账号的 Cookie
-    config.platforms.ocean[account] = cookie
-
-    // 写入配置
-    await writeAuthConfig(config)
-
-    ctx.body = {
-      code: 0,
-      message: `Ocean ${account} 账号配置更新成功`,
-      data: {
-        account,
-        cookie: cookie.substring(0, 50) + '...', // 只返回前 50 个字符
-      },
-    }
-  } catch (error) {
-    console.error('更新 Ocean 配置失败:', error)
-    ctx.status = 500
-    ctx.body = {
-      code: -1,
-      message: '更新 Ocean 配置失败',
-      error: error.message,
-    }
-  }
-})
-
-// 导出读写函数供其他路由使用
 export { readAuthConfig, writeAuthConfig }
 export default router

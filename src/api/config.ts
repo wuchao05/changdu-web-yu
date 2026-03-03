@@ -18,13 +18,13 @@ export interface AppConfig {
 export const configApi = {
   // 获取配置
   async getConfig(): Promise<{ code: number; data: AppConfig }> {
-    const response = await axios.get(`${API_BASE_URL}/api/config`)
+    const response = await axios.get(`${API_BASE_URL}/api/auth/config`)
     return response.data
   },
 
   // 更新配置
   async updateConfig(config: AppConfig): Promise<{ code: number; message: string }> {
-    const response = await axios.put(`${API_BASE_URL}/api/config`, config)
+    const response = await axios.put(`${API_BASE_URL}/api/auth/config`, config)
     return response.data
   },
 }
