@@ -14,37 +14,31 @@ const router = new Router({
   prefix: '/api/auto-submit',
 })
 
+function getAllSubjectStatus() {
+  return {
+    daily: getSchedulerStatus(),
+  }
+}
+
 /**
  * 启动自动提交调度器
  * POST /api/auto-submit/start
  * Body: {
  *   intervalMinutes: number,  // 轮询间隔（分钟）
- *   subject: 'daily' | 'sanrou' | 'qianlong',  // 主体
- *   onlyRedFlag: boolean,  // 是否只提交红标剧（仅每日主体有效）
  * }
  */
 router.post('/start', async ctx => {
   try {
-    const { intervalMinutes, subject, onlyRedFlag } = ctx.request.body || {}
+    const { intervalMinutes } = ctx.request.body || {}
 
-    if (!subject || !['daily', 'sanrou', 'qianlong'].includes(subject)) {
-      ctx.status = 400
-      ctx.body = {
-        code: -1,
-        message: 'subject 参数必须是 daily、sanrou 或 qianlong',
-      }
-      return
-    }
-
-    const result = await startScheduler(subject, {
+    const result = await startScheduler({
       intervalMinutes: intervalMinutes || 5,
-      onlyRedFlag: onlyRedFlag || false,
     })
 
     ctx.body = {
       code: result.success ? 0 : -1,
       message: result.message,
-      data: getSchedulerStatus(),
+      data: getAllSubjectStatus(),
     }
   } catch (error) {
     console.error('[自动提交API] 启动失败:', error)
@@ -59,29 +53,15 @@ router.post('/start', async ctx => {
 /**
  * 停止自动提交调度器
  * POST /api/auto-submit/stop
- * Body: {
- *   subject: 'daily' | 'sanrou' | 'qianlong'  // 要停止的主体
- * }
  */
 router.post('/stop', async ctx => {
   try {
-    const { subject } = ctx.request.body || {}
-
-    if (!subject || !['daily', 'sanrou', 'qianlong'].includes(subject)) {
-      ctx.status = 400
-      ctx.body = {
-        code: -1,
-        message: 'subject 参数必须是 daily、sanrou 或 qianlong',
-      }
-      return
-    }
-
-    const result = await stopScheduler(subject)
+    const result = await stopScheduler()
 
     ctx.body = {
       code: result.success ? 0 : -1,
       message: result.message,
-      data: getSchedulerStatus(),
+      data: getAllSubjectStatus(),
     }
   } catch (error) {
     console.error('[自动提交API] 停止失败:', error)
@@ -100,12 +80,10 @@ router.post('/stop', async ctx => {
  */
 router.get('/status', async ctx => {
   try {
-    const status = getSchedulerStatus()
-
     ctx.body = {
       code: 0,
       message: 'ok',
-      data: status,
+      data: getAllSubjectStatus(),
     }
   } catch (error) {
     console.error('[自动提交API] 获取状态失败:', error)
@@ -120,29 +98,15 @@ router.get('/status', async ctx => {
 /**
  * 手动触发一次执行
  * POST /api/auto-submit/trigger
- * Body: {
- *   subject: 'daily' | 'sanrou' | 'qianlong'  // 要触发的主体
- * }
  */
 router.post('/trigger', async ctx => {
   try {
-    const { subject } = ctx.request.body || {}
-
-    if (!subject || !['daily', 'sanrou', 'qianlong'].includes(subject)) {
-      ctx.status = 400
-      ctx.body = {
-        code: -1,
-        message: 'subject 参数必须是 daily、sanrou 或 qianlong',
-      }
-      return
-    }
-
-    const result = await triggerManualRun(subject)
+    const result = await triggerManualRun()
 
     ctx.body = {
       code: result.success ? 0 : -1,
       message: result.message,
-      data: getSchedulerStatus(),
+      data: getAllSubjectStatus(),
     }
   } catch (error) {
     console.error('[自动提交API] 触发执行失败:', error)
@@ -157,29 +121,15 @@ router.post('/trigger', async ctx => {
 /**
  * 重置统计数据
  * POST /api/auto-submit/reset-stats
- * Body: {
- *   subject: 'daily' | 'sanrou' | 'qianlong'  // 要重置的主体
- * }
  */
 router.post('/reset-stats', async ctx => {
   try {
-    const { subject } = ctx.request.body || {}
-
-    if (!subject || !['daily', 'sanrou', 'qianlong'].includes(subject)) {
-      ctx.status = 400
-      ctx.body = {
-        code: -1,
-        message: 'subject 参数必须是 daily、sanrou 或 qianlong',
-      }
-      return
-    }
-
-    const result = await resetStats(subject)
+    const result = await resetStats()
 
     ctx.body = {
       code: result.success ? 0 : -1,
       message: result.message,
-      data: getSchedulerStatus(),
+      data: getAllSubjectStatus(),
     }
   } catch (error) {
     console.error('[自动提交API] 重置统计失败:', error)

@@ -10,11 +10,14 @@ export const AUTO_SUBMIT_CONFIG = {
       distributorId: '1844565955364887',
       secretKey: 'H53iZltmBXDndYt5ONW2h6tgCUxbG7kX',
     },
-    // 散柔渠道配置
-    sanrou: {
-      distributorId: '1842865091654731',
-      secretKey: 't05gPUR5ke8zyihAj9AlSNsarEJzCDzC',
-    },
+  },
+
+  // 下载中心请求头默认配置（可被 auth.json 中的 mr 配置覆盖）
+  downloadCenter: {
+    appId: '40011566',
+    appType: '7',
+    adUserId: '1291245239407612',
+    rootAdUserId: '600762415841560',
   },
 
   // 筛选条件

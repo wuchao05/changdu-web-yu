@@ -6,18 +6,15 @@
 import fs from 'fs/promises'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { FEISHU_CONFIG } from '../config/feishu.js'
+import { FEISHU_CONFIG, getFeishuConfig } from '../config/feishu.js'
 import { AUTO_SUBMIT_CONFIG } from '../config/autoSubmit.js'
 import { buildChangduGetHeaders } from '../utils/changduSign.js'
 import {
   CHANGDU_BASE_URL,
-  CHANGDU_DISTRIBUTOR_ID,
-  CHANGDU_SECRET_KEY,
   CHANGDU_DAILY_DISTRIBUTOR_ID,
   CHANGDU_DAILY_SECRET_KEY,
 } from '../config/changdu.js'
 import { readAuthConfig } from '../routes/auth.js'
-import { getProductLibraryConfigBySubject, DEFAULT_TEAM_ID } from '../config/productLibrary.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -41,19 +38,11 @@ function toBeijingTime(isoString) {
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 }
 
-// 抖音素材配置文件路径（与 douyinMaterial 路由保持一致）
+// 抖音素材配置文件路径
 const isProduction = process.env.NODE_ENV === 'production'
-const DOUYIN_MATERIAL_CONFIG_FILES = {
-  daily: isProduction
-    ? '/data/changdu-web-yu/douyin-material-config.json'
-    : path.join(__dirname, '../data/douyin-material-config.json'),
-  sanrou: isProduction
-    ? '/data/changdu-web-yu/douyin-material-config_sanrou.json'
-    : path.join(__dirname, '../data/douyin-material-config_sanrou.json'),
-  qianlong: isProduction
-    ? '/data/changdu-web-yu/douyin-material-config_qianlong.json'
-    : path.join(__dirname, '../data/douyin-material-config_qianlong.json'),
-}
+const DOUYIN_MATERIAL_CONFIG_FILE = isProduction
+  ? '/data/changdu-web-yu/douyin-material-config.json'
+  : path.join(__dirname, '../data/douyin-material-config.json')
 
 /**
  * 安全解析 JSON 响应
@@ -76,16 +65,8 @@ async function safeJsonParse(response, context = '') {
   }
 }
 
-// 状态文件路径（按主体分离）
-function getStateFilePath(subject) {
-  const fileName = `auto-submit-scheduler-state-${subject}.json`
-  return isProduction
-    ? `/data/changdu-web-yu/${fileName}`
-    : path.join(__dirname, `../data/${fileName}`)
-}
-
-// 旧状态文件路径（用于迁移）
-const OLD_STATE_FILE_PATH = isProduction
+// 状态文件路径
+const STATE_FILE_PATH = isProduction
   ? '/data/changdu-web-yu/auto-submit-scheduler-state.json'
   : path.join(__dirname, '../data/auto-submit-scheduler-state.json')
 
@@ -97,7 +78,6 @@ function createDefaultState() {
     nextRunTime: null,
     lastRunTime: null,
     running: false,
-    onlyRedFlag: false,
     stats: {
       totalProcessed: 0,
       successCount: 0,
@@ -115,20 +95,10 @@ function createDefaultState() {
   }
 }
 
-// 多主体调度器状态（每个主体独立）
-const schedulers = {
-  daily: {
-    state: createDefaultState(),
-    timer: null,
-  },
-  sanrou: {
-    state: createDefaultState(),
-    timer: null,
-  },
-  qianlong: {
-    state: createDefaultState(),
-    timer: null,
-  },
+// 调度器状态
+const scheduler = {
+  state: createDefaultState(),
+  timer: null,
 }
 
 // ============== 工具函数 ==============
@@ -193,67 +163,41 @@ function formatDate(date) {
 /**
  * 保存状态到文件
  */
-async function saveState(subject) {
+async function saveState() {
   try {
-    const stateFilePath = getStateFilePath(subject)
-    const dir = path.dirname(stateFilePath)
+    const dir = path.dirname(STATE_FILE_PATH)
     await fs.mkdir(dir, { recursive: true })
-    await fs.writeFile(stateFilePath, JSON.stringify(schedulers[subject].state, null, 2))
+    await fs.writeFile(STATE_FILE_PATH, JSON.stringify(scheduler.state, null, 2))
   } catch (error) {
-    console.error(`[自动提交-${subject}] 保存状态失败:`, error.message)
+    console.error('[自动提交] 保存状态失败:', error.message)
   }
 }
 
 /**
  * 加载状态
  */
-async function loadState(subject) {
+async function loadState() {
   try {
-    const stateFilePath = getStateFilePath(subject)
-    const data = await fs.readFile(stateFilePath, 'utf-8')
+    const data = await fs.readFile(STATE_FILE_PATH, 'utf-8')
     const savedState = JSON.parse(data)
-    schedulers[subject].state = { ...schedulers[subject].state, ...savedState }
-    console.log(`[自动提交-${subject}] 已加载保存的状态`)
+    scheduler.state = { ...scheduler.state, ...savedState }
+    console.log('[自动提交] 已加载保存的状态')
   } catch {
-    console.log(`[自动提交-${subject}] 未找到状态文件，使用默认状态`)
-  }
-}
-
-/**
- * 迁移旧状态文件到新的按主体分离的文件
- */
-async function migrateOldState() {
-  try {
-    const data = await fs.readFile(OLD_STATE_FILE_PATH, 'utf-8')
-    const oldState = JSON.parse(data)
-
-    // 根据旧状态的 subject 字段迁移到对应的新文件
-    const subject = oldState.subject || 'daily'
-    if (schedulers[subject]) {
-      schedulers[subject].state = { ...schedulers[subject].state, ...oldState }
-      await saveState(subject)
-      console.log(`[自动提交] 已迁移旧状态文件到 ${subject} 主体`)
-
-      // 删除旧文件
-      await fs.unlink(OLD_STATE_FILE_PATH)
-      console.log('[自动提交] 已删除旧状态文件')
-    }
-  } catch {
-    // 旧文件不存在或读取失败，忽略
+    console.log('[自动提交] 未找到状态文件，使用默认状态')
   }
 }
 
 /**
  * 添加任务历史记录
  */
-function addTaskHistory(subject, record) {
-  schedulers[subject].state.taskHistory.unshift({
+function addTaskHistory(record) {
+  scheduler.state.taskHistory.unshift({
     ...record,
     timestamp: new Date().toISOString(),
   })
   // 只保留最近50条
-  if (schedulers[subject].state.taskHistory.length > 50) {
-    schedulers[subject].state.taskHistory = schedulers[subject].state.taskHistory.slice(0, 50)
+  if (scheduler.state.taskHistory.length > 50) {
+    scheduler.state.taskHistory = scheduler.state.taskHistory.slice(0, 50)
   }
 }
 
@@ -280,27 +224,15 @@ async function getFeishuAccessToken() {
 }
 
 /**
- * 获取表ID配置
- */
-function getTableIds(subject) {
-  if (subject === 'daily') {
-    return FEISHU_CONFIG.daily_table_ids
-  } else if (subject === 'qianlong') {
-    return FEISHU_CONFIG.qianlong_table_ids
-  } else {
-    return FEISHU_CONFIG.table_ids // 散柔
-  }
-}
-
-/**
  * 搜索飞书剧集清单
  */
-async function searchDramaList(subject, dramaName) {
+async function searchDramaList(dramaName) {
+  const config = await getFeishuConfig()
   const accessToken = await getFeishuAccessToken()
-  const tableIds = getTableIds(subject)
+  const tableIds = config.table_ids
 
   const response = await fetch(
-    `https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_CONFIG.app_token}/tables/${tableIds.drama_list}/records/search`,
+    `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${tableIds.drama_list}/records/search`,
     {
       method: 'POST',
       headers: {
@@ -326,9 +258,10 @@ async function searchDramaList(subject, dramaName) {
 
   return safeJsonParse(response, '搜索剧集清单')
 }
-async function createDramaRecord(subject, dramaName, publishTime, bookId, rating) {
+async function createDramaRecord(dramaName, publishTime, bookId) {
+  const config = await getFeishuConfig()
   const accessToken = await getFeishuAccessToken()
-  const tableIds = getTableIds(subject)
+  const tableIds = config.table_ids
 
   const fields = { 剧名: dramaName }
 
@@ -345,13 +278,8 @@ async function createDramaRecord(subject, dramaName, publishTime, bookId, rating
     } catch {}
   }
 
-  // 每日主体才有评级字段
-  if (rating && subject === 'daily') {
-    fields['评级'] = rating
-  }
-
   const response = await fetch(
-    `https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_CONFIG.app_token}/tables/${tableIds.drama_list}/records`,
+    `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${tableIds.drama_list}/records`,
     {
       method: 'POST',
       headers: {
@@ -372,12 +300,13 @@ async function createDramaRecord(subject, dramaName, publishTime, bookId, rating
 /**
  * 查询可用的虎鱼账户
  */
-async function getAvailableHuyuAccounts(subject) {
+async function getAvailableHuyuAccounts() {
+  const config = await getFeishuConfig()
   const accessToken = await getFeishuAccessToken()
-  const tableIds = getTableIds(subject)
+  const tableIds = config.table_ids
 
   const response = await fetch(
-    `https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_CONFIG.app_token}/tables/${tableIds.account}/records/search?ignore_consistency_check=true`,
+    `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${tableIds.account}/records/search?ignore_consistency_check=true`,
     {
       method: 'POST',
       headers: {
@@ -408,24 +337,12 @@ async function getAvailableHuyuAccounts(subject) {
 }
 
 /**
- * 获取抖音素材配置（根据当前主体）
+ * 获取抖音素材配置
  * @returns {string} 格式化后的抖音素材配置字符串
  */
-async function getDouyinMaterialConfig(subject) {
-  // 根据主体选择配置文件
-  let configFile
-  if (subject === 'daily') {
-    configFile = DOUYIN_MATERIAL_CONFIG_FILES.daily
-  } else if (subject === 'sanrou') {
-    configFile = DOUYIN_MATERIAL_CONFIG_FILES.sanrou
-  } else if (subject === 'qianlong') {
-    configFile = DOUYIN_MATERIAL_CONFIG_FILES.qianlong
-  } else {
-    return ''
-  }
-
+async function getDouyinMaterialConfig() {
   try {
-    const content = await fs.readFile(configFile, 'utf-8')
+    const content = await fs.readFile(DOUYIN_MATERIAL_CONFIG_FILE, 'utf-8')
     const config = JSON.parse(content)
     const matches = config.matches || []
 
@@ -439,7 +356,7 @@ async function getDouyinMaterialConfig(subject) {
       .map(match => `${match.douyinAccount} ${match.douyinAccountId} ${match.materialRange}`)
       .join('\n')
   } catch (error) {
-    console.error(`[自动提交-${subject}] 读取抖音素材配置失败: ${error.message}`)
+    console.error('[自动提交] 读取抖音素材配置失败:', error.message)
     return ''
   }
 }
@@ -447,8 +364,8 @@ async function getDouyinMaterialConfig(subject) {
 /**
  * 获取第一个可用账户
  */
-async function getFirstAvailableAccount(subject) {
-  const accounts = await getAvailableHuyuAccounts(subject)
+async function getFirstAvailableAccount() {
+  const accounts = await getAvailableHuyuAccounts()
   if (accounts.length === 0) {
     return null
   }
@@ -472,10 +389,11 @@ async function getFirstAvailableAccount(subject) {
 /**
  * 创建剧集状态记录
  */
-async function createDramaStatusRecord(subject, params) {
-  const { dramaName, publishTime, account, subjectValue, status, douyinMaterial, rating } = params
+async function createDramaStatusRecord(params) {
+  const config = await getFeishuConfig()
+  const { dramaName, publishTime, account, subjectValue, status, douyinMaterial } = params
   const accessToken = await getFeishuAccessToken()
-  const tableIds = getTableIds(subject)
+  const tableIds = config.table_ids
 
   // 计算日期时间戳（与前端逻辑一致）
   // 将首发时间转换为当天00:00:00的13位时间戳
@@ -527,12 +445,8 @@ async function createDramaStatusRecord(subject, params) {
     fields['抖音素材'] = douyinMaterial
   }
 
-  if (rating) {
-    fields['评级'] = rating
-  }
-
   const response = await fetch(
-    `https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_CONFIG.app_token}/tables/${tableIds.drama_status}/records`,
+    `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${tableIds.drama_status}/records`,
     {
       method: 'POST',
       headers: {
@@ -545,8 +459,8 @@ async function createDramaStatusRecord(subject, params) {
 
   const result = await safeJsonParse(response, '创建剧集状态记录')
   if (result.code !== 0) {
-    console.error(`[自动提交-${subject}] 创建剧集状态记录失败，请求字段:`, JSON.stringify(fields))
-    console.error(`[自动提交-${subject}] 飞书返回:`, JSON.stringify(result))
+    console.error('[自动提交] 创建剧集状态记录失败，请求字段:', JSON.stringify(fields))
+    console.error('[自动提交] 飞书返回:', JSON.stringify(result))
     throw new Error(`创建剧集状态记录失败: ${result.msg}`)
   }
   return result
@@ -555,12 +469,13 @@ async function createDramaStatusRecord(subject, params) {
 /**
  * 更新账户使用状态
  */
-async function updateAccountUsedStatus(subject, recordId) {
+async function updateAccountUsedStatus(recordId) {
+  const config = await getFeishuConfig()
   const accessToken = await getFeishuAccessToken()
-  const tableIds = getTableIds(subject)
+  const tableIds = config.table_ids
 
   const response = await fetch(
-    `https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_CONFIG.app_token}/tables/${tableIds.account}/records/${recordId}`,
+    `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${tableIds.account}/records/${recordId}`,
     {
       method: 'PUT',
       headers: {
@@ -587,31 +502,21 @@ async function updateAccountUsedStatus(subject, recordId) {
 /**
  * 获取剧集清单表ID（用于API请求）
  */
-function getDramaListTableId(subject) {
-  if (subject === 'daily') {
-    return FEISHU_CONFIG.daily_table_ids.drama_list
-  } else if (subject === 'qianlong') {
-    return FEISHU_CONFIG.qianlong_table_ids.drama_list
-  }
-  return FEISHU_CONFIG.table_ids.drama_list
+async function getDramaListTableId() {
+  const config = await getFeishuConfig()
+  return config.table_ids.drama_list
 }
 
 /**
  * 获取当前主体的cookie
  */
-async function getSubjectCookie(subject) {
+async function getSubjectCookie() {
   const authConfig = await readAuthConfig()
   const unifiedCookie = authConfig.platforms?.changdu?.cookie || ''
   if (unifiedCookie) {
     return unifiedCookie
   }
-
-  if (subject === 'daily') {
-    return authConfig.platforms?.changdu?.mr?.cookie || ''
-  } else if (subject === 'qianlong') {
-    return authConfig.platforms?.changdu?.ql?.cookie || ''
-  }
-  return authConfig.platforms?.changdu?.sr?.cookie || ''
+  return authConfig.platforms?.changdu?.mr?.cookie || ''
 }
 
 function extractCsrfToken(cookie = '') {
@@ -638,15 +543,12 @@ async function getJiliangAuth() {
  * @param {Object} params - 请求参数
  * @param {number} params.pageIndex - 页码
  * @param {number} params.pageSize - 每页数量
- * @param {string} params.subject - 使用哪个主体的渠道（'daily' | 'sanrou' | 'qianlong'）
  */
 async function getNewDramaList(params = {}) {
-  const { pageIndex = 0, pageSize = 100, subject, dramaListTableId } = params
+  const { pageIndex = 0, pageSize = 100, dramaListTableId } = params
 
-  // 根据主体选择 distributorId 和 secretKey
-  const isDaily = subject === 'daily'
-  const distributorId = isDaily ? CHANGDU_DAILY_DISTRIBUTOR_ID : CHANGDU_DISTRIBUTOR_ID
-  const secretKey = isDaily ? CHANGDU_DAILY_SECRET_KEY : CHANGDU_SECRET_KEY
+  const distributorId = CHANGDU_DAILY_DISTRIBUTOR_ID
+  const secretKey = CHANGDU_DAILY_SECRET_KEY
 
   // 构建请求参数（与手动刷新一致）
   const requestParams = {
@@ -779,7 +681,7 @@ async function getNewDramaListWithRetry(
 /**
  * 获取下载任务列表
  */
-async function getDownloadTaskList(subject, startTime, endTime) {
+async function getDownloadTaskList(startTime, endTime) {
   const queryParams = new URLSearchParams({
     start_time: String(startTime),
     end_time: String(endTime),
@@ -791,25 +693,17 @@ async function getDownloadTaskList(subject, startTime, endTime) {
   const url = `https://www.changdunovel.com/node/api/platform/distributor/download_center/task_list/?${queryParams.toString()}`
 
   // 获取cookie
-  const cookie = await getSubjectCookie(subject)
+  const authConfig = await readAuthConfig()
+  const mrConfig = authConfig.platforms?.changdu?.mr || {}
+  const cookie = await getSubjectCookie()
 
-  // 下载中心专用头部
-  const headerConfig =
-    subject === 'daily'
-      ? {
-          Appid: '40011566',
-          Apptype: '7',
-          Aduserid: '1291245239407612',
-          Rootaduserid: '600762415841560',
-          Distributorid: '1844565955364887',
-        }
-      : {
-          Appid: '40012555',
-          Apptype: '7',
-          Aduserid: '380892546610362',
-          Rootaduserid: '380892546610362',
-          Distributorid: '1842236883646506',
-        }
+  const headerConfig = {
+    Appid: AUTO_SUBMIT_CONFIG.downloadCenter.appId,
+    Apptype: AUTO_SUBMIT_CONFIG.downloadCenter.appType,
+    Distributorid: mrConfig.distributorId || AUTO_SUBMIT_CONFIG.changdu.daily.distributorId,
+    Aduserid: mrConfig.adUserId || AUTO_SUBMIT_CONFIG.downloadCenter.adUserId,
+    Rootaduserid: mrConfig.rootAdUserId || AUTO_SUBMIT_CONFIG.downloadCenter.rootAdUserId,
+  }
 
   const response = await fetch(url, {
     method: 'GET',
@@ -848,332 +742,26 @@ async function editJiliangAccountRemark(accountId, remark) {
   return safeJsonParse(response, '更新巨量账户备注')
 }
 
-// ============== 商品 API ==============
-
-const SPLAY_BASE_URL = 'https://splay-admin.lnkaishi.cn'
-
-/**
- * 获取XT Token
- */
-async function getXtToken(subject) {
-  const authConfig = await readAuthConfig()
-
-  // 散柔/每日主体使用 xh token，牵龙主体使用 daren token
-  if (subject === 'sanrou' || subject === 'daily') {
-    return authConfig.tokens?.xh || ''
-  } else if (subject === 'qianlong') {
-    return authConfig.tokens?.daren || ''
-  }
-  return authConfig.tokens?.xh || ''
-}
-
-/**
- * 搜索番茄后台剧集
- */
-async function searchSplayAlbums(subject, dramaName) {
-  const token = await getXtToken(subject)
-  if (!token) {
-    throw new Error('未配置 XT Token')
-  }
-
-  const encodedTitle = encodeURIComponent(dramaName)
-  const queryString = `team_id=${DEFAULT_TEAM_ID}&title=${encodedTitle}&page=1&page_size=100&dy_audit_status=-1&from=1&category_id=-1`
-
-  const response = await fetch(`${SPLAY_BASE_URL}/album/search?${queryString}`, {
-    method: 'GET',
-    headers: {
-      token,
-    },
-  })
-
-  return safeJsonParse(response, '搜索番茄后台剧集')
-}
-
-/**
- * 获取小程序链接
- */
-async function getSplayMiniProgramUrl(subject, albumId) {
-  const token = await getXtToken(subject)
-  if (!token) {
-    throw new Error('未配置 XT Token')
-  }
-
-  // 根据主体获取对应的商品库配置
-  const subjectConfigMap = {
-    daily: '超琦',
-    sanrou: '超琦',
-    qianlong: '欣雅',
-  }
-  const productConfig = getProductLibraryConfigBySubject(undefined, subjectConfigMap[subject])
-  const params = new URLSearchParams({
-    team_id: DEFAULT_TEAM_ID,
-    ad_account_id: productConfig.adAccountId,
-    album_id: String(albumId),
-  })
-
-  const response = await fetch(`${SPLAY_BASE_URL}/product/miniUrl?${params.toString()}`, {
-    method: 'GET',
-    headers: {
-      token,
-    },
-  })
-
-  return safeJsonParse(response, '获取小程序链接')
-}
-
-/**
- * 添加番茄剧集（用于 is_delete === 1 的剧集）
- */
-async function addTomatoAlbum(subject, bookId) {
-  const token = await getXtToken(subject)
-  if (!token) return
-
-  try {
-    await fetch(`${SPLAY_BASE_URL}/config/tomatoAlbum?team_id=${DEFAULT_TEAM_ID}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        token,
-      },
-      body: JSON.stringify({
-        book_id: bookId,
-        category_id: 1,
-      }),
-    })
-    console.log(`[自动提交-${subject}] 成功添加番茄剧集:`, bookId)
-  } catch (error) {
-    console.error(`[自动提交-${subject}] 添加番茄剧集失败:`, error.message)
-  }
-}
-
-/**
- * 查找匹配的剧集
- */
-async function findMatchingAlbum(subject, albums, dramaName) {
-  // 先找 promotion_status === 1 且 publish_status === 1 的
-  const exactlyMatched = albums.find(
-    album => album.title === dramaName && album.promotion_status === 1 && album.publish_status === 1
-  )
-
-  if (exactlyMatched) {
-    if (exactlyMatched.is_delete === 1 && exactlyMatched.copyright_content_id) {
-      await addTomatoAlbum(subject, exactlyMatched.copyright_content_id)
-    }
-    return exactlyMatched
-  }
-
-  // 其次找 promotion_status === 1 的
-  const matched = albums.find(album => album.title === dramaName && album.promotion_status === 1)
-  if (matched) {
-    if (matched.is_delete === 1 && matched.copyright_content_id) {
-      await addTomatoAlbum(subject, matched.copyright_content_id)
-    }
-    return matched
-  }
-
-  return null
-}
-
-/**
- * 创建商品
- */
-async function createSplayProduct(subject, payload) {
-  const token = await getXtToken(subject)
-  if (!token) {
-    throw new Error('未配置 XT Token')
-  }
-
-  const response = await fetch(`${SPLAY_BASE_URL}/product/create?team_id=${DEFAULT_TEAM_ID}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      token,
-    },
-    body: JSON.stringify(payload),
-  })
-
-  return safeJsonParse(response, '创建商品')
-}
-
-/**
- * 查询商品是否存在
- */
-async function checkProductExists(subject, dramaName) {
-  const token = await getXtToken(subject)
-  if (!token) {
-    return false
-  }
-
-  // 根据主体获取对应的商品库配置
-  const subjectConfigMap = {
-    daily: '超琦',
-    sanrou: '超琦',
-    qianlong: '欣雅',
-  }
-  const productConfig = getProductLibraryConfigBySubject(undefined, subjectConfigMap[subject])
-  const params = new URLSearchParams({
-    team_id: DEFAULT_TEAM_ID,
-    ad_account_id: productConfig.adAccountId,
-    product_platform_id: productConfig.productPlatformId,
-    page: '1',
-    page_size: '20',
-    product_name: dramaName,
-  })
-
-  try {
-    const response = await fetch(`${SPLAY_BASE_URL}/product/list?${params.toString()}`, {
-      method: 'GET',
-      headers: {
-        token,
-      },
-    })
-
-    const result = await safeJsonParse(response, '查询商品列表')
-    if (result.data?.list && Array.isArray(result.data.list)) {
-      return result.data.list.some(item => item.name === dramaName)
-    }
-    return false
-  } catch (error) {
-    console.log(`[自动提交-${subject}] 查询商品失败: ${dramaName}`, error.message)
-    return false
-  }
-}
-
-/**
- * 处理商品新增（非每日主体时）
- */
-async function handleAddProduct(subject, drama) {
-  const dramaName = drama.series_name
-  if (!dramaName) {
-    console.log(`[自动提交-${subject}] 剧名为空，跳过新增商品`)
-    return
-  }
-
-  const token = await getXtToken(subject)
-  if (!token) {
-    console.log(`[自动提交-${subject}] 未配置 XT Token，跳过新增商品`)
-    return
-  }
-
-  try {
-    // 1. 检查商品是否已存在
-    const exists = await checkProductExists(subject, dramaName)
-    if (exists) {
-      console.log(`[自动提交-${subject}] ✓ ${dramaName} 商品已存在，无需新增`)
-      return
-    }
-
-    // 2. 搜索番茄后台剧集
-    const albumResponse = await searchSplayAlbums(subject, dramaName)
-    if (albumResponse.code !== 0 || !albumResponse.data) {
-      console.log(`[自动提交-${subject}] ✗ ${dramaName} 番茄后台查询失败`)
-      return
-    }
-
-    // 3. 查找匹配的剧集
-    const album = await findMatchingAlbum(subject, albumResponse.data.list || [], dramaName)
-    if (!album) {
-      console.log(`[自动提交-${subject}] ✗ ${dramaName} 番茄后台未找到符合条件的剧`)
-      return
-    }
-
-    // 4. 获取小程序链接
-    const miniProgramResponse = await getSplayMiniProgramUrl(subject, album.id)
-    if (miniProgramResponse.code !== 0 || !miniProgramResponse.data) {
-      console.log(`[自动提交-${subject}] ✗ ${dramaName} 获取小程序链接失败`)
-      return
-    }
-
-    // 5. 确定主体对应的商品库配置
-    const subjectConfigMap = {
-      daily: '超琦', // 每日主体不会走到这里，但保持一致
-      sanrou: '超琦', // 散柔 → 超琦
-      qianlong: '欣雅', // 牵龙 → 欣雅
-    }
-    const productConfig = getProductLibraryConfigBySubject(undefined, subjectConfigMap[subject])
-    const coverUrl = album.cover || drama.original_thumb_url || ''
-
-    // 固定的商品分类配置
-    const productPayload = {
-      product_list: [
-        {
-          mini_program_info: miniProgramResponse.data,
-          playlet_gender: '3', // 其他（'1'=男频, '2'=女频, '3'=其他）
-          name: dramaName,
-          ad_carrier: '字节小程序',
-          album_id: album.id,
-          image_url: coverUrl,
-          first_category: '短剧',
-          sub_category: '都市',
-          third_category: '其他',
-          first_category_id: '2019',
-          sub_category_id: '201901',
-          third_category_id: '20190133',
-        },
-      ],
-      ad_account_id: productConfig.adAccountId,
-      is_free: 0,
-      product_platform_id: productConfig.productPlatformId,
-    }
-
-    // 6. 创建商品（带重试）
-    let delay = 1000
-    const maxDelay = 8000
-    let retryCount = 0
-    const maxRetries = 5
-
-    while (retryCount < maxRetries) {
-      const response = await createSplayProduct(subject, productPayload)
-      console.log(`[自动提交-${subject}] ${dramaName} 创建商品响应:`, JSON.stringify(response))
-      const result = response.data?.[0]
-
-      if (result && !result.result && result.product_id) {
-        console.log(`[自动提交-${subject}] ✓ ${dramaName} 商品新增成功`)
-        return
-      }
-
-      if (result?.result?.includes('系统请求频率超限')) {
-        console.log(`[自动提交-${subject}] ${dramaName} 请求频率超限，${delay}ms后重试...`)
-        await wait(delay)
-        delay = Math.min(delay * 2, maxDelay)
-        retryCount++
-        continue
-      }
-
-      throw new Error(result?.result || '新增商品失败')
-    }
-
-    console.log(`[自动提交-${subject}] ✗ ${dramaName} 商品新增失败：重试次数超限`)
-  } catch (error) {
-    console.log(`[自动提交-${subject}] ✗ ${dramaName} 商品处理失败:`, error.message)
-    throw error
-  }
-}
-
 // ============== 核心业务逻辑 ==============
 
 /**
  * 获取并过滤今天/明天/后天的剧集
  */
-async function fetchAutoSubmitDramas(subject) {
+async function fetchAutoSubmitDramas() {
   const dateRanges = getDateRanges()
 
-  console.log(`[自动提交-${subject}] ========== 获取剧集 ==========`)
-  console.log(`[自动提交-${subject}] 今天:`, formatDate(dateRanges.today))
-  console.log(`[自动提交-${subject}] 明天:`, formatDate(dateRanges.tomorrow))
-  console.log(`[自动提交-${subject}] 后天:`, formatDate(dateRanges.dayAfterTomorrow))
+  console.log('[自动提交] ========== 获取剧集 ==========')
+  console.log('[自动提交] 今天:', formatDate(dateRanges.today))
+  console.log('[自动提交] 明天:', formatDate(dateRanges.tomorrow))
+  console.log('[自动提交] 后天:', formatDate(dateRanges.dayAfterTomorrow))
 
-  const dramaListTableId = getDramaListTableId(subject)
+  const dramaListTableId = await getDramaListTableId()
   const { batchSize, batchDelay, totalPages } = AUTO_SUBMIT_CONFIG.pagination
 
   // 并发获取下载任务列表
-  const downloadResult = await getDownloadTaskList(
-    subject,
-    dateRanges.startTime,
-    dateRanges.endTime
-  )
+  const downloadResult = await getDownloadTaskList(dateRanges.startTime, dateRanges.endTime)
   const downloadList = downloadResult.data || []
-  console.log(`[自动提交-${subject}] 下载任务列表:`, downloadList.length, '条')
+  console.log('[自动提交] 下载任务列表:', downloadList.length, '条')
 
   // 分批获取剧集列表
   const dramaResults = []
@@ -1183,7 +771,6 @@ async function fetchAutoSubmitDramas(subject) {
       getNewDramaListWithRetry({
         pageIndex: batchStart + i,
         pageSize: 100,
-        subject,
         dramaListTableId,
       })
     )
@@ -1204,7 +791,7 @@ async function fetchAutoSubmitDramas(subject) {
     return acc
   }, [])
 
-  console.log(`[自动提交-${subject}] 去重后的剧集总数:`, uniqueDramas.length)
+  console.log('[自动提交] 去重后的剧集总数:', uniqueDramas.length)
 
   // 过滤剧集
   const filteredDramas = uniqueDramas.filter(drama => {
@@ -1214,7 +801,7 @@ async function fetchAutoSubmitDramas(subject) {
     return true
   })
 
-  console.log(`[自动提交-${subject}] 过滤后的剧集总数:`, filteredDramas.length)
+  console.log('[自动提交] 过滤后的剧集总数:', filteredDramas.length)
 
   // 按日期分组
   const todayDramas = []
@@ -1235,75 +822,15 @@ async function fetchAutoSubmitDramas(subject) {
     }
   }
 
-  console.log(`[自动提交-${subject}] 今天的剧集数:`, todayDramas.length)
-  console.log(`[自动提交-${subject}] 明天的剧集数:`, tomorrowDramas.length)
-  console.log(`[自动提交-${subject}] 后天的剧集数:`, dayAfterTomorrowDramas.length)
-
-  // 增剧对比（每日主体）
-  const newDramaSet = new Set()
-  if (subject === 'daily') {
-    try {
-      // 获取散柔主体的剧集列表用于对比
-      const sanrouResults = []
-      for (let batchStart = 0; batchStart < totalPages; batchStart += batchSize) {
-        const batchEnd = Math.min(batchStart + batchSize, totalPages)
-        const batchPromises = Array.from({ length: batchEnd - batchStart }, (_, i) =>
-          getNewDramaListWithRetry({
-            pageIndex: batchStart + i,
-            pageSize: 100,
-            subject: 'sanrou', // 使用散柔渠道
-          })
-        )
-        const batchResults = await Promise.all(batchPromises)
-        sanrouResults.push(...batchResults)
-
-        if (batchEnd < totalPages) {
-          await wait(batchDelay)
-        }
-      }
-
-      const sanrouAllData = sanrouResults.flatMap(result => result.data?.data || [])
-      const uniqueSanrouDramas = sanrouAllData.reduce((acc, drama) => {
-        if (!acc.find(item => item.book_id === drama.book_id)) {
-          acc.push(drama)
-        }
-        return acc
-      }, [])
-
-      const sanrouFiltered = uniqueSanrouDramas.filter(drama => {
-        if (drama.dy_audit_status !== AUTO_SUBMIT_CONFIG.filter.dyAuditStatus) return false
-        if (
-          drama.episode_amount &&
-          drama.episode_amount < AUTO_SUBMIT_CONFIG.filter.minEpisodeAmount
-        )
-          return false
-        return true
-      })
-
-      console.log(`[自动提交-${subject}] 散柔剧集（过滤后）:`, sanrouFiltered.length)
-
-      const sanrouBookIds = new Set(sanrouFiltered.map(d => d.book_id))
-
-      // 找出增剧
-      const allThreeDaysDramas = [...todayDramas, ...tomorrowDramas, ...dayAfterTomorrowDramas]
-      for (const drama of allThreeDaysDramas) {
-        if (!sanrouBookIds.has(drama.book_id)) {
-          newDramaSet.add(drama.book_id)
-        }
-      }
-
-      console.log(`[自动提交-${subject}] 增剧数量:`, newDramaSet.size)
-    } catch (error) {
-      console.error(`[自动提交-${subject}] 增剧对比失败:`, error.message)
-    }
-  }
+  console.log('[自动提交] 今天的剧集数:', todayDramas.length)
+  console.log('[自动提交] 明天的剧集数:', tomorrowDramas.length)
+  console.log('[自动提交] 后天的剧集数:', dayAfterTomorrowDramas.length)
 
   return {
     today: todayDramas,
     tomorrow: tomorrowDramas,
     dayAfterTomorrow: dayAfterTomorrowDramas,
     downloadList,
-    newDramaSet,
   }
 }
 
@@ -1319,14 +846,9 @@ function getDownloadDataForDrama(downloadList, dramaName) {
 /**
  * 按优先级排序剧集
  */
-function sortDramasByPriority(dramas, downloadList, newDramaSet) {
+function sortDramasByPriority(dramas, downloadList) {
   return [...dramas].sort((a, b) => {
-    // 优先级 1：红标剧（增剧）
-    const aIsNew = newDramaSet.has(a.book_id)
-    const bIsNew = newDramaSet.has(b.book_id)
-    if (aIsNew !== bIsNew) return aIsNew ? -1 : 1
-
-    // 优先级 2：飞书清单中不存在 && 下载中心有完成的任务
+    // 优先级：飞书清单中不存在 && 下载中心有完成的任务
     const aDownloadData = getDownloadDataForDrama(downloadList, a.series_name)
     const bDownloadData = getDownloadDataForDrama(downloadList, b.series_name)
     const aCanAdd = !a.feishu_downloaded && !a.feishu_exists && aDownloadData?.task_status === 2
@@ -1340,19 +862,19 @@ function sortDramasByPriority(dramas, downloadList, newDramaSet) {
 /**
  * 处理单部剧的提交
  */
-async function processDrama(subject, drama, downloadList, newDramaSet) {
+async function processDrama(drama, downloadList) {
   const dramaName = drama.series_name
 
   try {
     // 1. 检查可用账户
-    const availableAccount = await getFirstAvailableAccount(subject)
+    const availableAccount = await getFirstAvailableAccount()
     if (!availableAccount) {
-      console.log(`[自动提交-${subject}] 无可用账户，跳过: ${dramaName}`)
+      console.log('[自动提交] 无可用账户，跳过:', dramaName)
       return { success: false, reason: 'no_account' }
     }
 
     // 2. 搜索飞书剧集清单，检查是否已存在
-    const searchResult = await searchDramaList(subject, dramaName)
+    const searchResult = await searchDramaList(dramaName)
     if (searchResult.data && searchResult.data.total > 0) {
       const existingDrama = searchResult.data.items.find(item => {
         const itemDramaName = item.fields['剧名']?.[0]?.text
@@ -1360,80 +882,56 @@ async function processDrama(subject, drama, downloadList, newDramaSet) {
       })
 
       if (existingDrama) {
-        console.log(`[自动提交-${subject}] 剧集已存在，跳过: ${dramaName}`)
+        console.log('[自动提交] 剧集已存在，跳过:', dramaName)
         return { success: false, reason: 'already_exists' }
       }
     }
 
-    // 3. 确定评级
-    let rating
-    if (subject === 'daily') {
-      const isRedFlagDrama = newDramaSet.has(drama.book_id)
-      rating = isRedFlagDrama ? '红标' : '黄标'
-    }
+    // 3. 创建飞书剧集清单记录
+    await createDramaRecord(dramaName, drama.publish_time, drama.book_id)
+    console.log('[自动提交] 创建剧集清单记录成功:', dramaName)
 
-    // 4. 创建飞书剧集清单记录
-    await createDramaRecord(
-      subject,
-      dramaName,
-      drama.publish_time,
-      subject === 'daily' ? drama.book_id : undefined,
-      rating
-    )
-    console.log(`[自动提交-${subject}] 创建剧集清单记录成功: ${dramaName}`)
+    // 4. 主体字段值固定为每日
+    const subjectValue = '每日'
 
-    // 5. 确定主体字段值
-    const subjectValue = subject === 'daily' ? '每日' : subject === 'qianlong' ? '欣雅' : '超琦'
-
-    // 6. 根据下载状态确定飞书状态
+    // 5. 根据下载状态确定飞书状态
     const downloadData = getDownloadDataForDrama(downloadList, dramaName)
     const taskStatus = downloadData?.task_status
     const readyStatuses = AUTO_SUBMIT_CONFIG.taskStatus.readyStatuses
     const feishuStatus =
       taskStatus !== undefined && readyStatuses.includes(taskStatus) ? '待下载' : '待提交'
 
-    // 7. 获取抖音素材配置（根据当前主体）
-    const douyinMaterial = await getDouyinMaterialConfig(subject)
+    // 6. 获取抖音素材配置
+    const douyinMaterial = await getDouyinMaterialConfig()
 
-    // 8. 创建剧集状态记录
-    await createDramaStatusRecord(subject, {
+    // 7. 创建剧集状态记录
+    await createDramaStatusRecord({
       dramaName,
       publishTime: drama.publish_time,
       account: availableAccount.account,
       subjectValue,
       status: feishuStatus,
-      douyinMaterial: douyinMaterial || undefined, // 如果为空字符串则传 undefined
-      rating, // 传递评级参数
+      douyinMaterial: douyinMaterial || undefined,
     })
-    console.log(`[自动提交-${subject}] 创建剧集状态记录成功，分配账户: ${availableAccount.account}`)
+    console.log('[自动提交] 创建剧集状态记录成功，分配账户:', availableAccount.account)
 
-    // 9. 更新账户使用状态
-    await updateAccountUsedStatus(subject, availableAccount.recordId)
+    // 8. 更新账户使用状态
+    await updateAccountUsedStatus(availableAccount.recordId)
 
-    // 10. 更新巨量账户备注（每日主体）
-    if (subject === 'daily' && availableAccount.account) {
+    // 9. 更新巨量账户备注
+    if (availableAccount.account) {
       try {
         const remark = `小红-${dramaName}`
         await editJiliangAccountRemark(availableAccount.account, remark)
-        console.log(`[自动提交-${subject}] 更新巨量账户备注成功: ${availableAccount.account}`)
+        console.log('[自动提交] 更新巨量账户备注成功:', availableAccount.account)
       } catch (jiliangError) {
-        console.error(`[自动提交-${subject}] 更新巨量账户备注失败:`, jiliangError.message)
-      }
-    }
-
-    // 11. 非每日主体时，需要检查并新增商品
-    if (subject !== 'daily') {
-      try {
-        await handleAddProduct(subject, drama)
-      } catch (productError) {
-        console.log(`[自动提交-${subject}] ${dramaName} 商品处理失败:`, productError.message)
-        // 商品失败不中断整个流程
+        console.error('[自动提交] 更新巨量账户备注失败:', jiliangError.message)
       }
     }
 
     return { success: true }
   } catch (error) {
-    console.error(`[自动提交-${subject}] 处理失败: ${dramaName}`, error.message)
+    console.error('[自动提交] 处理失败:', dramaName, error.message)
     return { success: false, reason: 'error', error: error.message }
   }
 }
@@ -1441,12 +939,12 @@ async function processDrama(subject, drama, downloadList, newDramaSet) {
 /**
  * 执行自动提交流程
  */
-async function runAutoSubmitCycle(subject) {
-  const state = schedulers[subject].state
+async function runAutoSubmitCycle() {
+  const state = scheduler.state
 
   if (!state.enabled) return
   if (state.running) {
-    console.log(`[自动提交-${subject}] 上一轮仍在运行，跳过本次`)
+    console.log('[自动提交] 上一轮仍在运行，跳过本次')
     return
   }
 
@@ -1455,14 +953,13 @@ async function runAutoSubmitCycle(subject) {
     startTime: new Date().toISOString(),
     status: 'running',
   }
-  await saveState(subject)
+  await saveState()
 
   try {
-    console.log(`[自动提交-${subject}] ========== 开始自动提交流程 ==========`)
+    console.log('[自动提交] ========== 开始自动提交流程 ==========')
 
     // 1. 获取并过滤剧集
-    const { today, tomorrow, dayAfterTomorrow, downloadList, newDramaSet } =
-      await fetchAutoSubmitDramas(subject)
+    const { today, tomorrow, dayAfterTomorrow, downloadList } = await fetchAutoSubmitDramas()
 
     // 2. 按日期分组处理
     const dateGroups = [
@@ -1478,7 +975,7 @@ async function runAutoSubmitCycle(subject) {
 
     for (const dateGroup of dateGroups) {
       if (!state.enabled) {
-        console.log(`[自动提交-${subject}] 已停止`)
+        console.log('[自动提交] 已停止')
         break
       }
 
@@ -1493,55 +990,46 @@ async function runAutoSubmitCycle(subject) {
         const downloadData = getDownloadDataForDrama(downloadList, d.series_name)
         if (!downloadData || downloadData.task_status !== 2) return false
 
-        // 条件3: 如果是每日主体且只提交红标剧
-        if (subject === 'daily' && state.onlyRedFlag && !newDramaSet.has(d.book_id)) return false
-
         return true
       })
 
       if (eligibleDramas.length === 0) {
-        console.log(`[自动提交-${subject}] ${dateGroup.date}没有需要处理的剧集`)
+        console.log(`[自动提交] ${dateGroup.date}没有需要处理的剧集`)
         continue
       }
 
       // 4. 排序
-      const sortedDramas = sortDramasByPriority(eligibleDramas, downloadList, newDramaSet)
+      const sortedDramas = sortDramasByPriority(eligibleDramas, downloadList)
 
-      const filterMode = subject === 'daily' && state.onlyRedFlag ? '仅红标剧' : '所有剧'
-      console.log(
-        `[自动提交-${subject}] 开始处理${dateGroup.date}的剧集，共 ${sortedDramas.length} 部（筛选模式：${filterMode}）`
-      )
+      console.log(`[自动提交] 开始处理${dateGroup.date}的剧集，共 ${sortedDramas.length} 部`)
 
       // 5. 依次处理
       state.progress.total = sortedDramas.length
       for (let i = 0; i < sortedDramas.length; i++) {
         if (!state.enabled) {
-          console.log(`[自动提交-${subject}] 已停止`)
+          console.log('[自动提交] 已停止')
           break
         }
 
         const drama = sortedDramas[i]
         state.progress.current = i + 1
         state.progress.currentDrama = drama.series_name
-        await saveState(subject)
+        await saveState()
 
-        const redFlagLabel = subject === 'daily' && newDramaSet.has(drama.book_id) ? ' [红标]' : ''
-        console.log(
-          `[自动提交-${subject}] 处理第 ${i + 1}/${sortedDramas.length} 部：${drama.series_name}${redFlagLabel}`
-        )
+        console.log(`[自动提交] 处理第 ${i + 1}/${sortedDramas.length} 部：${drama.series_name}`)
 
-        const result = await processDrama(subject, drama, downloadList, newDramaSet)
+        const result = await processDrama(drama, downloadList)
         processedCount++
 
         if (result.success) {
           successCount++
-          console.log(`[自动提交-${subject}] ✓ ${drama.series_name} 处理成功`)
+          console.log(`[自动提交] ✓ ${drama.series_name} 处理成功`)
         } else if (result.reason === 'already_exists' || result.reason === 'no_account') {
           skipCount++
         } else {
           failCount++
           console.log(
-            `[自动提交-${subject}] ✗ ${drama.series_name} 处理失败: ${result.error || result.reason}`
+            `[自动提交] ✗ ${drama.series_name} 处理失败: ${result.error || result.reason}`
           )
         }
 
@@ -1549,7 +1037,7 @@ async function runAutoSubmitCycle(subject) {
         await wait(1000)
       }
 
-      console.log(`[自动提交-${subject}] ${dateGroup.date}的剧集处理完成`)
+      console.log(`[自动提交] ${dateGroup.date}的剧集处理完成`)
     }
 
     // 更新统计
@@ -1559,7 +1047,7 @@ async function runAutoSubmitCycle(subject) {
     state.stats.skipCount += skipCount
 
     // 记录历史
-    addTaskHistory(subject, {
+    addTaskHistory({
       status: 'completed',
       processed: processedCount,
       success: successCount,
@@ -1567,13 +1055,13 @@ async function runAutoSubmitCycle(subject) {
       skip: skipCount,
     })
 
-    console.log(`[自动提交-${subject}] ========== 自动提交流程完成 ==========`)
+    console.log('[自动提交] ========== 自动提交流程完成 ==========')
     console.log(
-      `[自动提交-${subject}] 本轮统计: 处理 ${processedCount}, 成功 ${successCount}, 失败 ${failCount}, 跳过 ${skipCount}`
+      `[自动提交] 本轮统计: 处理 ${processedCount}, 成功 ${successCount}, 失败 ${failCount}, 跳过 ${skipCount}`
     )
   } catch (error) {
-    console.error(`[自动提交-${subject}] 执行失败:`, error.message)
-    addTaskHistory(subject, {
+    console.error('[自动提交] 执行失败:', error.message)
+    addTaskHistory({
       status: 'error',
       error: error.message,
     })
@@ -1585,29 +1073,29 @@ async function runAutoSubmitCycle(subject) {
 
     // 如果还启用，设置下次运行
     if (state.enabled) {
-      scheduleNextRun(subject)
+      scheduleNextRun()
     }
 
-    await saveState(subject)
+    await saveState()
   }
 }
 
 /**
  * 调度下次运行
  */
-function scheduleNextRun(subject) {
-  const state = schedulers[subject].state
+function scheduleNextRun() {
+  const state = scheduler.state
   const intervalMs = state.intervalMinutes * 60 * 1000
   state.nextRunTime = new Date(Date.now() + intervalMs).toISOString()
 
-  console.log(`[自动提交-${subject}] 下次运行时间: ${state.nextRunTime}`)
+  console.log('[自动提交] 下次运行时间:', state.nextRunTime)
 
-  if (schedulers[subject].timer) {
-    clearTimeout(schedulers[subject].timer)
+  if (scheduler.timer) {
+    clearTimeout(scheduler.timer)
   }
 
-  schedulers[subject].timer = setTimeout(() => {
-    runAutoSubmitCycle(subject)
+  scheduler.timer = setTimeout(() => {
+    runAutoSubmitCycle()
   }, intervalMs)
 }
 
@@ -1616,27 +1104,25 @@ function scheduleNextRun(subject) {
 /**
  * 启动调度器
  */
-export async function startScheduler(subject, options = {}) {
-  const { intervalMinutes = 5, onlyRedFlag = false } = options
+export async function startScheduler(options = {}) {
+  const { intervalMinutes = 5 } = options
 
-  const state = schedulers[subject].state
+  const state = scheduler.state
 
   if (state.enabled) {
-    console.log(`[自动提交-${subject}] 调度器已经在运行`)
+    console.log('[自动提交] 调度器已经在运行')
     return { success: false, message: '调度器已经在运行' }
   }
 
   state.enabled = true
   state.intervalMinutes = intervalMinutes
-  state.onlyRedFlag = onlyRedFlag
 
-  console.log(`[自动提交-${subject}] 启动调度器，轮询间隔: ${intervalMinutes} 分钟`)
-  console.log(`[自动提交-${subject}] 仅红标: ${onlyRedFlag}`)
+  console.log('[自动提交] 启动调度器，轮询间隔:', intervalMinutes, '分钟')
 
-  await saveState(subject)
+  await saveState()
 
   // 立即执行一次
-  runAutoSubmitCycle(subject)
+  runAutoSubmitCycle()
 
   return { success: true, message: '调度器已启动' }
 }
@@ -1644,10 +1130,10 @@ export async function startScheduler(subject, options = {}) {
 /**
  * 停止调度器
  */
-export async function stopScheduler(subject) {
-  console.log(`[自动提交-${subject}] 停止调度器`)
+export async function stopScheduler() {
+  console.log('[自动提交] 停止调度器')
 
-  const state = schedulers[subject].state
+  const state = scheduler.state
 
   state.enabled = false
   state.running = false
@@ -1655,110 +1141,60 @@ export async function stopScheduler(subject) {
   state.currentTask = null
   state.progress = { current: 0, total: 0, currentDate: '', currentDrama: '' }
 
-  if (schedulers[subject].timer) {
-    clearTimeout(schedulers[subject].timer)
-    schedulers[subject].timer = null
+  if (scheduler.timer) {
+    clearTimeout(scheduler.timer)
+    scheduler.timer = null
   }
 
-  await saveState(subject)
+  await saveState()
 
   return { success: true, message: '调度器已停止' }
 }
 
 /**
- * 获取调度器状态（单个主体或所有主体）
+ * 获取调度器状态
  */
-export function getSchedulerStatus(subject) {
-  // 如果指定了主体，返回该主体的状态
-  if (subject) {
-    const state = schedulers[subject].state
-    return {
-      enabled: state.enabled,
-      running: state.running,
-      intervalMinutes: state.intervalMinutes,
-      onlyRedFlag: state.onlyRedFlag,
-      nextRunTime: toBeijingTime(state.nextRunTime),
-      lastRunTime: toBeijingTime(state.lastRunTime),
-      stats: state.stats,
-      progress: state.progress,
-      taskHistory: state.taskHistory.slice(0, 10).map(task => ({
-        ...task,
-        timestamp: toBeijingTime(task.timestamp),
-      })),
-    }
-  }
-
-  // 否则返回所有主体的状态
+export function getSchedulerStatus() {
+  const state = scheduler.state
   return {
-    daily: {
-      enabled: schedulers.daily.state.enabled,
-      running: schedulers.daily.state.running,
-      intervalMinutes: schedulers.daily.state.intervalMinutes,
-      onlyRedFlag: schedulers.daily.state.onlyRedFlag,
-      nextRunTime: toBeijingTime(schedulers.daily.state.nextRunTime),
-      lastRunTime: toBeijingTime(schedulers.daily.state.lastRunTime),
-      stats: schedulers.daily.state.stats,
-      progress: schedulers.daily.state.progress,
-      taskHistory: schedulers.daily.state.taskHistory.slice(0, 10).map(task => ({
-        ...task,
-        timestamp: toBeijingTime(task.timestamp),
-      })),
-    },
-    sanrou: {
-      enabled: schedulers.sanrou.state.enabled,
-      running: schedulers.sanrou.state.running,
-      intervalMinutes: schedulers.sanrou.state.intervalMinutes,
-      onlyRedFlag: schedulers.sanrou.state.onlyRedFlag,
-      nextRunTime: toBeijingTime(schedulers.sanrou.state.nextRunTime),
-      lastRunTime: toBeijingTime(schedulers.sanrou.state.lastRunTime),
-      stats: schedulers.sanrou.state.stats,
-      progress: schedulers.sanrou.state.progress,
-      taskHistory: schedulers.sanrou.state.taskHistory.slice(0, 10).map(task => ({
-        ...task,
-        timestamp: toBeijingTime(task.timestamp),
-      })),
-    },
-    qianlong: {
-      enabled: schedulers.qianlong.state.enabled,
-      running: schedulers.qianlong.state.running,
-      intervalMinutes: schedulers.qianlong.state.intervalMinutes,
-      onlyRedFlag: schedulers.qianlong.state.onlyRedFlag,
-      nextRunTime: toBeijingTime(schedulers.qianlong.state.nextRunTime),
-      lastRunTime: toBeijingTime(schedulers.qianlong.state.lastRunTime),
-      stats: schedulers.qianlong.state.stats,
-      progress: schedulers.qianlong.state.progress,
-      taskHistory: schedulers.qianlong.state.taskHistory.slice(0, 10).map(task => ({
-        ...task,
-        timestamp: toBeijingTime(task.timestamp),
-      })),
-    },
+    enabled: state.enabled,
+    running: state.running,
+    intervalMinutes: state.intervalMinutes,
+    nextRunTime: toBeijingTime(state.nextRunTime),
+    lastRunTime: toBeijingTime(state.lastRunTime),
+    stats: state.stats,
+    progress: state.progress,
+    taskHistory: state.taskHistory.slice(0, 10).map(task => ({
+      ...task,
+      timestamp: toBeijingTime(task.timestamp),
+    })),
   }
 }
 
 /**
  * 手动触发一次执行
  */
-export async function triggerManualRun(subject) {
-  const state = schedulers[subject].state
+export async function triggerManualRun() {
+  const state = scheduler.state
 
   if (state.running) {
     return { success: false, message: '当前正在运行中' }
   }
 
-  console.log(`[自动提交-${subject}] 手动触发执行`)
+  console.log('[自动提交] 手动触发执行')
 
   // 临时启用以执行一次
   const wasEnabled = state.enabled
   state.enabled = true
 
-  await runAutoSubmitCycle(subject)
+  await runAutoSubmitCycle()
 
   // 如果之前未启用，恢复状态
   if (!wasEnabled) {
     state.enabled = false
-    if (schedulers[subject].timer) {
-      clearTimeout(schedulers[subject].timer)
-      schedulers[subject].timer = null
+    if (scheduler.timer) {
+      clearTimeout(scheduler.timer)
+      scheduler.timer = null
     }
   }
 
@@ -1768,8 +1204,8 @@ export async function triggerManualRun(subject) {
 /**
  * 重置统计数据
  */
-export async function resetStats(subject) {
-  const state = schedulers[subject].state
+export async function resetStats() {
+  const state = scheduler.state
 
   state.stats = {
     totalProcessed: 0,
@@ -1778,7 +1214,7 @@ export async function resetStats(subject) {
     skipCount: 0,
   }
   state.taskHistory = []
-  await saveState(subject)
+  await saveState()
   return { success: true, message: '统计已重置' }
 }
 
@@ -1786,21 +1222,16 @@ export async function resetStats(subject) {
  * 初始化调度器（服务启动时调用）
  */
 export async function initScheduler() {
-  // 尝试迁移旧状态文件
-  await migrateOldState()
+  // 加载状态
+  await loadState()
 
-  // 加载所有主体的状态
-  await Promise.all([loadState('daily'), loadState('sanrou'), loadState('qianlong')])
+  // 服务器重启后，重置 running 状态
+  scheduler.state.running = false
+  scheduler.state.progress = { current: 0, total: 0, currentDate: '', currentDrama: '' }
 
-  // 服务器重启后，重置所有主体的 running 状态
-  for (const subject of ['daily', 'sanrou', 'qianlong']) {
-    schedulers[subject].state.running = false
-    schedulers[subject].state.progress = { current: 0, total: 0, currentDate: '', currentDrama: '' }
-
-    // 如果之前是启用状态，自动恢复
-    if (schedulers[subject].state.enabled) {
-      console.log(`[自动提交-${subject}] 恢复之前的调度状态`)
-      scheduleNextRun(subject)
-    }
+  // 如果之前是启用状态，自动恢复
+  if (scheduler.state.enabled) {
+    console.log('[自动提交] 恢复之前的调度状态')
+    scheduleNextRun()
   }
 }

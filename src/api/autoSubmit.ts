@@ -9,7 +9,6 @@ export interface AutoSubmitStatusItem {
   enabled: boolean
   running: boolean
   intervalMinutes: number
-  onlyRedFlag: boolean
   nextRunTime: string | null
   lastRunTime: string | null
   stats: {
@@ -37,9 +36,7 @@ export interface AutoSubmitStatusItem {
 
 // 所有主体的状态类型
 export interface AutoSubmitStatusAll {
-  daily: AutoSubmitStatusItem
-  sanrou: AutoSubmitStatusItem
-  qianlong: AutoSubmitStatusItem
+  [subject: string]: AutoSubmitStatusItem
 }
 
 // API 响应类型
@@ -52,8 +49,7 @@ export interface AutoSubmitResponse {
 // 启动参数类型
 export interface StartAutoSubmitParams {
   intervalMinutes?: number
-  subject: 'daily' | 'sanrou' | 'qianlong'
-  onlyRedFlag?: boolean
+  subject?: string
 }
 
 /**
@@ -66,14 +62,12 @@ export function startAutoSubmit(params: StartAutoSubmitParams): Promise<AutoSubm
 /**
  * 停止自动提交调度器
  */
-export function stopAutoSubmit(
-  subject: 'daily' | 'sanrou' | 'qianlong'
-): Promise<AutoSubmitResponse> {
+export function stopAutoSubmit(subject?: string): Promise<AutoSubmitResponse> {
   return httpInstance.post('/auto-submit/stop', { subject }).then(res => res.data)
 }
 
 /**
- * 获取调度器状态（返回所有主体的状态）
+ * 获取调度器状态
  */
 export function getAutoSubmitStatus(): Promise<{
   code: number
@@ -86,17 +80,13 @@ export function getAutoSubmitStatus(): Promise<{
 /**
  * 手动触发一次执行
  */
-export function triggerAutoSubmit(
-  subject: 'daily' | 'sanrou' | 'qianlong'
-): Promise<AutoSubmitResponse> {
-  return httpInstance.post('/auto-submit/trigger', { subject }).then(res => res.data)
+export function triggerAutoSubmit(): Promise<AutoSubmitResponse> {
+  return httpInstance.post('/auto-submit/trigger').then(res => res.data)
 }
 
 /**
  * 重置统计数据
  */
-export function resetAutoSubmitStats(
-  subject: 'daily' | 'sanrou' | 'qianlong'
-): Promise<AutoSubmitResponse> {
-  return httpInstance.post('/auto-submit/reset-stats', { subject }).then(res => res.data)
+export function resetAutoSubmitStats(): Promise<AutoSubmitResponse> {
+  return httpInstance.post('/auto-submit/reset-stats').then(res => res.data)
 }

@@ -905,6 +905,36 @@ const isAutoSubmitForCurrentSubject = computed(() => {
   return currentSubjectStatus.value.enabled
 })
 
+function normalizeAutoSubmitStatus(rawStatus: unknown): Record<string, any> {
+  if (!rawStatus || typeof rawStatus !== 'object') {
+    return {}
+  }
+
+  const statusObj = rawStatus as Record<string, any>
+
+  // 兼容旧接口：直接返回单个状态对象
+  if ('enabled' in statusObj && 'running' in statusObj && 'stats' in statusObj) {
+    return {
+      每日: statusObj,
+      daily: statusObj,
+      默认: statusObj,
+    }
+  }
+
+  // 兼容新旧主体键
+  if (statusObj.daily && !statusObj['每日']) {
+    statusObj['每日'] = statusObj.daily
+  }
+  if (statusObj['每日'] && !statusObj.daily) {
+    statusObj.daily = statusObj['每日']
+  }
+  if (statusObj.daily && !statusObj['默认']) {
+    statusObj['默认'] = statusObj.daily
+  }
+
+  return statusObj
+}
+
 // 图片弹窗相关状态
 const showImageModal = ref(false)
 const imageLoading = ref(false)
@@ -1406,7 +1436,7 @@ async function stopAutoSubmit() {
       message.success('自动提交已停止')
       // 更新本地状态
       if (result.data) {
-        autoSubmitStatus.value = result.data
+        autoSubmitStatus.value = normalizeAutoSubmitStatus(result.data)
       }
     } else {
       message.warning(result.message || '停止可能未成功')
@@ -1453,7 +1483,7 @@ async function fetchAutoSubmitStatusFromServer() {
     const result = await getAutoSubmitStatus()
     if (result.code === 0 && result.data) {
       // 更新所有主体的状态
-      autoSubmitStatus.value = result.data
+      autoSubmitStatus.value = normalizeAutoSubmitStatus(result.data)
 
       // 计算当前主体的倒计时
       const currentStatus = currentSubjectStatus.value
@@ -2353,7 +2383,7 @@ onMounted(async () => {
     const statusResult = await getAutoSubmitStatus()
     if (statusResult.code === 0 && statusResult.data) {
       // 更新状态
-      autoSubmitStatus.value = statusResult.data
+      autoSubmitStatus.value = normalizeAutoSubmitStatus(statusResult.data)
       // 如果当前主体启用了自动提交，开始轮询
       if (currentSubjectStatus.value.enabled) {
         startStatusPolling()
