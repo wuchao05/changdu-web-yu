@@ -15,13 +15,13 @@ export interface ApiConfig {
 
 const DEFAULT_API_CONFIG: ApiConfig = {
   cookie: '',
-  appId: '40011566',
-  appType: '7',
+  appId: '',
+  appType: '',
   autoDownloadEnabled: false,
   autoDownloadIntervalMinutes: 20,
-  distributorId: '1844565955364887',
-  adUserId: '1291245239407612',
-  rootAdUserId: '600762415841560',
+  distributorId: '',
+  adUserId: '',
+  rootAdUserId: '',
 }
 
 const ACCOUNT_DEFAULTS: Record<'daily', ApiConfig> = {
@@ -99,13 +99,21 @@ export const useApiConfigStore = defineStore('apiConfig', () => {
           configs.value.daily.cookie = authData.changduCookie
         }
         if (authData.headers && typeof authData.headers === 'object') {
-          configs.value.daily.appId = authData.headers.appid || configs.value.daily.appId
-          configs.value.daily.appType = authData.headers.apptype || configs.value.daily.appType
-          configs.value.daily.distributorId =
-            authData.headers.distributorId || configs.value.daily.distributorId
-          configs.value.daily.adUserId = authData.headers.adUserId || configs.value.daily.adUserId
-          configs.value.daily.rootAdUserId =
-            authData.headers.rootAdUserId || configs.value.daily.rootAdUserId
+          if (typeof authData.headers.appid === 'string') {
+            configs.value.daily.appId = authData.headers.appid
+          }
+          if (typeof authData.headers.apptype === 'string') {
+            configs.value.daily.appType = authData.headers.apptype
+          }
+          if (typeof authData.headers.distributorId === 'string') {
+            configs.value.daily.distributorId = authData.headers.distributorId
+          }
+          if (typeof authData.headers.adUserId === 'string') {
+            configs.value.daily.adUserId = authData.headers.adUserId
+          }
+          if (typeof authData.headers.rootAdUserId === 'string') {
+            configs.value.daily.rootAdUserId = authData.headers.rootAdUserId
+          }
         }
         console.log('[apiConfig] 已从服务器加载认证配置')
       }
@@ -154,11 +162,26 @@ export const useApiConfigStore = defineStore('apiConfig', () => {
           : {}),
         ...(authData.headers
           ? {
-              appId: authData.headers.appid || configs.value.daily.appId,
-              appType: authData.headers.apptype || configs.value.daily.appType,
-              distributorId: authData.headers.distributorId || configs.value.daily.distributorId,
-              adUserId: authData.headers.adUserId || configs.value.daily.adUserId,
-              rootAdUserId: authData.headers.rootAdUserId || configs.value.daily.rootAdUserId,
+              appId:
+                typeof authData.headers.appid === 'string'
+                  ? authData.headers.appid
+                  : configs.value.daily.appId,
+              appType:
+                typeof authData.headers.apptype === 'string'
+                  ? authData.headers.apptype
+                  : configs.value.daily.appType,
+              distributorId:
+                typeof authData.headers.distributorId === 'string'
+                  ? authData.headers.distributorId
+                  : configs.value.daily.distributorId,
+              adUserId:
+                typeof authData.headers.adUserId === 'string'
+                  ? authData.headers.adUserId
+                  : configs.value.daily.adUserId,
+              rootAdUserId:
+                typeof authData.headers.rootAdUserId === 'string'
+                  ? authData.headers.rootAdUserId
+                  : configs.value.daily.rootAdUserId,
             }
           : {}),
       }

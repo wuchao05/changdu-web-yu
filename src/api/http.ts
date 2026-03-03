@@ -9,18 +9,6 @@ export interface ExtendedError extends Error {
 
 const { message } = createDiscreteApi(['message'])
 
-const DEFAULT_DAILY_HEADERS = {
-  Appid: '40011566',
-  Apptype: '7',
-  Distributorid: '1844565955364887',
-} as const
-
-const DEFAULT_DAILY_DOWNLOAD_HEADERS = {
-  ...DEFAULT_DAILY_HEADERS,
-  Aduserid: '1291245239407612',
-  Rootaduserid: '600762415841560',
-} as const
-
 /**
  * 兼容历史调用：模板版固定使用每日请求头，这里保留空实现避免旧模块报错
  */
@@ -59,20 +47,35 @@ function getRequestHeaders(url?: string) {
   const apiConfigStore = useApiConfigStore()
   const dailyConfig = apiConfigStore.getConfigByAccount('daily')
 
+  const missingBase: string[] = []
+  if (!dailyConfig.appId) missingBase.push('headers.appid')
+  if (!dailyConfig.appType) missingBase.push('headers.apptype')
+  if (!dailyConfig.distributorId) missingBase.push('headers.distributorId')
+  if (missingBase.length > 0) {
+    throw createError(`请求头配置缺失: ${missingBase.join(', ')}`, 'ConfigError')
+  }
+
   const dailyHeaders = {
-    Appid: dailyConfig.appId || DEFAULT_DAILY_HEADERS.Appid,
-    Apptype: dailyConfig.appType || DEFAULT_DAILY_HEADERS.Apptype,
-    Distributorid: dailyConfig.distributorId || DEFAULT_DAILY_HEADERS.Distributorid,
+    Appid: dailyConfig.appId,
+    Apptype: dailyConfig.appType,
+    Distributorid: dailyConfig.distributorId,
   }
 
   if (!isDownloadApi(url)) {
     return dailyHeaders
   }
 
+  const missingDownload: string[] = []
+  if (!dailyConfig.adUserId) missingDownload.push('headers.adUserId')
+  if (!dailyConfig.rootAdUserId) missingDownload.push('headers.rootAdUserId')
+  if (missingDownload.length > 0) {
+    throw createError(`下载接口请求头配置缺失: ${missingDownload.join(', ')}`, 'ConfigError')
+  }
+
   return {
     ...dailyHeaders,
-    Aduserid: dailyConfig.adUserId || DEFAULT_DAILY_DOWNLOAD_HEADERS.Aduserid,
-    Rootaduserid: dailyConfig.rootAdUserId || DEFAULT_DAILY_DOWNLOAD_HEADERS.Rootaduserid,
+    Aduserid: dailyConfig.adUserId,
+    Rootaduserid: dailyConfig.rootAdUserId,
   }
 }
 
@@ -99,7 +102,11 @@ httpInstance.interceptors.request.use(
 
     return config
   },
-  error => Promise.reject(error)
+  error => {
+    const errorMessage = error?.message || '请求头配置错误'
+    message.error(errorMessage)
+    return Promise.reject(error)
+  }
 )
 
 httpInstance.interceptors.response.use(

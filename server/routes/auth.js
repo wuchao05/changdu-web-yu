@@ -28,11 +28,11 @@ const DEFAULT_SIMPLE_CONFIG = {
   changduCookie: '',
   juliangCookie: '',
   headers: {
-    appid: '40011566',
-    apptype: '7',
-    distributorId: '1844565955364887',
-    adUserId: '1291245239407612',
-    rootAdUserId: '600762415841560',
+    appid: '',
+    apptype: '',
+    distributorId: '',
+    adUserId: '',
+    rootAdUserId: '',
   },
   feishu: {
     app_token: '',
@@ -47,10 +47,10 @@ const DEFAULT_SIMPLE_CONFIG = {
 const DEFAULT_PLATFORM_CONFIG = {
   changdu: {
     cookie: '',
-    sr: { cookie: '', distributorId: '1842865091654731', adUserId: '', rootAdUserId: '' },
-    ql: { cookie: '', distributorId: '1841142223098969', adUserId: '', rootAdUserId: '' },
-    mr: { cookie: '', distributorId: '1844565955364887', adUserId: '', rootAdUserId: '' },
-    dr: { cookie: '', distributorId: '1841149910426777' },
+    sr: { cookie: '', distributorId: '', adUserId: '', rootAdUserId: '' },
+    ql: { cookie: '', distributorId: '', adUserId: '', rootAdUserId: '' },
+    mr: { cookie: '', distributorId: '', adUserId: '', rootAdUserId: '' },
+    dr: { cookie: '', distributorId: '' },
   },
   jiliang: {
     cookie: '',
@@ -75,23 +75,21 @@ function normalizeSimpleConfig(config = {}) {
     juliangCookie: typeof config.juliangCookie === 'string' ? config.juliangCookie : '',
     headers: {
       appid:
-        typeof headers.appid === 'string' && headers.appid
-          ? headers.appid
-          : DEFAULT_SIMPLE_CONFIG.headers.appid,
+        typeof headers.appid === 'string' ? headers.appid : DEFAULT_SIMPLE_CONFIG.headers.appid,
       apptype:
-        typeof headers.apptype === 'string' && headers.apptype
+        typeof headers.apptype === 'string'
           ? headers.apptype
           : DEFAULT_SIMPLE_CONFIG.headers.apptype,
       distributorId:
-        typeof headers.distributorId === 'string' && headers.distributorId
+        typeof headers.distributorId === 'string'
           ? headers.distributorId
           : DEFAULT_SIMPLE_CONFIG.headers.distributorId,
       adUserId:
-        typeof headers.adUserId === 'string' && headers.adUserId
+        typeof headers.adUserId === 'string'
           ? headers.adUserId
           : DEFAULT_SIMPLE_CONFIG.headers.adUserId,
       rootAdUserId:
-        typeof headers.rootAdUserId === 'string' && headers.rootAdUserId
+        typeof headers.rootAdUserId === 'string'
           ? headers.rootAdUserId
           : DEFAULT_SIMPLE_CONFIG.headers.rootAdUserId,
     },

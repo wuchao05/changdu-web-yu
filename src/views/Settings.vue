@@ -171,11 +171,11 @@ const form = reactive<AppConfig>({
   changduCookie: '',
   juliangCookie: '',
   headers: {
-    appid: '40011566',
-    apptype: '7',
-    distributorId: '1844565955364887',
-    adUserId: '1291245239407612',
-    rootAdUserId: '600762415841560',
+    appid: '',
+    apptype: '',
+    distributorId: '',
+    adUserId: '',
+    rootAdUserId: '',
   },
   feishu: {
     app_token: '',
@@ -193,11 +193,11 @@ async function loadConfig() {
     if (result.code === 0 && result.data) {
       form.changduCookie = result.data.changduCookie || ''
       form.juliangCookie = result.data.juliangCookie || ''
-      form.headers.appid = result.data.headers?.appid || '40011566'
-      form.headers.apptype = result.data.headers?.apptype || '7'
-      form.headers.distributorId = result.data.headers?.distributorId || '1844565955364887'
-      form.headers.adUserId = result.data.headers?.adUserId || '1291245239407612'
-      form.headers.rootAdUserId = result.data.headers?.rootAdUserId || '600762415841560'
+      form.headers.appid = result.data.headers?.appid || ''
+      form.headers.apptype = result.data.headers?.apptype || ''
+      form.headers.distributorId = result.data.headers?.distributorId || ''
+      form.headers.adUserId = result.data.headers?.adUserId || ''
+      form.headers.rootAdUserId = result.data.headers?.rootAdUserId || ''
       form.feishu.app_token = result.data.feishu?.app_token || ''
       form.feishu.table_ids.drama_list = result.data.feishu?.table_ids?.drama_list || ''
       form.feishu.table_ids.drama_status = result.data.feishu?.table_ids?.drama_status || ''
