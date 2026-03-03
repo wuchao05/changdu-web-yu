@@ -1,14 +1,8 @@
 <template>
-  <div class="drama-card" :class="{ 'is-new-drama': isNewDrama }">
+  <div class="drama-card">
     <!-- 排名徽章 -->
     <div v-if="showRanking && ranking" class="ranking-badge">
       <div :class="getRankingClass(ranking)" class="ranking-number">{{ ranking }}</div>
-    </div>
-
-    <!-- 增剧标识 -->
-    <div v-if="isNewDrama" class="new-drama-badge">
-      <Icon icon="mdi:fire" class="badge-icon" />
-      <span class="badge-text">红标剧·优先剪辑</span>
     </div>
 
     <div class="drama-content">
@@ -81,36 +75,7 @@
 
             <!-- 操作按钮区域 -->
             <div class="action-buttons action-buttons-stack">
-              <!-- 下载按钮 - 只在状态为完成(2)时显示，且飞书未显示已下载状态时显示 -->
-              <template v-if="downloadData?.task_status === 2 && !drama.feishu_downloaded">
-                <button
-                  @click="handleDownload"
-                  :disabled="isDownloaded || isDownloadTriggered"
-                  :class="[
-                    'action-button',
-                    isDownloaded || isDownloadTriggered
-                      ? 'action-button-downloaded'
-                      : 'action-button-download',
-                  ]"
-                  :title="
-                    isDownloaded
-                      ? `已下载: ${drama.series_name}`
-                      : isDownloadTriggered
-                        ? '已触发下载'
-                        : `下载: ${drama.series_name}`
-                  "
-                >
-                  <Icon
-                    :icon="
-                      isDownloaded || isDownloadTriggered ? 'mdi:check-circle' : 'mdi:download'
-                    "
-                    class="button-icon"
-                  />
-                  <span>{{
-                    isDownloaded ? '已下载' : isDownloadTriggered ? '已触发下载' : '下载'
-                  }}</span>
-                </button>
-              </template>
+              <!-- 下载按钮已移除 -->
 
               <!-- 新增待下载按钮 - 只有当飞书剧集清单表中不存在这部剧时才显示 -->
               <!-- 已提交待下载状态 -->
@@ -446,7 +411,6 @@ interface Props {
   isSubmittedForClip?: boolean // 是否已提交待剪辑
   ranking?: number // 排名，从1开始
   showRanking?: boolean // 是否显示排名
-  isNewDrama?: boolean // 是否为增剧（红标剧）
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -454,13 +418,10 @@ const props = withDefaults(defineProps<Props>(), {
   isSyncing: false,
   isProcessing: false,
   isAnySyncing: false,
-  isDownloaded: false,
-  isDownloadTriggered: false,
   isSubmittedForDownload: false,
   isSubmittedForClip: false,
   ranking: undefined,
   showRanking: false,
-  isNewDrama: false,
 })
 
 // 事件定义
@@ -468,7 +429,6 @@ const emit = defineEmits<{
   'show-image': [drama: DramaItem]
   'copy-name': [dramaName: string]
   'sync-to-feishu': [{ drama: DramaItem; productConfig?: ProductSelectionResult }]
-  download: [downloadData: DownloadTask]
 }>()
 
 // 类型安全的 emit 函数
@@ -835,36 +795,6 @@ function getRankingClass(ranking: number): string {
       return 'ranking-default'
   }
 }
-
-// 处理下载
-async function handleDownload() {
-  if (props.downloadData) {
-    // 先复制剧名到剪贴板
-    const dramaName = props.downloadData.book_name || props.downloadData.task_name || '未知剧名'
-    try {
-      await navigator.clipboard.writeText(dramaName)
-      // 可以在这里添加复制成功的提示，但为了不干扰下载流程，我们静默处理
-      console.log(`已复制剧名: ${dramaName}`)
-    } catch (err) {
-      console.error('复制剧名失败:', err)
-      // 降级方案：使用传统的复制方法
-      try {
-        const textArea = document.createElement('textarea')
-        textArea.value = dramaName
-        document.body.appendChild(textArea)
-        textArea.select()
-        document.execCommand('copy')
-        document.body.removeChild(textArea)
-        console.log(`已复制剧名: ${dramaName}`)
-      } catch (fallbackErr) {
-        console.error('降级复制也失败:', fallbackErr)
-      }
-    }
-
-    // 然后触发下载
-    emit('download', props.downloadData)
-  }
-}
 </script>
 
 <style scoped>
@@ -884,54 +814,6 @@ async function handleDownload() {
   box-shadow:
     0 4px 12px -1px rgba(239, 68, 68, 0.2),
     0 2px 6px -1px rgba(239, 68, 68, 0.1);
-}
-
-.drama-card.is-new-drama:hover {
-  @apply border-red-500 shadow-2xl;
-  box-shadow:
-    0 8px 20px -2px rgba(239, 68, 68, 0.25),
-    0 4px 8px -2px rgba(239, 68, 68, 0.15);
-}
-
-/* 增剧标识 */
-.new-drama-badge {
-  @apply absolute -top-3 -right-3 z-20 bg-gradient-to-r from-red-500 to-orange-500 text-white px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5;
-  animation: pulse-glow 2s ease-in-out infinite;
-}
-
-.badge-icon {
-  @apply w-4 h-4;
-  animation: fire-flicker 1.5s ease-in-out infinite;
-}
-
-.badge-text {
-  @apply text-xs font-bold tracking-wide;
-}
-
-@keyframes pulse-glow {
-  0%,
-  100% {
-    box-shadow:
-      0 0 15px rgba(239, 68, 68, 0.6),
-      0 0 30px rgba(239, 68, 68, 0.3);
-  }
-  50% {
-    box-shadow:
-      0 0 25px rgba(239, 68, 68, 0.8),
-      0 0 45px rgba(239, 68, 68, 0.5);
-  }
-}
-
-@keyframes fire-flicker {
-  0%,
-  100% {
-    transform: scale(1);
-    filter: brightness(1);
-  }
-  50% {
-    transform: scale(1.1);
-    filter: brightness(1.3);
-  }
 }
 
 /* 排名徽章样式 */

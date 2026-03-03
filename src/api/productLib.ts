@@ -2,8 +2,7 @@
  * 商品库 API 服务
  */
 import { ENV } from '@/config/env'
-import { getProductLibraryConfigBySubject } from '@/config/productLibrary'
-import { useApiConfigStore } from '@/stores/apiConfig'
+import { getProductLibraryConfig } from '@/config/productLibrary'
 
 // 全局固定的 teamId
 const DEFAULT_TEAM_ID = '500039'
@@ -50,17 +49,14 @@ const DEFAULT_PAGE_SIZE = 20
  * @param productName 商品名称（剧名）
  * @param token XT Token
  * @param signal 可选的 AbortSignal，用于取消请求
- * @param subject 主体名称（可选，如 "超琦"、"欣雅"），默认使用超琦配置
  * @returns 商品查询结果
  */
 export async function queryProduct(
   productName: string,
   token: string,
-  signal?: AbortSignal,
-  subject?: string
+  signal?: AbortSignal
 ): Promise<ProductQueryResponse> {
-  const apiConfigStore = useApiConfigStore()
-  const productConfig = getProductLibraryConfigBySubject(apiConfigStore.effectiveUserId, subject)
+  const productConfig = getProductLibraryConfig()
   const params = new URLSearchParams({
     team_id: DEFAULT_TEAM_ID,
     ad_account_id: productConfig.adAccountId,
@@ -98,17 +94,15 @@ export async function queryProduct(
  * @param productName 商品名称（剧名）
  * @param token XT Token
  * @param signal 可选的 AbortSignal，用于取消请求
- * @param subject 主体名称（可选，如 "超琦"、"欣雅"），默认使用超琦配置
  * @returns 是否存在完全匹配的商品
  */
 export async function checkProductExists(
   productName: string,
   token: string,
-  signal?: AbortSignal,
-  subject?: string
+  signal?: AbortSignal
 ): Promise<boolean> {
   try {
-    const result = await queryProduct(productName, token, signal, subject)
+    const result = await queryProduct(productName, token, signal)
 
     // 检查是否有完全匹配的商品
     if (result.data?.list && Array.isArray(result.data.list)) {

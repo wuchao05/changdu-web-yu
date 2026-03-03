@@ -78,8 +78,8 @@ export function useGlobalDateRange() {
   watch(
     () => accountStore.currentAccount,
     newType => {
-      if (newType === 'sanrou' || newType === 'daren' || newType === 'daily') {
-        // 切换到散柔账号时，使用散柔的默认日期范围
+      if (newType === 'daily') {
+        // 切换到每日账号时，使用散柔的默认日期范围
         if (settingsStore.settings.defaultDateRange === 'today') {
           const today = dayjs().tz('Asia/Shanghai').format('YYYY-MM-DD')
           sanrouDateRange.value = [today, today]

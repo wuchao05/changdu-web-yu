@@ -7,7 +7,7 @@ import { useApiConfigStore } from '@/stores/apiConfig'
  */
 export class XtApiService {
   private getUserId() {
-    return useApiConfigStore().effectiveUserId
+    return undefined
   }
 
   /**

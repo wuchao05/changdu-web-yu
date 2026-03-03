@@ -11,7 +11,6 @@ import type {
   DramaRankingData,
   DramaRankingParams,
   DistributorData,
-  QianlongOrderParams,
   NewDramaData,
   NewDramaParams,
   DownloadTaskResponse,
@@ -107,58 +106,6 @@ export function getDistributors(): Promise<DistributorData> {
       headers: {
         // 重要：设置 Distributorid 为 0 表示管理员身份，可以获取所有达人信息
         Distributorid: '0',
-      },
-    })
-    .then(res => res.data)
-}
-
-/**
- * 牵龙账号专用接口 - 获取聚合订单数据
- */
-export function getQianlongOrders(params: QianlongOrderParams): Promise<OrderData> {
-  // 构建请求参数，如果 pay_status 为 undefined 则不传（表示查询全部）
-  const requestParams: Record<string, unknown> = {
-    promotion_type: 0,
-    media_source: 0,
-    display_type: 1,
-    ...params,
-  }
-
-  // 如果 pay_status 是 undefined，则从参数中删除
-  if (requestParams.pay_status === undefined) {
-    delete requestParams.pay_status
-  }
-
-  return httpInstance
-    .get('/novelsale/distributor/promotion/detail/v2', {
-      params: requestParams,
-    })
-    .then(res => res.data)
-}
-
-/**
- * 牵龙账号连接测试 - 使用小数据量验证API配置是否正确
- */
-export function testQianlongConnection(): Promise<OrderData> {
-  // 使用最近30天的时间范围进行测试
-  const endTime = Math.floor(Date.now() / 1000) // 当前时间（秒）
-  const startTime = endTime - 30 * 24 * 60 * 60 // 30天前（秒）
-
-  const testParams: QianlongOrderParams = {
-    begin_time: startTime,
-    end_time: endTime,
-    page_index: 0,
-    page_size: 1, // 只获取1条数据用于测试
-    pay_status: 0, // 只查询支付成功的订单
-  }
-
-  return httpInstance
-    .get('/novelsale/distributor/promotion/detail/v2', {
-      params: {
-        promotion_type: 0,
-        media_source: 0,
-        display_type: 1,
-        ...testParams,
       },
     })
     .then(res => res.data)

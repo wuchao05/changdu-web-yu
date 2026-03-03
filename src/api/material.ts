@@ -91,25 +91,6 @@ export class MaterialService {
    * 新增素材
    */
   static async Add(req: MaterialAddReq): Promise<BaseResp<null>> {
-    const apiConfigStore = useApiConfigStore()
-    const token = apiConfigStore.config.xtToken
-    if (!token) {
-      throw new Error('请先在设置中配置 XT token')
-    }
-
-    const response = await fetch(`${ENV.BASE_URL}/material/add`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Xt-Token': token,
-      },
-      body: JSON.stringify(req),
-    })
-
-    if (!response.ok) {
-      throw new Error(`提交素材失败: ${response.status} ${response.statusText}`)
-    }
-
-    return response.json()
+    throw new Error('素材新增功能已禁用')
   }
 }

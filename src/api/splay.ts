@@ -1,11 +1,5 @@
 import { ENV } from '@/config/env'
-import type {
-  SplayAlbumItem,
-  SplayAlbumSearchResponse,
-  SplayCreateProductParams,
-  SplayCreateProductResponse,
-  SplayMiniProgramResponse,
-} from './types'
+import type { SplayAlbumItem, SplayAlbumSearchResponse, SplayMiniProgramResponse } from './types'
 
 const BASE_URL = `${ENV.BASE_URL}/xt/splay`
 
@@ -43,16 +37,6 @@ export function getSplayMiniProgramUrl(albumId: number, token: string) {
   return request<SplayMiniProgramResponse>(`/product/mini-url?${params.toString()}`, {
     method: 'GET',
     headers: buildHeaders(token),
-  })
-}
-
-export function createSplayProduct(payload: SplayCreateProductParams, token: string) {
-  return request<SplayCreateProductResponse>('/product/create', {
-    method: 'POST',
-    headers: buildHeaders(token, {
-      'Content-Type': 'application/json',
-    }),
-    body: JSON.stringify(payload),
   })
 }
 

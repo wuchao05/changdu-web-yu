@@ -102,9 +102,9 @@ function checkMobile() {
 }
 
 onMounted(async () => {
-  // 模板统一使用散柔样式的数据区展示
-  if (accountStore.currentAccount !== 'sanrou') {
-    await accountStore.switchAccount('sanrou')
+  // 模板统一使用每日账号
+  if (accountStore.currentAccount !== 'daily') {
+    await accountStore.switchAccount('daily')
   }
 
   checkMobile()
