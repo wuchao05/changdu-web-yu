@@ -58,7 +58,6 @@ interface FeishuDramaRecord {
     剧名?: [{ text: string }]
     短剧ID?: { value?: [{ text: string }] }
     账户?: [{ text: string }]
-    评级?: [{ text: string }] | string | { type: number; value: string[] } // 评级字段（支持多���格式）
     日期?: number // 13位时间戳
     上架时间?: { type: number; value: [number] } // DateTime 字段格式
     当前状态?: string
@@ -179,40 +178,6 @@ const dramasColumns: DataTableColumns<FeishuDramaRecord> = [
     render: row => row.fields['账户']?.[0]?.text || '-',
   },
   {
-    title: '评级',
-    key: 'rating',
-    width: 60,
-    render: row => {
-      let rating = '绿标' // 默认为绿标
-      const ratingField = row.fields['评级']
-      if (ratingField) {
-        // 新格式：{ type: 3, value: ["绿标"] }
-        if (typeof ratingField === 'object' && 'value' in ratingField) {
-          if (Array.isArray(ratingField.value) && ratingField.value[0]) {
-            rating = ratingField.value[0]
-          }
-        }
-        // 旧格式兼容：[{ text: "绿标" }]
-        else if (Array.isArray(ratingField) && ratingField[0]?.text) {
-          rating = ratingField[0].text
-        }
-        // 字符串格式兼容
-        else if (typeof ratingField === 'string') {
-          rating = ratingField
-        }
-      }
-      return h(
-        NTag,
-        {
-          type: rating === '红标' ? 'error' : rating === '黄标' ? 'warning' : 'success',
-          size: 'small',
-          round: true,
-        },
-        { default: () => rating }
-      )
-    },
-  },
-  {
     title: '日期',
     key: 'date',
     width: 110,
@@ -296,7 +261,7 @@ const dramasColumns: DataTableColumns<FeishuDramaRecord> = [
 /**
  * 按优先级排序剧集
  * 注意：只有当前时间 >= 上架时间 - 30分钟 时，该剧才能被选中搭建
- * 优先级：红标 > 绿标 > 黄标，过期/今天剧优先于未来剧
+ * 优先级：过期/今天剧优先于未来剧，同优先级按上架时间升序
  * @param dramas 待搭建剧集列表
  * @returns 排序后的最高优先级剧集，如果没有符合条件的返回 null
  */
@@ -312,24 +277,6 @@ function selectHighestPriorityDrama(dramas: FeishuDramaRecord[]): FeishuDramaRec
     const timeField = drama.fields['上架时间']
     if (!timeField?.value?.[0]) return null
     return dayjs(timeField.value[0]).tz('Asia/Shanghai')
-  }
-
-  // 提取评级
-  const getRating = (drama: FeishuDramaRecord): string => {
-    const ratingField = drama.fields['评级']
-    // 新格式：{ type: 3, value: ["绿标"] }
-    if (ratingField && typeof ratingField === 'object' && 'value' in ratingField) {
-      if (Array.isArray(ratingField.value) && ratingField.value[0]) {
-        return ratingField.value[0]
-      }
-    }
-    // 旧格式兼容：[{ text: "绿标" }]
-    if (Array.isArray(ratingField) && ratingField[0]?.text) {
-      return ratingField[0].text
-    }
-    // 字符串格式兼容
-    if (typeof ratingField === 'string') return ratingField
-    return '绿标' // 默认绿标
   }
 
   // 检查剧集是否可以开始搭建（当前时间 >= 上架时间 - 30分钟）
@@ -358,15 +305,10 @@ function selectHighestPriorityDrama(dramas: FeishuDramaRecord[]): FeishuDramaRec
 
   if (buildableDramas.length === 0) return null
 
-  // 评级优先级
-  const ratingPriority: Record<string, number> = { 红标: 0, 绿标: 1, 黄标: 2 }
-
   // 按优先级排序
   buildableDramas.sort((a, b) => {
     const aPublishTime = getPublishTime(a)!
     const bPublishTime = getPublishTime(b)!
-    const aRating = getRating(a)
-    const bRating = getRating(b)
 
     // 判断是否是过期或今天的剧
     const aIsExpiredOrToday = aPublishTime.isBefore(todayEnd) || aPublishTime.isSame(todayEnd)
@@ -377,14 +319,7 @@ function selectHighestPriorityDrama(dramas: FeishuDramaRecord[]): FeishuDramaRec
       return aIsExpiredOrToday ? -1 : 1
     }
 
-    // 同时间段内，按评级排序
-    const aPriority = ratingPriority[aRating] ?? 2
-    const bPriority = ratingPriority[bRating] ?? 2
-    if (aPriority !== bPriority) {
-      return aPriority - bPriority
-    }
-
-    // 同评级按上架时间升序
+    // 同优先级按上架时间升序
     return aPublishTime.valueOf() - bPublishTime.valueOf()
   })
 
@@ -580,20 +515,6 @@ async function buildSingleDramaInPolling(drama: FeishuDramaRecord) {
       index: 1,
       dramaName: drama.fields['剧名']?.[0]?.text || '未知',
       accountId: drama.fields['账户']?.[0]?.text || '未知',
-      rating: (() => {
-        const ratingField = drama.fields['评级']
-        // 新格式：{ type: 3, value: ["绿标"] }
-        if (ratingField && typeof ratingField === 'object' && 'value' in ratingField) {
-          if (Array.isArray(ratingField.value) && ratingField.value[0]) {
-            return ratingField.value[0]
-          }
-        }
-        // 旧格式兼容：[{ text: "绿标" }]
-        if (Array.isArray(ratingField) && ratingField[0]?.text) return ratingField[0].text
-        // 字符串格式兼容
-        if (typeof ratingField === 'string') return ratingField
-        return '绿标'
-      })(),
       date: drama.fields['日期'] || undefined,
       publishTime: drama.fields['上架时间']?.value?.[0] || undefined,
       status: 'pending',
@@ -917,24 +838,6 @@ async function startAutoBuildWithDramas(dramasToBeBuilt: FeishuDramaRecord[]) {
 
     // 初始化搭建记录（使用待搭建的剧集数据）
     buildRecords.value = dramasToBeBuilt.map((drama, index) => {
-      // 提取评级
-      const ratingField = drama.fields['评级']
-      let rating = '绿标'
-      // 新格式：{ type: 3, value: ["绿标"] }
-      if (ratingField && typeof ratingField === 'object' && 'value' in ratingField) {
-        if (Array.isArray(ratingField.value) && ratingField.value[0]) {
-          rating = ratingField.value[0]
-        }
-      }
-      // 旧格式兼容：[{ text: "绿标" }]
-      else if (Array.isArray(ratingField) && ratingField[0]?.text) {
-        rating = ratingField[0].text
-      }
-      // 字符串格式兼容
-      else if (typeof ratingField === 'string') {
-        rating = ratingField
-      }
-
       // 从当前剧集的"抖音素材"字段解析配置
       const douyinMaterialField = drama.fields['抖音素材']?.[0]?.text
       const dramaDouyinConfigs = parseDouyinMaterialFromFeishu(douyinMaterialField)
@@ -947,7 +850,6 @@ async function startAutoBuildWithDramas(dramasToBeBuilt: FeishuDramaRecord[]) {
         index: index + 1,
         dramaName: drama.fields['剧名']?.[0]?.text || '未知',
         accountId: drama.fields['账户']?.[0]?.text || '未知',
-        rating,
         date: drama.fields['日期'] || undefined,
         publishTime: drama.fields['上架时间']?.value?.[0] || undefined,
         status: 'pending',
@@ -1688,27 +1590,11 @@ function handleClose() {
                 <div class="rules-grid">
                   <div class="rule-row">
                     <span class="priority-num p1">1</span>
-                    <span class="rule-text">过期/今天上架 + 红标</span>
+                    <span class="rule-text">过期/今天上架</span>
                   </div>
                   <div class="rule-row">
                     <span class="priority-num p2">2</span>
-                    <span class="rule-text">过期/今天上架 + 绿标</span>
-                  </div>
-                  <div class="rule-row">
-                    <span class="priority-num p3">3</span>
-                    <span class="rule-text">过期/今天上架 + 黄标</span>
-                  </div>
-                  <div class="rule-row">
-                    <span class="priority-num p4">4</span>
-                    <span class="rule-text">未来上架 + 红标</span>
-                  </div>
-                  <div class="rule-row">
-                    <span class="priority-num p5">5</span>
-                    <span class="rule-text">未来上架 + 绿标</span>
-                  </div>
-                  <div class="rule-row">
-                    <span class="priority-num p6">6</span>
-                    <span class="rule-text">未来上架 + 黄标</span>
+                    <span class="rule-text">未来上架</span>
                   </div>
                 </div>
               </div>
@@ -1719,9 +1605,7 @@ function handleClose() {
             </div>
           </n-tooltip>
         </div>
-        <div class="build-rules-desc">
-          启动后将按照评级和上架时间自动选择最高优先级的剧集进行搭建
-        </div>
+        <div class="build-rules-desc">启动后将按上架时间自动选择最高优先级的剧集进行搭建</div>
       </n-alert>
 
       <!-- 后台调度器运行状态 -->
@@ -1814,20 +1698,6 @@ function handleClose() {
                   <div class="history-main">
                     <span class="history-drama">{{ task.dramaName }}</span>
                     <div class="history-meta">
-                      <n-tag
-                        v-if="task.rating"
-                        :type="
-                          task.rating === '红标'
-                            ? 'error'
-                            : task.rating === '绿标'
-                              ? 'success'
-                              : 'warning'
-                        "
-                        size="tiny"
-                        :bordered="false"
-                      >
-                        {{ task.rating }}
-                      </n-tag>
                       <span v-if="task.date" class="meta-date">
                         {{ formatTaskDate(task.date) }}
                       </span>
@@ -1875,27 +1745,11 @@ function handleClose() {
                     </div>
                     <div class="rule-item">
                       <span class="priority-badge priority-1">优先级1</span>
-                      <span class="rule-desc">过期/今天上架 + 红标</span>
+                      <span class="rule-desc">过期/今天上架</span>
                     </div>
                     <div class="rule-item">
                       <span class="priority-badge priority-2">优先级2</span>
-                      <span class="rule-desc">过期/今天上架 + 绿标</span>
-                    </div>
-                    <div class="rule-item">
-                      <span class="priority-badge priority-3">优先级3</span>
-                      <span class="rule-desc">过期/今天上架 + 黄标</span>
-                    </div>
-                    <div class="rule-item">
-                      <span class="priority-badge priority-4">优先级4</span>
-                      <span class="rule-desc">未来上架 + 红标</span>
-                    </div>
-                    <div class="rule-item">
-                      <span class="priority-badge priority-5">优先级5</span>
-                      <span class="rule-desc">未来上架 + 绿标</span>
-                    </div>
-                    <div class="rule-item">
-                      <span class="priority-badge priority-6">优先级6</span>
-                      <span class="rule-desc">未来上架 + 黄标</span>
+                      <span class="rule-desc">未来上架</span>
                     </div>
                     <div class="rule-note">
                       <Icon icon="mdi:lightbulb-outline" class="note-icon" />

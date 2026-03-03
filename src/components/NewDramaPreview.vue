@@ -179,29 +179,6 @@
       </div>
     </div>
 
-    <!-- 二级 Tab 区域 - 仅在榜单剧时显示 -->
-    <div
-      v-if="!isSearching && activeTab === 'ranking'"
-      class="sticky secondary-tab-sticky z-40 bg-white/95 backdrop-blur-md border-b border-gray-200/60 shadow-sm"
-    >
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
-        <div class="secondary-tab-container">
-          <!-- 收入评级筛选二级 Tab -->
-          <div class="secondary-tab-switcher">
-            <button
-              v-for="level in incomeLevelOptions"
-              :key="level.value"
-              @click="selectedIncomeLevel = level.value"
-              :class="['secondary-tab-btn', selectedIncomeLevel === level.value ? 'active' : '']"
-            >
-              <Icon :icon="level.icon" class="secondary-tab-icon" />
-              <span class="secondary-tab-text">{{ level.label }}</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- 主要内容区域 -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pt-2 sm:pt-2 md:pt-2">
       <!-- 自动提交下载状态栏 -->
@@ -827,7 +804,7 @@ const isAnyDramaSyncing = ref(false)
 const submittedForDownloadSet = ref<Set<string>>(new Set())
 const submittedForClipSet = ref<Set<string>>(new Set())
 
-// 模板版移除增剧/红标对比逻辑
+// 模板版移除增剧对比逻辑
 
 onBeforeUnmount(() => {
   if (searchDebounceTimer) {
@@ -880,9 +857,6 @@ const rankingDownloadList = ref<DownloadTask[]>([])
 const rankingPageIndex = ref(0)
 const rankingPageSize = ref(10)
 const rankingTotal = ref(0)
-
-// 收入评级筛选状态
-const selectedIncomeLevel = ref('all')
 
 // 新增待剪辑相关状态
 const showDatePicker = ref(false)
@@ -978,46 +952,6 @@ const autoSubmitIntervalOptions = [
   { label: '12 小时', value: 720 },
 ]
 
-// 收入评级选项
-const incomeLevelOptions = [
-  {
-    value: 'all',
-    label: '全部',
-    icon: 'mdi:view-list',
-    incomeLevel: null,
-  },
-  {
-    value: 's-plus',
-    label: 'S+',
-    icon: 'mdi:star',
-    incomeLevel: 4,
-  },
-  {
-    value: 's',
-    label: 'S',
-    icon: 'mdi:star-outline',
-    incomeLevel: 3,
-  },
-  {
-    value: 'a',
-    label: 'A',
-    icon: 'mdi:circle',
-    incomeLevel: 2,
-  },
-  {
-    value: 'b',
-    label: 'B',
-    icon: 'mdi:circle-outline',
-    incomeLevel: 1,
-  },
-  {
-    value: 'c',
-    label: 'C',
-    icon: 'mdi:minus',
-    incomeLevel: 0,
-  },
-]
-
 // 计算属性
 const selectedDateLabel = computed(() => {
   const option = dateOptions.value.find(opt => opt.value === selectedDate.value)
@@ -1064,7 +998,7 @@ const filteredDramas = computed(() => {
     return downloadData?.task_status === 2
   }
 
-  // 模板版不启用红标/增剧逻辑，仅保留普通排序
+  // 模板版不启用增剧逻辑，仅保留普通排序
   const dramasWithAddAndCompleted = dramas.filter(d => canAddDownload(d) && isDownloadCompleted(d))
   const dramasWithAddButNotCompleted = dramas.filter(
     d => canAddDownload(d) && !isDownloadCompleted(d)
@@ -1354,9 +1288,6 @@ async function handleDateConfirm(selectedDate: string) {
         // 确定主体字段
         const subjectValue = dramaSubjectStore.subjectFieldValue
 
-        // 确定评级：新增待剪辑只写入状态表，不需要写评级字段
-        const ratingValue = undefined
-
         // 获取可用账户
         const availableAccount = await feishuApi.getAvailableHuyuAccount()
 
@@ -1383,7 +1314,6 @@ async function handleDateConfirm(selectedDate: string) {
             currentClipDrama.value.publish_time || '',
             subjectValue,
             douyinMaterial || undefined, // 如果为空字符串则传 undefined
-            ratingValue,
             clipStatus
           )
 
@@ -1607,31 +1537,16 @@ async function handleAddDownload(drama: NewDramaItem | RankingDramaItem) {
 
     // 剧集不存在或名称不完全匹配，继续创建新记录
     try {
-      // 判断评级（模板版不再使用红标逻辑）：
-      // 搜索结果写绿标，普通列表写黄标
-      let rating: string | undefined
-      if (dramaSubjectStore.isDailySubject) {
-        if (searchKeyword.value.trim().length > 0) {
-          rating = '绿标'
-        } else {
-          rating = '黄标'
-        }
-      }
-
       const createResult = await feishuApi.createDramaRecord(
         dramaName,
         '',
         drama.publish_time,
-        dramaSubjectStore.isDailySubject ? drama.book_id : undefined,
-        rating // 仅每日主体时有值，其他主���为 undefined
+        dramaSubjectStore.isDailySubject ? drama.book_id : undefined
       )
       console.log('新增记录成功:', createResult)
 
       // 确定主体字段
       const subjectValue = dramaSubjectStore.subjectFieldValue
-
-      // 确定评级
-      const ratingValue = undefined
 
       // 获取可用账户
       const availableAccount = await feishuApi.getAvailableHuyuAccount()
@@ -1672,8 +1587,7 @@ async function handleAddDownload(drama: NewDramaItem | RankingDramaItem) {
           finalAccountId,
           subjectValue, // 达人固定为"欣雅"
           feishuStatus,
-          douyinMaterial || undefined, // 如果为空字符串则传 undefined
-          ratingValue
+          douyinMaterial || undefined // 如果为空字符串则传 undefined
         )
         console.log('剧集状态记录创建成功，已分配账户:', finalAccountId, '状态:', feishuStatus)
 
@@ -1946,15 +1860,6 @@ watch(selectedDate, async () => {
   currentPage.value = 1
 })
 
-// 监听收入评级变化
-watch(selectedIncomeLevel, () => {
-  // 切换收入评级时重置到第一页并重新获取数据
-  rankingPageIndex.value = 0
-  if (activeTab.value === 'ranking') {
-    fetchRankingList()
-  }
-})
-
 // 监听搜索关键词变化
 watch(searchKeyword, () => {
   // 搜索时重置到第一页
@@ -2187,15 +2092,8 @@ async function fetchRankingList() {
     const startTime = Math.floor(now.subtract(90, 'day').valueOf() / 1000)
     const endTime = Math.floor(now.add(30, 'day').valueOf() / 1000)
 
-    // 获取当前选择的收入评级
-    const selectedOption = incomeLevelOptions.find(opt => opt.value === selectedIncomeLevel.value)
-    const incomeLevel = selectedOption?.incomeLevel
-
-    // 构建filter_options参数
+    // 构建 filter_options 参数
     const filterOptions: any = { sort_type: 1 }
-    if (incomeLevel !== null && incomeLevel !== undefined) {
-      filterOptions.income_level = incomeLevel
-    }
 
     // 并发请求排行榜接口和下载任务列表
     const [rankingResult, downloadResult] = await Promise.all([

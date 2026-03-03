@@ -832,7 +832,6 @@ async function handleCellClick(row: DramaStatusRow, date: string) {
             undefined, // DramaStatusBoard 中没有上架时间信息
             isDarenUser.value ? undefined : dramaSubjectStore.subjectFieldValue,
             undefined, // douyinMaterial
-            undefined, // rating
             clipStatus
           )
           // 更新账户的"是否已用"状态为"是"（自动根据达人/主体配置获取正确的账户表）

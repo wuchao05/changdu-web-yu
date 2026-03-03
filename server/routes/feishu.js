@@ -289,7 +289,7 @@ router.post('/bitable/search', async ctx => {
 router.post('/bitable/records', async ctx => {
   try {
     const config = await getFeishuConfig()
-    const { dramaName, publishTime, bookId, rating } = ctx.request.body
+    const { dramaName, publishTime, bookId } = ctx.request.body
     console.log('调用飞书新增剧集清单记录 API', JSON.stringify(ctx.request.body))
 
     if (!dramaName) {
@@ -354,11 +354,6 @@ router.post('/bitable/records', async ctx => {
       } catch {
         // 如果转换失败，不添加上架时间字段
       }
-    }
-
-    // 如果有评级，添加到字段中（仅每日主体的剧集清单表有此字段）
-    if (rating) {
-      createRequestBody.fields['评级'] = rating
     }
 
     // 调用飞书新增记录API
@@ -967,7 +962,6 @@ router.post('/bitable/drama-status', async ctx => {
       publishTime,
       subject,
       douyinMaterial,
-      rating,
     } = ctx.request.body
 
     if (!dramaName || !timestamp) {
@@ -1027,11 +1021,6 @@ router.post('/bitable/drama-status', async ctx => {
     // 如果有主体，添加到字段中
     if (subject) {
       requestData.fields['主体'] = subject
-    }
-
-    // 如果有评级，添加到字段中（仅每日主体的剧集状态表有此字段）
-    if (rating) {
-      requestData.fields['评级'] = rating
     }
 
     // 如果有上架时间，转换为13位Unix时间戳并添加到字段中
@@ -1364,11 +1353,10 @@ router.post('/bitable/drama-status/pending-build', async ctx => {
       })
     }
 
-    // 打印返回的数据样例（用于调试评级字段）
+    // 打印返回的数据样例
     if (resultData.data?.items?.length > 0) {
       console.log('========== 飞书返回数据样例 ==========')
       console.log('第一条记录的字段:', JSON.stringify(resultData.data.items[0].fields, null, 2))
-      console.log('评级字段值:', resultData.data.items[0].fields['评级'])
       console.log('=====================================')
     }
 
@@ -1683,7 +1671,7 @@ router.post('/bitable/drama-status/all', async ctx => {
 router.post('/bitable/drama-status/clip', async ctx => {
   try {
     const config = await getFeishuConfig()
-    const { dramaName, timestamp, account, publishTime, subject, douyinMaterial, rating, status } =
+    const { dramaName, timestamp, account, publishTime, subject, douyinMaterial, status } =
       ctx.request.body
     console.log('调用飞书创建剪辑记录 API', JSON.stringify(ctx.request.body))
 
@@ -1739,11 +1727,6 @@ router.post('/bitable/drama-status/clip', async ctx => {
     // 如果有主体，添加到字段中
     if (subject) {
       requestData.fields['主体'] = subject
-    }
-
-    // 如果有评级，添加到字段中（仅每日主体的剧集状态表有此字段）
-    if (rating) {
-      requestData.fields['评级'] = rating
     }
 
     // 如果有抖音素材配置，添加到字段中（必须是非空字符串）

@@ -34,7 +34,6 @@ interface FeishuDramaRecord {
     剧名?: [{ text: string }]
     短剧ID?: { value?: [{ text: string }] }
     账户?: [{ text: string }]
-    评级?: [{ text: string }] | string | { type: number; value: string[] } // 评级字段（支持多种格式）
   }
 }
 
@@ -163,32 +162,11 @@ async function handleStartBuild() {
 
     // 2. 初始化搭建记录
     buildRecords.value = dramas.value.map((drama, index) => {
-      // 提取评级字段，支持多种格式
-      let rating = '绿标' // 默认为绿标
-      const ratingField = drama.fields['评级']
-      if (ratingField) {
-        // 新格式：{ type: 3, value: ["绿标"] }
-        if (typeof ratingField === 'object' && 'value' in ratingField) {
-          if (Array.isArray(ratingField.value) && ratingField.value[0]) {
-            rating = ratingField.value[0]
-          }
-        }
-        // 旧格式兼容：[{ text: "绿标" }]
-        else if (Array.isArray(ratingField) && ratingField[0]?.text) {
-          rating = ratingField[0].text
-        }
-        // 字符串格式兼容
-        else if (typeof ratingField === 'string') {
-          rating = ratingField
-        }
-      }
-
       return {
         id: drama.record_id,
         index: index + 1,
         dramaName: drama.fields['剧名']?.[0]?.text || '未知',
         accountId: drama.fields['账户']?.[0]?.text || '未知',
-        rating, // 添加评级字段
         status: 'pending' as const,
         totalBatches: douyinConfigs.value.length,
         completedBatches: 0,

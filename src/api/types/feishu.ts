@@ -79,7 +79,6 @@ export type FeishuFieldType =
   | 'barcode' // 条码
   | 'currency' // 货币
   | 'progress' // 进度
-  | 'rating' // 评分
   | 'location' // 地理位置
   | 'lookup' // 查找
   | 'rollup' // 汇总

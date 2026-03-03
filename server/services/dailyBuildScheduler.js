@@ -6,7 +6,7 @@
 import fs from 'fs/promises'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { FEISHU_CONFIG } from '../config/feishu.js'
+import { FEISHU_CONFIG, getFeishuConfig } from '../config/feishu.js'
 import { DAILY_BUILD_CONFIG } from '../config/dailyBuild.js'
 import { JILIANG_CONFIG } from '../config/jiliang.js'
 import { buildChangduPostHeaders } from '../utils/changduSign.js'
@@ -74,12 +74,13 @@ async function getFeishuAccessToken() {
  * 查询待搭建剧集（从飞书）
  */
 async function getPendingSetupDramas() {
+  const config = await getFeishuConfig()
   const accessToken = await getFeishuAccessToken()
-  const dailyTableId = FEISHU_CONFIG.daily_table_ids.drama_status
+  const dailyTableId = config.table_ids.drama_status
 
   // 查询每日表
   const response = await fetch(
-    `https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_CONFIG.app_token}/tables/${dailyTableId}/records/search`,
+    `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${dailyTableId}/records/search`,
     {
       method: 'POST',
       headers: {
@@ -95,7 +96,6 @@ async function getPendingSetupDramas() {
           '日期',
           '当前状态',
           '上架时间',
-          '评级',
           '抖音素材',
           '备注',
         ],
@@ -136,8 +136,9 @@ async function getPendingSetupDramas() {
  * @param {string} remark - 备注（可选，用于记录失败或跳过原因）
  */
 async function updateDramaStatus(recordId, status, buildTime, tableId, remark) {
+  const config = await getFeishuConfig()
   const accessToken = await getFeishuAccessToken()
-  const targetTableId = tableId || FEISHU_CONFIG.daily_table_ids.drama_status
+  const targetTableId = tableId || config.table_ids.drama_status
 
   const fields = { 当前状态: status }
   if (buildTime) {
@@ -148,7 +149,7 @@ async function updateDramaStatus(recordId, status, buildTime, tableId, remark) {
   }
 
   const response = await fetch(
-    `https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_CONFIG.app_token}/tables/${targetTableId}/records/${recordId}`,
+    `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${targetTableId}/records/${recordId}`,
     {
       method: 'PUT',
       headers: {
@@ -170,7 +171,7 @@ async function updateDramaStatus(recordId, status, buildTime, tableId, remark) {
 /**
  * 按优先级选择剧集
  * 注意：只有当前时间 >= 上架时间 - 30分钟 时，该剧才能被选中搭建
- * 优先级：红标 > 绿标 > 黄标，过期剧优先于未来剧
+ * 优先级：过期剧优先于未来剧；同优先级按上架时间升序
  */
 function selectHighestPriorityDrama(dramas) {
   const now = new Date()
@@ -183,20 +184,6 @@ function selectHighestPriorityDrama(dramas) {
     const timeField = drama.fields['上架时间']
     if (!timeField?.value?.[0]) return null
     return new Date(timeField.value[0])
-  }
-
-  const getRating = drama => {
-    const ratingField = drama.fields['评级']
-    if (ratingField && typeof ratingField === 'object' && 'value' in ratingField) {
-      if (Array.isArray(ratingField.value) && ratingField.value[0]) {
-        return ratingField.value[0]
-      }
-    }
-    if (Array.isArray(ratingField) && ratingField[0]?.text) {
-      return ratingField[0].text
-    }
-    if (typeof ratingField === 'string') return ratingField
-    return '绿标'
   }
 
   // 检查剧集是否可以开始搭建（当前时间 >= 上架时间 - 30分钟）
@@ -226,16 +213,12 @@ function selectHighestPriorityDrama(dramas) {
   if (buildableDramas.length === 0) return null
 
   // 按优先级排序：
-  // 1. 评级优先级：红标 > 绿标 > 黄标
-  // 2. 时间优先级：过期/今天 > 未来
-  // 3. 同优先级按上架时间升序（早的先搭建）
-  const ratingPriority = { 红标: 0, 绿标: 1, 黄标: 2 }
+  // 1. 时间优先级：过期/今天 > 未来
+  // 2. 同优先级按上架时间升序（早的先搭建）
 
   buildableDramas.sort((a, b) => {
     const aPublishTime = getPublishTime(a)
     const bPublishTime = getPublishTime(b)
-    const aRating = getRating(a)
-    const bRating = getRating(b)
 
     // 判断是否是过期或今天的剧
     const aIsExpiredOrToday =
@@ -248,14 +231,7 @@ function selectHighestPriorityDrama(dramas) {
       return aIsExpiredOrToday ? -1 : 1
     }
 
-    // 同时间段内，按评级排序
-    const aPriority = ratingPriority[aRating] ?? 2
-    const bPriority = ratingPriority[bRating] ?? 2
-    if (aPriority !== bPriority) {
-      return aPriority - bPriority
-    }
-
-    // 同评级按上架时间升序
+    // 同优先级按上架时间升序
     return aPublishTime.getTime() - bPublishTime.getTime()
   })
 
@@ -1451,21 +1427,7 @@ async function executePollingCycle() {
       }
 
       const dramaName = selectedDrama.fields['剧名']?.[0]?.text || '未知'
-      // 提取评级、日期和上架时间用于任务历史记录
-      const getRatingValue = drama => {
-        const ratingField = drama.fields['评级']
-        if (ratingField && typeof ratingField === 'object' && 'value' in ratingField) {
-          if (Array.isArray(ratingField.value) && ratingField.value[0]) {
-            return ratingField.value[0]
-          }
-        }
-        if (Array.isArray(ratingField) && ratingField[0]?.text) {
-          return ratingField[0].text
-        }
-        if (typeof ratingField === 'string') return ratingField
-        return null
-      }
-      const rating = getRatingValue(selectedDrama)
+      // 提取日期和上架时间用于任务历史记录
       const date = selectedDrama.fields['日期'] || null
       const publishTime = selectedDrama.fields['上架时间']?.value?.[0] || null
       console.log('[后台搭建] 选中剧集: ' + dramaName + ' (剩余 ' + (dramas.length - 1) + ' 部)')
@@ -1487,7 +1449,6 @@ async function executePollingCycle() {
         schedulerState.taskHistory.unshift({
           dramaName,
           status: 'success',
-          rating,
           date,
           publishTime,
           completedAt: new Date().toISOString(),
@@ -1534,7 +1495,6 @@ async function executePollingCycle() {
           schedulerState.taskHistory.unshift({
             dramaName,
             status: isSkip ? 'skipped' : 'failed',
-            rating,
             date,
             publishTime,
             error: error.message,

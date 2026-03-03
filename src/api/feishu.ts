@@ -276,15 +276,13 @@ class FeishuApiService {
    * @param account 账户（可选）
    * @param publishTime 上架时间（可选）
    * @param bookId 短剧ID（可选）
-   * @param rating 评级（可选，如"红标"、"绿标"、"黄标"）
    * @returns 新增结果
    */
   async createDramaRecord(
     dramaName: string,
     account?: string,
     publishTime?: string,
-    bookId?: string,
-    rating?: string
+    bookId?: string
   ): Promise<FeishuCreateRecordResponse> {
     const response = await fetch(`${ENV.BASE_URL}/feishu/bitable/records`, {
       method: 'POST',
@@ -294,7 +292,6 @@ class FeishuApiService {
         account: account || '',
         publishTime: publishTime || '',
         bookId: bookId || '',
-        rating: rating || '',
       }),
     })
 
@@ -577,7 +574,6 @@ class FeishuApiService {
    * @param subject 主体（可选，如 "超琦"、"欣雅"）
    * @param status 当前状态（可选，默认为"待下载"）
    * @param douyinMaterial 抖音素材（可选）
-   * @param rating 评级（可选，如"红标"、"绿标"、"黄标"）
    * @returns 创建结果
    */
   async createDramaStatusRecord(
@@ -586,8 +582,7 @@ class FeishuApiService {
     account?: string,
     subject?: string,
     status?: string,
-    douyinMaterial?: string,
-    rating?: string
+    douyinMaterial?: string
   ): Promise<FeishuCreateRecordResponse> {
     // 将首发时间转换为当天00:00:00的13位时间戳
     const dateOnly = publishTime.split(' ')[0] // 提取日期部分 YYYY-MM-DD
@@ -615,7 +610,6 @@ class FeishuApiService {
         subject,
         status,
         douyinMaterial,
-        rating,
       }),
     })
 
@@ -825,7 +819,6 @@ class FeishuApiService {
    * @param publishTime 上架时间（可选）
    * @param subject 主体（可选，如 "超琦"、"欣雅"）
    * @param douyinMaterial 抖音素材（可选）
-   * @param rating 评级（可选，如"红标"、"绿标"、"黄标"）
    * @param status 当前状态（可选，默认"待剪辑"）
    * @returns 创建结果
    */
@@ -836,7 +829,6 @@ class FeishuApiService {
     publishTime?: string,
     subject?: string,
     douyinMaterial?: string,
-    rating?: string,
     status?: string
   ): Promise<FeishuCreateRecordResponse> {
     const response = await fetch(`${ENV.BASE_URL}/feishu/bitable/drama-status/clip`, {
@@ -849,7 +841,6 @@ class FeishuApiService {
         publishTime,
         subject,
         douyinMaterial,
-        rating,
         status,
       }),
     })
@@ -1026,24 +1017,13 @@ class FeishuApiService {
         }
 
     // 根据参数决定字段列表（短剧ID仅每日主体需要）
-    // 当 useDaily=true 时，使用每日主体的完整字段列表（包含主体、评级和抖音素材）
+    // 当 useDaily=true 时，使用每日主体的完整字段列表（包含主体和抖音素材）
     const fieldNames = includeBookId
       ? useDaily
-        ? [
-            '剧名',
-            '短剧ID',
-            '账户',
-            '主体',
-            '日期',
-            '当前状态',
-            '上架时间',
-            '评级',
-            '抖音素材',
-            '备注',
-          ] // 每日主体：完整字段
+        ? ['剧名', '短剧ID', '账户', '主体', '日期', '当前状态', '上架时间', '抖音素材', '备注'] // 每日主体：完整字段
         : ['剧名', '短剧ID', '账户', '主体', '日期', '当前状态', '上架时间']
       : useDaily
-        ? ['剧名', '账户', '主体', '日期', '当前状态', '上架时间', '评级', '抖音素材', '备注'] // 每日主体：完整字段
+        ? ['剧名', '账户', '主体', '日期', '当前状态', '上架时间', '抖音素材', '备注'] // 每日主体：完整字段
         : ['剧名', '账户', '主体', '日期', '当前状态', '上架时间']
 
     const response = await fetch(`${ENV.BASE_URL}/feishu/bitable/drama-status/pending-build`, {

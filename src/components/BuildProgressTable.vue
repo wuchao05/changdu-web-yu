@@ -9,7 +9,6 @@ export interface BuildDramaRecord {
   index: number
   dramaName: string
   accountId: string
-  rating?: string // 评级（红标/绿标）
   date?: number // 日期（时间戳）
   publishTime?: number // 上架时间（时间戳）
   status: 'pending' | 'running' | 'success' | 'failed' | 'skipped'
@@ -44,15 +43,6 @@ const columns: DataTableColumns<BuildDramaRecord> = [
     width: 180,
     ellipsis: {
       tooltip: true,
-    },
-  },
-  {
-    title: '评级',
-    key: 'rating',
-    width: 80,
-    align: 'center',
-    render(row) {
-      return renderRating(row)
     },
   },
   {
@@ -94,20 +84,6 @@ const columns: DataTableColumns<BuildDramaRecord> = [
     },
   },
 ]
-
-// 渲染评级标签
-function renderRating(record: BuildDramaRecord) {
-  const rating = record.rating || '绿标' // 默认为绿标
-  return h(
-    NTag,
-    {
-      type: rating === '红标' ? 'error' : rating === '黄标' ? 'warning' : 'success',
-      size: 'small',
-      round: true,
-    },
-    { default: () => rating }
-  )
-}
 
 // 渲染进度条
 function renderProgress(record: BuildDramaRecord) {

@@ -535,7 +535,6 @@ export async function triggerSmartScheduler(params: { user: string }): Promise<{
 export interface BackgroundSchedulerTaskHistory {
   dramaName: string
   status: 'success' | 'failed' | 'skipped'
-  rating?: string | null
   date?: number | null
   publishTime?: number | null
   error?: string
