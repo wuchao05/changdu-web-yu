@@ -42,6 +42,7 @@ const DEFAULT_SIMPLE_CONFIG = {
       account: '',
     },
   },
+  douyinMaterialMatches: [],
 }
 
 const DEFAULT_PLATFORM_CONFIG = {
@@ -63,6 +64,40 @@ const DEFAULT_PLATFORM_CONFIG = {
   adx: {
     cookie: '',
   },
+}
+
+function normalizeDouyinMaterialMatches(matches = []) {
+  if (!Array.isArray(matches)) {
+    return []
+  }
+
+  return matches
+    .filter(match => match && typeof match === 'object')
+    .map((match, index) => {
+      const now = new Date().toISOString()
+      const douyinAccount =
+        typeof match.douyinAccount === 'string' ? match.douyinAccount.trim() : ''
+      const douyinAccountId =
+        typeof match.douyinAccountId === 'string' ? match.douyinAccountId.trim() : ''
+      const materialRange =
+        typeof match.materialRange === 'string' ? match.materialRange.trim() : ''
+      const createdAt =
+        typeof match.createdAt === 'string' && match.createdAt ? match.createdAt : now
+      const updatedAt =
+        typeof match.updatedAt === 'string' && match.updatedAt ? match.updatedAt : now
+      const id =
+        typeof match.id === 'string' && match.id.trim() ? match.id.trim() : `${Date.now()}_${index}`
+
+      return {
+        id,
+        douyinAccount,
+        douyinAccountId,
+        materialRange,
+        createdAt,
+        updatedAt,
+      }
+    })
+    .filter(match => match.douyinAccount && match.douyinAccountId && match.materialRange)
 }
 
 function normalizeSimpleConfig(config = {}) {
@@ -101,6 +136,7 @@ function normalizeSimpleConfig(config = {}) {
         account: typeof tableIds.account === 'string' ? tableIds.account : '',
       },
     },
+    douyinMaterialMatches: normalizeDouyinMaterialMatches(config.douyinMaterialMatches),
   }
 }
 
@@ -324,6 +360,11 @@ router.put('/config', async ctx => {
       ...(Object.prototype.hasOwnProperty.call(payload, 'feishu')
         ? {
             feishu: normalizeSimpleConfig({ feishu: payload.feishu }).feishu,
+          }
+        : {}),
+      ...(Object.prototype.hasOwnProperty.call(payload, 'douyinMaterialMatches')
+        ? {
+            douyinMaterialMatches: normalizeDouyinMaterialMatches(payload.douyinMaterialMatches),
           }
         : {}),
     }

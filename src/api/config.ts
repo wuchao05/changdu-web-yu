@@ -2,6 +2,15 @@ import axios from 'axios'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 
+export interface DouyinMaterialMatch {
+  id: string
+  douyinAccount: string
+  douyinAccountId: string
+  materialRange: string
+  createdAt: string
+  updatedAt: string
+}
+
 export interface AppConfig {
   changduCookie: string
   juliangCookie: string
@@ -20,6 +29,7 @@ export interface AppConfig {
       account: string
     }
   }
+  douyinMaterialMatches: DouyinMaterialMatch[]
 }
 
 export const configApi = {
