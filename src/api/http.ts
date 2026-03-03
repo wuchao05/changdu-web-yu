@@ -51,6 +51,7 @@ function getRequestHeaders(url?: string) {
   if (!dailyConfig.appId) missingBase.push('headers.appid')
   if (!dailyConfig.appType) missingBase.push('headers.apptype')
   if (!dailyConfig.distributorId) missingBase.push('headers.distributorId')
+  if (!dailyConfig.adUserId) missingBase.push('headers.adUserId')
   if (missingBase.length > 0) {
     throw createError(`请求头配置缺失: ${missingBase.join(', ')}`, 'ConfigError')
   }
@@ -59,22 +60,19 @@ function getRequestHeaders(url?: string) {
     Appid: dailyConfig.appId,
     Apptype: dailyConfig.appType,
     Distributorid: dailyConfig.distributorId,
+    Aduserid: dailyConfig.adUserId,
   }
 
   if (!isDownloadApi(url)) {
     return dailyHeaders
   }
 
-  const missingDownload: string[] = []
-  if (!dailyConfig.adUserId) missingDownload.push('headers.adUserId')
-  if (!dailyConfig.rootAdUserId) missingDownload.push('headers.rootAdUserId')
-  if (missingDownload.length > 0) {
-    throw createError(`下载接口请求头配置缺失: ${missingDownload.join(', ')}`, 'ConfigError')
+  if (!dailyConfig.rootAdUserId) {
+    throw createError('下载接口请求头配置缺失: headers.rootAdUserId', 'ConfigError')
   }
 
   return {
     ...dailyHeaders,
-    Aduserid: dailyConfig.adUserId,
     Rootaduserid: dailyConfig.rootAdUserId,
   }
 }
