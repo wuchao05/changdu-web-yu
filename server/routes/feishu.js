@@ -114,6 +114,45 @@ router.put('/bitable/records/:recordId/file-md5', async ctx => {
     }
 
     const accessToken = tokenJson.tenant_access_token
+    if (!accessToken) {
+      logFeishuUpstreamError('create-drama-list-record:get-token-empty', {
+        status: tokenResponse.status,
+        code: tokenJson.code,
+        msg: tokenJson.msg,
+        url: `${FEISHU_CONFIG.api_base_url}${FEISHU_CONFIG.token_endpoint}`,
+        responseData: tokenJson,
+        responseText: tokenData,
+      })
+      ctx.status = 500
+      ctx.body = { error: 'Failed to get access token', details: tokenJson }
+      return
+    }
+    if (!accessToken) {
+      logFeishuUpstreamError('create-drama-status-record:get-token-empty', {
+        status: tokenResponse.status,
+        code: tokenJson.code,
+        msg: tokenJson.msg,
+        url: `${FEISHU_CONFIG.api_base_url}${FEISHU_CONFIG.token_endpoint}`,
+        responseData: tokenJson,
+        responseText: tokenData,
+      })
+      ctx.status = 500
+      ctx.body = { error: 'Failed to get access token', details: tokenJson }
+      return
+    }
+    if (!accessToken) {
+      logFeishuUpstreamError('huyu-accounts:get-token-empty', {
+        status: tokenResponse.status,
+        code: tokenJson.code,
+        msg: tokenJson.msg,
+        url: `${FEISHU_CONFIG.api_base_url}${FEISHU_CONFIG.token_endpoint}`,
+        responseData: tokenJson,
+        responseText: tokenData,
+      })
+      ctx.status = 500
+      ctx.body = { error: 'Failed to get access token', details: tokenJson }
+      return
+    }
 
     // 构建更新请求体
     const updateRequestBody = {
@@ -255,6 +294,19 @@ router.post('/bitable/search', async ctx => {
     }
 
     const accessToken = tokenJson.tenant_access_token
+    if (!accessToken) {
+      logFeishuUpstreamError('create-drama-clip-record:get-token-empty', {
+        status: tokenResponse.status,
+        code: tokenJson.code,
+        msg: tokenJson.msg,
+        url: `${FEISHU_CONFIG.api_base_url}${FEISHU_CONFIG.token_endpoint}`,
+        responseData: tokenJson,
+        responseText: tokenData,
+      })
+      ctx.status = 500
+      ctx.body = { error: 'Failed to get access token', details: tokenJson }
+      return
+    }
 
     // 构建搜索请求体
     const searchRequestBody = {
@@ -478,17 +530,15 @@ router.post('/bitable/huyu-accounts', async ctx => {
     }
 
     // 调用飞书账户查询API
-    const response = await fetch(
-      `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${targetTableId}/records/search?ignore_consistency_check=true`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(searchRequestBody),
-      }
-    )
+    const upstreamUrl = `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${targetTableId}/records/search?ignore_consistency_check=true`
+    const response = await fetch(upstreamUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(searchRequestBody),
+    })
 
     const data = await response.text()
 
@@ -501,10 +551,24 @@ router.post('/bitable/huyu-accounts', async ctx => {
       return
     }
 
+    if (!response.ok || jsonData.code !== 0) {
+      logFeishuUpstreamError('huyu-accounts:search', {
+        status: response.status,
+        code: jsonData.code,
+        msg: jsonData.msg,
+        url: upstreamUrl,
+        appToken: config.app_token,
+        tableId: targetTableId,
+        requestData: searchRequestBody,
+        responseData: jsonData,
+        responseText: data,
+      })
+    }
+
     ctx.status = response.status
     ctx.body = jsonData
   } catch (error) {
-    // Error logging removed
+    console.error('[飞书路由异常][huyu-accounts:search]', error)
     ctx.status = 500
     ctx.body = {
       error: 'Internal Server Error',
@@ -559,6 +623,19 @@ router.put('/bitable/records/:recordId/account', async ctx => {
     }
 
     const accessToken = tokenJson.tenant_access_token
+    if (!accessToken) {
+      logFeishuUpstreamError('huyu-accounts:used:get-token-empty', {
+        status: tokenResponse.status,
+        code: tokenJson.code,
+        msg: tokenJson.msg,
+        url: `${FEISHU_CONFIG.api_base_url}${FEISHU_CONFIG.token_endpoint}`,
+        responseData: tokenJson,
+        responseText: tokenData,
+      })
+      ctx.status = 500
+      ctx.body = { error: 'Failed to get access token', details: tokenJson }
+      return
+    }
 
     // 构建更新记录请求体
     const updateRequestBody = {
@@ -674,17 +751,15 @@ router.put('/bitable/huyu-accounts/:recordId/used', async ctx => {
     }
 
     // 调用飞书更新账户记录API
-    const response = await fetch(
-      `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${targetTableId}/records/${recordId}?ignore_consistency_check=true`,
-      {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updateRequestBody),
-      }
-    )
+    const upstreamUrl = `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${targetTableId}/records/${recordId}?ignore_consistency_check=true`
+    const response = await fetch(upstreamUrl, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(updateRequestBody),
+    })
 
     const data = await response.text()
 
@@ -697,10 +772,24 @@ router.put('/bitable/huyu-accounts/:recordId/used', async ctx => {
       return
     }
 
+    if (!response.ok || jsonData.code !== 0) {
+      logFeishuUpstreamError('huyu-accounts:used:update', {
+        status: response.status,
+        code: jsonData.code,
+        msg: jsonData.msg,
+        url: upstreamUrl,
+        appToken: config.app_token,
+        tableId: targetTableId,
+        requestData: updateRequestBody,
+        responseData: jsonData,
+        responseText: data,
+      })
+    }
+
     ctx.status = response.status
     ctx.body = jsonData
   } catch (error) {
-    // Error logging removed
+    console.error('[飞书路由异常][huyu-accounts:used:update]', error)
     ctx.status = 500
     ctx.body = {
       error: 'Internal Server Error',
