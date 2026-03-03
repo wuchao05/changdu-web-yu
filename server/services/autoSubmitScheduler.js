@@ -38,11 +38,7 @@ function toBeijingTime(isoString) {
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 }
 
-// 抖音素材配置文件路径
 const isProduction = process.env.NODE_ENV === 'production'
-const DOUYIN_MATERIAL_CONFIG_FILE = isProduction
-  ? '/data/changdu-web-yu/douyin-material-config.json'
-  : path.join(__dirname, '../data/douyin-material-config.json')
 
 /**
  * 安全解析 JSON 响应
@@ -342,9 +338,10 @@ async function getAvailableHuyuAccounts() {
  */
 async function getDouyinMaterialConfig() {
   try {
-    const content = await fs.readFile(DOUYIN_MATERIAL_CONFIG_FILE, 'utf-8')
-    const config = JSON.parse(content)
-    const matches = config.matches || []
+    const authConfig = await readAuthConfig()
+    const matches = Array.isArray(authConfig.douyinMaterialMatches)
+      ? authConfig.douyinMaterialMatches
+      : []
 
     if (matches.length === 0) {
       return ''
