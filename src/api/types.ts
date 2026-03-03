@@ -249,7 +249,7 @@ export interface DistributorInfo {
 }
 
 // 账号类型定义
-export type AccountType = 'sanrou' | 'qianlong' | 'daren' | 'daily'
+export type AccountType = 'daily'
 
 export interface AccountConfig {
   id: AccountType
@@ -260,38 +260,6 @@ export interface AccountConfig {
     appid: string
     apptype: string
     distributorId?: string
-  }
-}
-
-// 牵龙账号专用接口类型
-export interface QianlongOrderParams {
-  begin_time: number // 秒级时间戳
-  end_time: number // 秒级时间戳
-  promotion_type?: number
-  media_source?: number
-  display_type?: number
-  page_index: number
-  page_size: number
-  pay_status?: number // 0=成功 1=未支付 不传=全部
-}
-
-// 牵龙账号达人聚合数据类型
-export interface CreatorDailyData {
-  creatorName: string
-  date: string // YYYY-MM-DD
-  totalAmount: number // 当日充值金额（元）
-  orderCount: number // 订单数量
-}
-
-export interface QianlongAggregateData {
-  creatorStats: CreatorDailyData[]
-  summary: {
-    totalCreators: number
-    totalAmount: number
-    dateRange: {
-      start: string
-      end: string
-    }
   }
 }
 
@@ -369,7 +337,6 @@ export interface NewDramaParams {
   gender?: number // 短剧性别筛选：0 = 女频，1 = 男频
   creation_status?: number // 短剧连载状态：0 = 完结，1 = 连载中
   delivery_status?: number // 投放状态筛选：0 = 不可投放，1 = 可投放，2 = 即将下架
-  drama_list_table_id?: string // 飞书剧集清单表ID，用于根据主体查询不同的表格
 }
 
 // 下载任务相关类型
@@ -463,41 +430,4 @@ export interface SplayMiniProgramResponse {
   code: number
   message: string
   data: string
-}
-
-// 番茄后台 - 新增商品
-export interface SplayProductInfo {
-  mini_program_info: string
-  playlet_gender: '1' | '2' | '3'
-  name: string
-  ad_carrier: string
-  album_id: number
-  image_url: string
-  first_category: string
-  sub_category: string
-  third_category: string
-  first_category_id: string
-  sub_category_id: string
-  third_category_id: string
-}
-
-export interface SplayCreateProductParams {
-  product_list: SplayProductInfo[]
-  ad_account_id: string
-  is_free: number
-  product_platform_id: string
-}
-
-export interface SplayCreateProductEntry {
-  album_id: number
-  result: string
-  name: string
-  product_id: string
-  product_platform_id: string
-}
-
-export interface SplayCreateProductResponse {
-  code: number
-  message: string
-  data: SplayCreateProductEntry[]
 }

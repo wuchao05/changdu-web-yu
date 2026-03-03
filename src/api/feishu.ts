@@ -4,9 +4,6 @@
 import { FEISHU_CONFIG, FEISHU_API_CONFIG } from '@/config/feishu'
 import { ENV } from '@/config/env'
 import { useDramaSubjectStore } from '@/stores/dramaSubject'
-import { useAccountStore } from '@/stores/account'
-import { useDarenStore } from '@/stores/daren'
-import { useUserAuth } from '@/composables/useUserAuth'
 import type {
   FeishuTokenRequest,
   FeishuTokenResponse,
@@ -78,80 +75,16 @@ class FeishuApiService {
   }
 
   private getDramaListTableId(): string {
-    // 在爆剧爆剪场景下，达人用户使用自己配置的表ID
-    const isNewDramaPreview =
-      typeof window !== 'undefined' && window.location.pathname.includes('new-drama-preview')
-
-    if (isNewDramaPreview) {
-      const accountStore = useAccountStore()
-      if (accountStore.isDarenAccount) {
-        const { currentUserId } = useUserAuth()
-        const darenStore = useDarenStore()
-        const currentDaren = darenStore.darenList.find(d => d.id === currentUserId.value)
-
-        // 如果找到了达人配置且设置了飞书剧集清单表ID，使用达人配置
-        if (currentDaren?.feishuDramaListTableId) {
-          return currentDaren.feishuDramaListTableId
-        }
-
-        // 如果是达人账号类型但没有配置，降级使用主体配置
-        console.log('达人配置未设置飞书剧集清单表ID，使用主体配置')
-      }
-    }
-
     const dramaSubjectStore = useDramaSubjectStore()
     return dramaSubjectStore.dramaListTableId
   }
 
   private getDramaStatusTableId(): string {
-    // 在爆剧爆剪场景下，达人用户使用自己配置的表ID
-    const isNewDramaPreview =
-      typeof window !== 'undefined' && window.location.pathname.includes('new-drama-preview')
-
-    if (isNewDramaPreview) {
-      const accountStore = useAccountStore()
-      if (accountStore.isDarenAccount) {
-        const { currentUserId } = useUserAuth()
-        const darenStore = useDarenStore()
-        const currentDaren = darenStore.darenList.find(d => d.id === currentUserId.value)
-
-        // 如果找到了达人配置且设置了飞书剧集状态表ID，使用达人配置
-        if (currentDaren?.feishuDramaStatusTableId) {
-          return currentDaren.feishuDramaStatusTableId
-        }
-
-        // 如果是达人账号类型但没有配置，降级使用主体配置
-        console.log('达人配置未设置飞书剧集状态表ID，使用主体配置')
-      }
-    }
-
     const dramaSubjectStore = useDramaSubjectStore()
     return dramaSubjectStore.dramaStatusTableId
   }
 
   private getAccountTableId(): string {
-    // 在爆剧爆剪场景下，达人用户使用自己配置的表ID
-    const isNewDramaPreview =
-      typeof window !== 'undefined' && window.location.pathname.includes('new-drama-preview')
-
-    if (isNewDramaPreview) {
-      const accountStore = useAccountStore()
-      if (accountStore.isDarenAccount) {
-        const { currentUserId } = useUserAuth()
-        const darenStore = useDarenStore()
-        const currentDaren = darenStore.darenList.find(d => d.id === currentUserId.value)
-
-        // 如果找到了达人配置且设置了飞书账户表ID，使用达人配置
-        if (currentDaren?.feishuAccountTableId) {
-          return currentDaren.feishuAccountTableId
-        }
-
-        // 如果是达人账号类型但没有配置，降级使用主体配置
-        // 这样管理员切换到达人账号类型也能正常使用
-        console.log('达人配置未设置飞书账户表ID，使用主体配置')
-      }
-    }
-
     const dramaSubjectStore = useDramaSubjectStore()
     return dramaSubjectStore.accountTableId
   }
@@ -1115,15 +1048,9 @@ class FeishuApiService {
         }
 
     // 根据 includeBookId 参数决定是否包含"短剧ID"字段
-    // 达人用户不包含"主体"字段
-    const { isDarenUser } = useUserAuth()
     const fieldNames = includeBookId
-      ? isDarenUser
-        ? ['剧名', '短剧ID', '账户', '日期']
-        : ['剧名', '短剧ID', '账户', '主体', '日期']
-      : isDarenUser
-        ? ['剧名', '账户', '日期']
-        : ['剧名', '账户', '主体', '日期']
+      ? ['剧名', '短剧ID', '账户', '主体', '日期']
+      : ['剧名', '账户', '主体', '日期']
 
     const response = await fetch(`${ENV.BASE_URL}/feishu/bitable/drama-status/pending-build`, {
       method: 'POST',
@@ -1197,8 +1124,6 @@ class FeishuApiService {
 
     // 根据参数决定字段列表（短剧ID仅每日主体需要）
     // 当 useDaily=true 时，使用每日主体的完整字段列表（包含主体、评级和抖音素材）
-    // 只有在非每日主体且为达人用户时，才不包含"主体"字段
-    const { isDarenUser } = useUserAuth()
     const fieldNames = includeBookId
       ? useDaily
         ? [
@@ -1213,14 +1138,10 @@ class FeishuApiService {
             '抖音素材',
             '备注',
           ] // 每日主体：完整字段
-        : isDarenUser
-          ? ['剧名', '短剧ID', '账户', '日期', '当前状态', '上架时间'] // 达人：无主体、评级和抖音素材
-          : ['剧名', '短剧ID', '账户', '主体', '日期', '当前状态', '上架时间'] // 其他主体：有主体，无评级和抖音素材
+        : ['剧名', '短剧ID', '账户', '主体', '日期', '当前状态', '上架时间']
       : useDaily
         ? ['剧名', '账户', '主体', '日期', '当前状态', '上架时间', '评级', '抖音素材', '备注'] // 每日主体：完整字段
-        : isDarenUser
-          ? ['剧名', '账户', '日期', '当前状态', '上架时间'] // 达人：无主体、评级和抖音素材
-          : ['剧名', '账户', '主体', '日期', '当前状态', '上架时间'] // 其他主体：有主体，无评级和抖音素材
+        : ['剧名', '账户', '主体', '日期', '当前状态', '上架时间']
 
     const response = await fetch(`${ENV.BASE_URL}/feishu/bitable/drama-status/pending-build`, {
       method: 'POST',
@@ -1291,7 +1212,7 @@ class FeishuApiService {
   async batchCreateDailyAccounts(
     accounts: Array<{ account: string; isUsed: string }>
   ): Promise<FeishuApiResponse<any>> {
-    const tableId = FEISHU_CONFIG.daily_table_ids.account
+    const tableId = FEISHU_CONFIG.table_ids.account
 
     // 调用后端代理接口而不是直接调用飞书 API
     const response = await fetch(`${ENV.BASE_URL}/feishu/bitable/daily-accounts/batch-create`, {

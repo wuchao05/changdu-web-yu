@@ -8,6 +8,7 @@ import {
   getChangduSecretKey,
 } from '../config/changdu.js'
 import { readAuthConfig } from './auth.js'
+import { FEISHU_CONFIG, getFeishuConfig } from '../config/feishu.js'
 
 const router = new Router()
 
@@ -129,51 +130,6 @@ async function getDramaIdByTitle(title) {
     console.error(`[名称转ID] 错误: "${title}"`, error.message)
     return null
   }
-}
-
-// 飞书配置 - 吴超
-// const FEISHU_CONFIG = {
-//   app_id: 'cli_a839f03393785013',
-//   app_secret: '63orqvu6Wyyb9iEelFqvndl2AKiAFN38',
-//   api_base_url: 'https://open.feishu.cn/open-apis',
-//   token_endpoint: '/auth/v3/tenant_access_token/internal',
-// }
-
-// 飞书配置 - 小红
-const FEISHU_CONFIG = {
-  app_id: 'cli_a870f7611b7b1013',
-  app_secret: 'NTwHbZG8rpOQyMEnXGPV6cNQ84KEqE8z',
-  api_base_url: 'https://open.feishu.cn/open-apis',
-  app_token: 'WdWvbGUXXaokk8sAS94c00IZnsf',
-  token_endpoint: '/auth/v3/tenant_access_token/internal',
-  table_ids: {
-    // 剧集清单 - 散柔（超琦）主体
-    drama_list: 'tblvuZhBd4drW26n',
-    // 剧集状态 - 散柔（超琦）主体
-    drama_status: 'tblDOyi2Lzs80sv0',
-    // 超琦账户
-    chaoqi_account: 'tbl0PVvAOHKGcWLs',
-    // 欣雅账户表
-    xinya_account: 'tblh9obuLh1g7hOS',
-  },
-  // 牵龙（欣雅）主体表格 ID 配置
-  qianlong_table_ids: {
-    // 剧集清单 - 牵龙剧集清单表ID
-    drama_list: 'tblGDNtOIvJ9fNjK',
-    // 剧集状态 - 牵龙剧集状态表ID
-    drama_status: 'tblZB1ujNLN7Onpl',
-    // 欣雅账户表
-    account: 'tblh9obuLh1g7hOS',
-  },
-  // 每日账号表格 ID 配置
-  daily_table_ids: {
-    // 剧集清单
-    drama_list: 'tblYEW4YqqSmnsB5',
-    // 剧集状态
-    drama_status: 'tblJcLhLpEkmFkga',
-    // 账户表
-    account: 'tblrlxmzydVtPcbW',
-  },
 }
 
 // 应用概览列表 - 支持达人抖音号过滤
@@ -300,15 +256,13 @@ router.get('/distributor/login/v1', createGetHandler('Login', '/novelsale/distri
 // 系列列表 - 使用常读开放平台 API（签名认证），同步获取飞书剧集清单数据
 router.get('/distributor/content/series/list/v1', async ctx => {
   try {
+    const config = await getFeishuConfig()
     const headerDistributorId = ctx.headers.distributorid || ctx.headers.Distributorid
     const candidateDistributorId = headerDistributorId ? String(headerDistributorId) : ''
     const distributorId = CHANGDU_SECRET_KEY_MAP[candidateDistributorId]
       ? candidateDistributorId
       : CHANGDU_DISTRIBUTOR_ID
     const secretKey = getChangduSecretKey(distributorId)
-
-    // 接收前端传递的 drama_list_table_id，用于根据主体查询不同的飞书表格
-    const dramaListTableId = ctx.query.drama_list_table_id
 
     // 构建请求参数
     const params = {
@@ -479,8 +433,8 @@ router.get('/distributor/content/series/list/v1', async ctx => {
         let pageToken = undefined
         let totalRecords = 0
 
-        // 使用前端传递的 table_id，如果没有则使用默认配置
-        const targetTableId = dramaListTableId || FEISHU_CONFIG.table_ids.drama_list
+        // 统一使用设置页保存的飞书配置
+        const targetTableId = config.table_ids.drama_list
 
         do {
           // 构建 URL 参数，使用 GET 接口代替 search 接口
@@ -492,7 +446,7 @@ router.get('/distributor/content/series/list/v1', async ctx => {
           }
 
           const feishuResponse = await fetch(
-            `https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_CONFIG.app_token}/tables/${targetTableId}/records?${urlParams.toString()}`,
+            `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${targetTableId}/records?${urlParams.toString()}`,
             {
               method: 'GET',
               headers: {
@@ -628,9 +582,7 @@ router.get(
 // 排行榜列表 - 增强版，同步获取飞书剧集清单数据
 router.get('/distributor/statistic/rank/series/quality/list/v2', async ctx => {
   try {
-    // 接收前端传递的 drama_list_table_id，用于根据主体查询不同的飞书表格
-    const dramaListTableId = ctx.query.drama_list_table_id
-
+    const config = await getFeishuConfig()
     // 首先获取排行榜数据
     const rankingListHandler = createGetHandler(
       'Ranking List',
@@ -677,8 +629,8 @@ router.get('/distributor/statistic/rank/series/quality/list/v2', async ctx => {
         let pageToken = undefined
         // let pageCount = 0
 
-        // 使用前端传递的 table_id，如果没有则使用默认配置
-        const targetTableId = dramaListTableId || FEISHU_CONFIG.table_ids.drama_list
+        // 统一使用设置页保存的飞书配置
+        const targetTableId = config.table_ids.drama_list
 
         do {
           // 构建 URL 参数，使用 GET 接口代替 search 接口
@@ -690,7 +642,7 @@ router.get('/distributor/statistic/rank/series/quality/list/v2', async ctx => {
           }
 
           const feishuResponse = await fetch(
-            `https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_CONFIG.app_token}/tables/${targetTableId}/records?${urlParams.toString()}`,
+            `https://open.feishu.cn/open-apis/bitable/v1/apps/${config.app_token}/tables/${targetTableId}/records?${urlParams.toString()}`,
             {
               method: 'GET',
               headers: {

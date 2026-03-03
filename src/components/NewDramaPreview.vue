@@ -21,16 +21,6 @@
               </h1>
               <p class="text-xs text-gray-500">精选热门短剧精彩片段</p>
             </div>
-            <!-- 模板版固定每日主体，不展示主体切换 -->
-            <div v-if="false && !isDarenUser" class="flex items-center space-x-2 ml-4">
-              <!-- <span class="text-sm text-gray-600 font-medium">主体:</span> -->
-              <NSelect
-                v-model:value="dramaSubjectStore.currentSubject"
-                :options="dramaSubjectStore.subjectOptions"
-                size="small"
-                class="w-28"
-              />
-            </div>
           </div>
 
           <!-- 右侧：操作按钮 -->
@@ -143,21 +133,9 @@
               <button
                 v-if="activeTab === 'new-drama'"
                 @click="showAutoSubmitModal = true"
-                :disabled="
-                  isDarenUser || isAutoSubmitForCurrentSubject || loading || listSkeletonLoading
-                "
-                :class="[
-                  'pending-download-btn',
-                  isAutoSubmitForCurrentSubject ? 'active' : '',
-                  isDarenUser ? 'disabled' : '',
-                ]"
-                :title="
-                  isDarenUser
-                    ? '达人用户不支持自动提交下载'
-                    : isAutoSubmitForCurrentSubject
-                      ? '自动提交运行中'
-                      : '自动提交下载'
-                "
+                :disabled="isAutoSubmitForCurrentSubject || loading || listSkeletonLoading"
+                :class="['pending-download-btn', isAutoSubmitForCurrentSubject ? 'active' : '']"
+                :title="isAutoSubmitForCurrentSubject ? '自动提交运行中' : '自动提交下载'"
               >
                 <Icon
                   icon="mdi:robot-outline"
@@ -265,17 +243,14 @@
           :key="drama.book_id"
           :drama="drama"
           :download-data="getDownloadDataForDrama(drama.series_name)"
-          :is-download-triggered="isDownloadTriggered(drama.series_name)"
           :is-syncing="syncingDramaId === drama.book_id"
           :is-processing="clipProcessingDramaId === drama.book_id"
           :is-any-syncing="isAnyOperationBlocked"
-          :is-downloaded="isDramaDownloaded(drama.series_name)"
           :is-submitted-for-download="submittedForDownloadSet.has(drama.book_id)"
           :is-submitted-for-clip="submittedForClipSet.has(drama.book_id)"
           @show-image="showDramaImage"
           @copy-name="copyDramaName"
           @sync-to-feishu="syncToFeishu"
-          @download="handleDownload"
         />
       </div>
       <div v-else-if="isSearching && searchLoading" class="empty-state">
@@ -393,17 +368,14 @@
             :key="drama.book_id"
             :drama="drama"
             :download-data="getDownloadDataForDrama(drama.series_name)"
-            :is-download-triggered="isDownloadTriggered(drama.series_name)"
             :is-syncing="syncingDramaId === drama.book_id"
             :is-processing="clipProcessingDramaId === drama.book_id"
             :is-any-syncing="isAnyOperationBlocked"
-            :is-downloaded="isDramaDownloaded(drama.series_name)"
             :is-submitted-for-download="submittedForDownloadSet.has(drama.book_id)"
             :is-submitted-for-clip="submittedForClipSet.has(drama.book_id)"
             @show-image="showDramaImage"
             @copy-name="copyDramaName"
             @sync-to-feishu="syncToFeishu"
-            @download="handleDownload"
           />
         </div>
 
@@ -419,11 +391,9 @@
             :key="drama.book_id"
             :drama="drama as any"
             :download-data="getRankingDownloadDataForDrama(drama.book_name)"
-            :is-download-triggered="isDownloadTriggered(drama.book_name)"
             :is-syncing="syncingDramaId === drama.book_id"
             :is-processing="clipProcessingDramaId === drama.book_id"
             :is-any-syncing="isAnyOperationBlocked"
-            :is-downloaded="isRankingDramaDownloaded(drama.book_name)"
             :is-submitted-for-download="submittedForDownloadSet.has(drama.book_id)"
             :is-submitted-for-clip="submittedForClipSet.has(drama.book_id)"
             :ranking="rankingPageIndex * rankingPageSize + index + 1"
@@ -431,7 +401,6 @@
             @show-image="showDramaImage"
             @copy-name="copyDramaName"
             @sync-to-feishu="syncToFeishu"
-            @download="handleDownload"
           />
         </div>
 
@@ -793,16 +762,8 @@ import { useRouter } from 'vue-router'
 import { useAccountStore } from '@/stores/account'
 import { useApiConfigStore } from '@/stores/apiConfig'
 import { useDramaSubjectStore } from '@/stores/dramaSubject'
-import { useDarenStore } from '@/stores/daren'
 import { useDouyinMaterialStore } from '@/stores/douyinMaterial'
-import { useUserAuth } from '@/composables/useUserAuth'
-import {
-  getNewDramaList,
-  searchNewDramaList,
-  getDownloadTaskList,
-  getDownloadUrl,
-  feishuApi,
-} from '@/api'
+import { getNewDramaList, searchNewDramaList, getDownloadTaskList, feishuApi } from '@/api'
 import {
   startAutoSubmit as startAutoSubmitApi,
   stopAutoSubmit as stopAutoSubmitApi,
@@ -828,25 +789,10 @@ const router = useRouter()
 const accountStore = useAccountStore()
 const apiConfigStore = useApiConfigStore()
 const dramaSubjectStore = useDramaSubjectStore()
-const darenStore = useDarenStore()
 const douyinMaterialStore = useDouyinMaterialStore()
 
 // 格式化抖音号素材配置
 function formatDouyinMaterialConfig(): string {
-  // 达人用户：使用达人自己的配置
-  if (isDarenUser.value) {
-    const daren = darenStore.findDarenByUserId(currentUserId.value)
-    if (!daren?.douyinMaterialMatches || daren.douyinMaterialMatches.length === 0) {
-      return ''
-    }
-
-    return daren.douyinMaterialMatches
-      .filter(match => match.douyinAccount && match.douyinAccountId && match.materialRange)
-      .map(match => `${match.douyinAccount} ${match.douyinAccountId} ${match.materialRange}`)
-      .join('\n')
-  }
-
-  // 管理员：使用每日主体配置
   const matches = douyinMaterialStore.matches
 
   if (!matches || matches.length === 0) {
@@ -858,17 +804,6 @@ function formatDouyinMaterialConfig(): string {
     .map(match => `${match.douyinAccount} ${match.douyinAccountId} ${match.materialRange}`)
     .join('\n')
 }
-
-// 用户身份管理
-const { isDarenUser, currentUserId } = useUserAuth()
-
-// 根据当前主体选择正确的table_id
-
-// 获取当前达人信息
-const currentDaren = computed(() => {
-  if (!isDarenUser.value) return null
-  return darenStore.darenList.find(d => d.id === currentUserId.value)
-})
 
 // 使用 Naive UI 的 message API
 const message = useMessage()
@@ -967,19 +902,8 @@ const searchCurrentPage = ref(1)
 const searchPageSize = ref(10)
 let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null
 
-const downloadTriggeredSet = ref<Set<string>>(new Set())
-
 // 自动提交下载相关状态
-const autoSubmitStatus = ref({
-  enabled: false,
-  running: false,
-  intervalMinutes: 5,
-  nextRunTime: null as string | null,
-  lastRunTime: null as string | null,
-  stats: { totalProcessed: 0, successCount: 0, failCount: 0, skipCount: 0 },
-  progress: { current: 0, total: 0, currentDate: '', currentDrama: '' },
-  taskHistory: [] as any[],
-})
+const autoSubmitStatus = ref<Record<string, any>>({})
 const autoSubmitTimer = ref<number | null>(null) // 定时器ID
 const autoSubmitCountdownTimer = ref<number | null>(null) // 倒计时定时器ID
 const autoSubmitInterval = ref(5) // 轮询间隔（分钟）
@@ -987,8 +911,9 @@ const autoSubmitCountdown = ref(0) // 倒计时（秒）
 const showAutoSubmitModal = ref(false) // 是否显示时间选择弹窗
 // 当前主体的状态
 const currentSubjectStatus = computed(() => {
+  const subject = dramaSubjectStore.currentSubject
   return (
-    autoSubmitStatus.value || {
+    autoSubmitStatus.value[subject] || {
       enabled: false,
       running: false,
       intervalMinutes: 5,
@@ -1119,14 +1044,6 @@ const currentDateDramas = computed(() => {
 
 // 是否正在搜索
 const isSearching = computed(() => searchKeyword.value.trim().length > 0)
-
-// 获取当前使用的剧集清单表ID（达人使用自己配置的表ID）
-const currentDramaListTableId = computed(() => {
-  if (accountStore.isDarenAccount && currentDaren.value?.feishuDramaListTableId) {
-    return currentDaren.value.feishuDramaListTableId
-  }
-  return dramaSubjectStore.dramaListTableId
-})
 
 // 过滤后的短剧列表（包含搜索过滤）
 const filteredDramas = computed(() => {
@@ -1315,108 +1232,6 @@ async function copyDramaName(dramaName: string) {
   }
 }
 
-// 检查剧集是否已下载
-function isDramaDownloaded(dramaName: string): boolean {
-  // 检查飞书剧集清单中的下载状态
-  const drama = dramaList.value.find(d => d.series_name === dramaName)
-  return drama?.feishu_downloaded === true
-}
-
-// 下载处理函数
-async function handleDownload(
-  downloadData: DownloadTask,
-  options: { silent?: boolean } = {}
-): Promise<boolean> {
-  const silent = options.silent === true
-  const downloadKey =
-    downloadData.book_name?.trim() || downloadData.task_name?.trim() || downloadData.task_id
-
-  // 检查是否有可用下载参数
-  if (!downloadData.imagex_uri && !downloadData.download_url) {
-    if (!silent) {
-      copyToastMessage.value = '该任务没有可用的下载地址'
-      showCopyToast.value = true
-      setTimeout(() => {
-        showCopyToast.value = false
-      }, 3000)
-    } else {
-      console.warn('跳过下载：缺少下载地址', downloadData)
-    }
-    return false
-  }
-
-  try {
-    if (downloadKey) {
-      markDownloadTriggered(downloadKey)
-    }
-    const dramaName = downloadData.book_name || downloadData.task_name || '未知剧名'
-
-    // 显示下载开始提示
-    if (!silent) {
-      copyToastMessage.value = `准备下载：${dramaName}`
-      showCopyToast.value = true
-    }
-
-    // 前端直接触发下载（优先直链），避免后端代理
-    const baseName = downloadData.book_name?.trim() || downloadData.task_name || '下载文件'
-    const fileName = /\.zip$/i.test(baseName) ? baseName : `${baseName}.zip`
-
-    let directUrl = downloadData.download_url || ''
-    if (!directUrl && downloadData.imagex_uri) {
-      try {
-        const urlResp = await getDownloadUrl(downloadData.imagex_uri)
-        if (urlResp.code === 0 && urlResp.download_url) {
-          directUrl = urlResp.download_url
-        }
-      } catch (error) {
-        console.warn('获取下载直链失败', error)
-      }
-    }
-
-    if (!directUrl) {
-      throw new Error('无可用下载链接')
-    }
-
-    const link = document.createElement('a')
-    link.href = directUrl
-    link.download = fileName
-    link.target = '_self'
-    link.rel = 'noopener'
-    link.style.display = 'none'
-    document.body.appendChild(link)
-    requestAnimationFrame(() => {
-      link.click()
-      setTimeout(() => {
-        if (link.parentNode) {
-          link.parentNode.removeChild(link)
-        }
-      }, 0)
-    })
-    const downloaded = true
-
-    // 显示成功提示
-    if (!silent) {
-      copyToastMessage.value = downloaded ? `下载已开始：${dramaName}` : `下载已触发：${dramaName}`
-      setTimeout(() => {
-        showCopyToast.value = false
-      }, 3000)
-    }
-    return downloaded
-  } catch (err) {
-    console.error('下载失败:', err)
-    if (downloadKey) {
-      clearDownloadTriggered(downloadKey)
-    }
-    if (!silent) {
-      copyToastMessage.value = `下载失败：${downloadData.book_name || '未知剧名'}`
-      setTimeout(() => {
-        showCopyToast.value = false
-      }, 3000)
-    }
-    return false
-  }
-}
-
 // 查看剧集大图功能（直接使用短剧列表返回的 original_thumb_url）
 function showDramaImage(drama: NewDramaItem) {
   showImageModal.value = true
@@ -1529,7 +1344,7 @@ async function handleDateConfirm(selectedDate: string) {
     } else {
       // 不存在记录，直接检查账户并创建剪辑记录
       try {
-        // 检查是否有可用的账户（自动根据达人/主体配置获取正确的账户表）
+        // 检查是否有可用的账户
         const hasAvailableAccount = await feishuApi.checkAvailableHuyuAccounts()
         if (!hasAvailableAccount) {
           showSuccessToast('无可用账户，请及时联系管理员添加并完成录户')
@@ -1537,7 +1352,7 @@ async function handleDateConfirm(selectedDate: string) {
         }
 
         // 确定主体字段
-        const subjectValue = isDarenUser.value ? '欣雅' : dramaSubjectStore.subjectFieldValue
+        const subjectValue = dramaSubjectStore.subjectFieldValue
 
         // 确定评级：新增待剪辑只写入状态表，不需要写评级字段
         const ratingValue = undefined
@@ -1554,13 +1369,13 @@ async function handleDateConfirm(selectedDate: string) {
         const finalRecordId = availableAccount.recordId
 
         if (finalAccountId && finalRecordId) {
-          // 格式化抖音号素材配置（达人有配置则写入，管理员也写入）
+          // 格式化抖音号素材配置
           const douyinMaterial = formatDouyinMaterialConfig()
 
-          // 非达人用户状态为"待下载"，达人用户为"待剪辑"
-          const clipStatus = isDarenUser.value ? '待剪辑' : '待下载'
+          // 状态统一为"待剪辑"
+          const clipStatus = '待剪辑'
 
-          // 创建剪辑记录，包含剧名、上架时间、账户和主体（达人固定为"欣雅"）
+          // 创建剪辑记录，包含剧名、上架时间、账户和主体
           await feishuApi.createClipRecord(
             dramaName,
             timestamp,
@@ -1572,7 +1387,7 @@ async function handleDateConfirm(selectedDate: string) {
             clipStatus
           )
 
-          // 更新账户的"是否已用"状态为"是"（自动根据达人/主体配置获取正确的账户表）
+          // 更新账户的"是否已用"状态为"是"
           await feishuApi.updateHuyuAccountUsedStatus(finalRecordId)
 
           showSuccessToast(
@@ -1634,6 +1449,7 @@ async function startAutoSubmit() {
 
     const result = await startAutoSubmitApi({
       intervalMinutes: autoSubmitInterval.value,
+      subject: dramaSubjectStore.currentSubject,
     })
 
     if (result.code === 0) {
@@ -1654,7 +1470,7 @@ async function stopAutoSubmit() {
   console.log('停止服务端自动提交下载')
 
   try {
-    const result = await stopAutoSubmitApi()
+    const result = await stopAutoSubmitApi(dramaSubjectStore.currentSubject)
 
     if (result.code === 0) {
       message.success('自动提交已停止')
@@ -1813,7 +1629,7 @@ async function handleAddDownload(drama: NewDramaItem | RankingDramaItem) {
       console.log('新增记录成功:', createResult)
 
       // 确定主体字段
-      const subjectValue = isDarenUser.value ? '欣雅' : dramaSubjectStore.subjectFieldValue
+      const subjectValue = dramaSubjectStore.subjectFieldValue
 
       // 确定评级
       const ratingValue = undefined
@@ -2015,12 +1831,6 @@ function getRankingDownloadDataForDrama(dramaName: string): DownloadTask | null 
   return result
 }
 
-// 检查排行榜剧集是否已下载
-function isRankingDramaDownloaded(dramaName: string): boolean {
-  const drama = rankingList.value.find(d => d.book_name === dramaName)
-  return drama?.feishu_downloaded === true
-}
-
 // API 请求函数
 async function fetchDramaList() {
   loading.value = true
@@ -2040,21 +1850,18 @@ async function fetchDramaList() {
         page_size: 100,
         permission_statuses: '3,4',
         page_index: 0,
-        drama_list_table_id: currentDramaListTableId.value,
       }),
       // 第二页：获取接下来的100条
       getNewDramaList({
         page_size: 100,
         permission_statuses: '3,4',
         page_index: 1,
-        drama_list_table_id: currentDramaListTableId.value,
       }),
       // 第三页：获取接下来的100条
       getNewDramaList({
         page_size: 100,
         permission_statuses: '3,4',
         page_index: 2,
-        drama_list_table_id: currentDramaListTableId.value,
       }),
       // 下载任务列表（获取所有状态）
       getDownloadTaskList({
@@ -2198,25 +2005,6 @@ function goBack() {
   router.push('/')
 }
 
-function isDownloadTriggered(name?: string | null) {
-  if (!name) return false
-  return downloadTriggeredSet.value.has(name.trim())
-}
-
-function markDownloadTriggered(name?: string | null) {
-  if (!name) return
-  const next = new Set(downloadTriggeredSet.value)
-  next.add(name.trim())
-  downloadTriggeredSet.value = next
-}
-
-function clearDownloadTriggered(name?: string | null) {
-  if (!name) return
-  const next = new Set(downloadTriggeredSet.value)
-  next.delete(name.trim())
-  downloadTriggeredSet.value = next
-}
-
 // 智能刷新处理
 async function handleRefresh() {
   if (searchKeyword.value.trim()) {
@@ -2294,7 +2082,6 @@ async function performSearch(keyword: string, page: number) {
         query: keyword,
         page_index: page - 1, // 接口从0开始
         page_size: searchPageSize.value,
-        drama_list_table_id: currentDramaListTableId.value, // 达人使用自己配置的表ID
       }),
       // 获取下载任务列表（获取所有状态）
       getDownloadTaskList({
@@ -2420,7 +2207,6 @@ async function fetchRankingList() {
             filter_options: JSON.stringify(filterOptions),
             page_index: rankingPageIndex.value,
             page_size: rankingPageSize.value,
-            drama_list_table_id: dramaSubjectStore.dramaListTableId, // 根据主体选择表格
           },
         })
         .then(res => res.data),
@@ -2630,13 +2416,13 @@ async function goToRankingPage(page: number | string) {
 
 // 组件挂载时获取数据
 onMounted(async () => {
-  // 从服务器同步最新的认证配置（Cookie、XT Token 等）
+  // 从服务器同步最新的认证配置（Cookie 等）
   try {
     const response = await fetch('/api/auth/config')
     if (response.ok) {
       const { data } = await response.json()
       if (data && data.platforms?.changdu) {
-        apiConfigStore.updateFromAuthConfig({ tokens: data.tokens, platforms: data.platforms })
+        apiConfigStore.updateFromAuthConfig({ platforms: data.platforms })
       }
     } else {
       console.warn('获取认证配置失败，使用本地配置')
