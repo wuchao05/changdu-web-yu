@@ -283,6 +283,15 @@ async function getChangduSignConfig() {
   return { distributorId, secretKey }
 }
 
+function toRechargeTemplateIdNumber(rawRechargeTemplateId) {
+  const value = String(rawRechargeTemplateId || '').trim()
+  if (!/^\d+$/.test(value)) {
+    throw new Error('auth.buildConfig.rechargeTemplateId 必须是数字')
+  }
+
+  return Number(value)
+}
+
 async function getBuildConfig() {
   const authConfig = await readAuthConfig()
   const buildConfig = authConfig.buildConfig || {}
@@ -311,7 +320,7 @@ async function getBuildConfig() {
     productId: buildConfig.productId,
     productPlatformId: buildConfig.productPlatformId,
     landingUrl: buildConfig.landingUrl,
-    rechargeTemplateId: buildConfig.rechargeTemplateId,
+    rechargeTemplateId: toRechargeTemplateIdNumber(buildConfig.rechargeTemplateId),
   }
 }
 
