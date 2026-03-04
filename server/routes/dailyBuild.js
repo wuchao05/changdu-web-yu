@@ -325,7 +325,7 @@ router.post('/query-approved-microapp', async ctx => {
     console.log('========== 查询被共享的已审核通过的小程序 ==========')
     console.log('account_id:', account_id)
 
-    const { ccId } = await getBuildConfig()
+    const { ccId, microAppId } = await getBuildConfig()
 
     // 使用 search_type=2 查询被共享的已审核通过的小程序
     const url = new URL('https://business.oceanengine.com/app_package/microapp/applet/list')
@@ -357,7 +357,22 @@ router.post('/query-approved-microapp', async ctx => {
 
     // 从返回结果中找到 status=1 的小程序
     const applets = result.data?.applets || []
-    const approvedApplet = applets.find(applet => applet.status === 1)
+    const approvedApplets = applets.filter(applet => applet.status === 1)
+    let approvedApplet = approvedApplets[0]
+
+    // 如果有多个候选，优先匹配配置中的 microAppId（对应返回的 app_id）
+    if (approvedApplets.length > 1 && microAppId) {
+      const matchedApplet = approvedApplets.find(
+        applet => String(applet.app_id || '') === String(microAppId)
+      )
+      if (matchedApplet) {
+        approvedApplet = matchedApplet
+      }
+    }
+
+    console.log('已审核通过的小程序数量:', approvedApplets.length)
+    console.log('配置的 microAppId:', microAppId)
+    console.log('最终选中的 app_id:', approvedApplet?.app_id || '未选中')
 
     if (approvedApplet) {
       console.log('找到被共享的已审核通过的小程序:', approvedApplet.instance_id)

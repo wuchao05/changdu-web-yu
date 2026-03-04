@@ -435,7 +435,7 @@ async function queryMicroApp(accountId) {
  * 用于优化资产化流程，优先使用被共享的已审核通过的小程序
  */
 async function queryApprovedMicroApp(accountId) {
-  const { ccId } = await getBuildConfig()
+  const { ccId, microAppId } = await getBuildConfig()
 
   const url = new URL('https://business.oceanengine.com/app_package/microapp/applet/list')
   url.searchParams.set('page_no', '1')
@@ -462,10 +462,24 @@ async function queryApprovedMicroApp(accountId) {
   const applets = result.data?.applets || []
 
   // 找到 status=1 的小程序
-  const approvedApplet = applets.find(applet => applet.status === 1)
+  const approvedApplets = applets.filter(applet => applet.status === 1)
+  let approvedApplet = approvedApplets[0]
+
+  // 如果有多个候选，优先匹配配置中的 microAppId（对应返回的 app_id）
+  if (approvedApplets.length > 1 && microAppId) {
+    const matchedApplet = approvedApplets.find(
+      applet => String(applet.app_id || '') === String(microAppId)
+    )
+    if (matchedApplet) {
+      approvedApplet = matchedApplet
+    }
+  }
 
   console.log('[查询被共享的小程序] 查询结果:')
   console.log('  - 小程序总数:', applets.length)
+  console.log('  - 已审核通过小程序数量:', approvedApplets.length)
+  console.log('  - 配置的 microAppId:', microAppId)
+  console.log('  - 最终选中的 app_id:', approvedApplet?.app_id || '未选中')
   console.log('  - 找到已审核通过的小程序:', approvedApplet ? '是' : '否')
 
   if (approvedApplet) {
