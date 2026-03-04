@@ -409,6 +409,10 @@ router.post('/query-approved-microapp', async ctx => {
  * 查询小程序资产列表
  */
 router.post('/list-assets', async ctx => {
+  const startedAt = Date.now()
+  const traceId = `list-assets-${startedAt}-${Math.random().toString(36).slice(2, 8)}`
+  const logPrefix = `[list-assets][${traceId}]`
+
   try {
     const { account_id } = ctx.request.body
 
@@ -420,8 +424,7 @@ router.post('/list-assets', async ctx => {
 
     const cookie = await getJiliangCookie()
 
-    console.log('========== 查询小程序资产 ==========')
-    console.log('account_id:', account_id)
+    console.log(`${logPrefix} 开始查询小程序资产, account_id: ${account_id}`)
 
     const response = await fetch(
       `https://ad.oceanengine.com/event_manager/v2/api/assets/ad/list?aadvid=${account_id}`,
@@ -440,12 +443,22 @@ router.post('/list-assets', async ctx => {
     )
 
     const result = await response.json()
-    console.log('查询小程序资产结果:', JSON.stringify(result, null, 2))
-    console.log('====================================')
+    const microAppAssets = Array.isArray(result?.data?.micro_app) ? result.data.micro_app : []
+
+    console.log(`${logPrefix} 查询小程序资产结果:`, JSON.stringify(result, null, 2))
+    console.log(`${logPrefix} micro_app 数量: ${microAppAssets.length}`)
+    if (microAppAssets.length === 0) {
+      console.log(`${logPrefix} 未找到小程序资产，下一步应调用 /api/daily-build/create-asset`)
+    } else {
+      console.log(
+        `${logPrefix} 已找到小程序资产，首个 assets_id: ${microAppAssets[0]?.assets_id || '未知'}`
+      )
+    }
+    console.log(`${logPrefix} 完成, 耗时: ${Date.now() - startedAt}ms`)
 
     ctx.body = result
   } catch (error) {
-    console.error('查询小程序资产失败:', error)
+    console.error(`${logPrefix} 查询小程序资产失败, 耗时: ${Date.now() - startedAt}ms`, error)
     ctx.status = 500
     ctx.body = { error: error.message || '查询小程序资产失败' }
   }
@@ -455,6 +468,10 @@ router.post('/list-assets', async ctx => {
  * 创建小程序资产
  */
 router.post('/create-asset', async ctx => {
+  const startedAt = Date.now()
+  const traceId = `create-asset-${startedAt}-${Math.random().toString(36).slice(2, 8)}`
+  const logPrefix = `[create-asset][${traceId}]`
+
   try {
     const { account_id, micro_app_instance_id } = ctx.request.body
 
@@ -466,6 +483,24 @@ router.post('/create-asset', async ctx => {
 
     const cookie = await getJiliangCookie()
     const buildConfig = await getBuildConfig()
+    console.log(`${logPrefix} 开始创建小程序资产:`, {
+      account_id,
+      micro_app_instance_id,
+      micro_app_id: buildConfig.microAppId,
+      micro_app_name: buildConfig.microAppName,
+    })
+
+    const requestBody = {
+      assets_type: 4,
+      micro_app: {
+        assets_name: buildConfig.microAppName,
+        micro_app_id: buildConfig.microAppId,
+        micro_app_name: buildConfig.microAppName,
+        micro_app_type: 1,
+        micro_app_instance_id: micro_app_instance_id,
+      },
+    }
+    console.log(`${logPrefix} 请求体:`, requestBody)
 
     const response = await fetch(
       `https://ad.oceanengine.com/event_manager/api/assets/create?aadvid=${account_id}`,
@@ -476,23 +511,18 @@ router.post('/create-asset', async ctx => {
           Cookie: cookie,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          assets_type: 4,
-          micro_app: {
-            assets_name: buildConfig.microAppName,
-            micro_app_id: buildConfig.microAppId,
-            micro_app_name: buildConfig.microAppName,
-            micro_app_type: 1,
-            micro_app_instance_id: micro_app_instance_id,
-          },
-        }),
+        body: JSON.stringify(requestBody),
       }
     )
 
     const result = await response.json()
+    console.log(`${logPrefix} 上游响应状态: ${response.status} ${response.statusText}`)
+    console.log(`${logPrefix} 创建小程序资产结果:`, JSON.stringify(result, null, 2))
+    console.log(`${logPrefix} 完成, 耗时: ${Date.now() - startedAt}ms`)
+
     ctx.body = result
   } catch (error) {
-    console.error('创建小程序资产失败:', error)
+    console.error(`${logPrefix} 创建小程序资产失败, 耗时: ${Date.now() - startedAt}ms`, error)
     ctx.status = 500
     ctx.body = { error: error.message || '创建小程序资产失败' }
   }
@@ -502,6 +532,10 @@ router.post('/create-asset', async ctx => {
  * 查询事件状态
  */
 router.post('/check-event', async ctx => {
+  const startedAt = Date.now()
+  const traceId = `check-event-${startedAt}-${Math.random().toString(36).slice(2, 8)}`
+  const logPrefix = `[check-event][${traceId}]`
+
   try {
     const { account_id, assets_id } = ctx.request.body
 
@@ -513,9 +547,7 @@ router.post('/check-event', async ctx => {
 
     const cookie = await getJiliangCookie()
 
-    console.log('========== 查询事件状态 ==========')
-    console.log('account_id:', account_id)
-    console.log('assets_id:', assets_id)
+    console.log(`${logPrefix} 开始查询事件状态:`, { account_id, assets_id })
 
     const response = await fetch(
       `https://ad.oceanengine.com/event_manager/v2/api/event/track/status/${assets_id}?aadvid=${account_id}`,
@@ -529,20 +561,23 @@ router.post('/check-event', async ctx => {
     )
 
     const result = await response.json()
-    console.log('查询事件状态结果:', JSON.stringify(result, null, 2))
+    console.log(`${logPrefix} 查询事件状态结果:`, JSON.stringify(result, null, 2))
 
     // 检查是否已存在"付费"事件
     const hasPaymentEvent = result.data?.track_status?.some(event => event.event_name === '付费')
 
-    console.log('是否已存在付费事件:', hasPaymentEvent)
-    console.log('====================================')
+    console.log(`${logPrefix} 是否已存在付费事件:`, hasPaymentEvent)
+    if (!hasPaymentEvent) {
+      console.log(`${logPrefix} 未检测到付费事件，下一步应调用 /api/daily-build/add-event`)
+    }
+    console.log(`${logPrefix} 完成, 耗时: ${Date.now() - startedAt}ms`)
 
     ctx.body = {
       ...result,
       has_payment_event: hasPaymentEvent,
     }
   } catch (error) {
-    console.error('查询事件状态失败:', error)
+    console.error(`${logPrefix} 查询事件状态失败, 耗时: ${Date.now() - startedAt}ms`, error)
     ctx.status = 500
     ctx.body = { error: error.message || '查询事件状态失败' }
   }
@@ -552,6 +587,10 @@ router.post('/check-event', async ctx => {
  * 添加付费事件
  */
 router.post('/add-event', async ctx => {
+  const startedAt = Date.now()
+  const traceId = `add-event-${startedAt}-${Math.random().toString(36).slice(2, 8)}`
+  const logPrefix = `[add-event][${traceId}]`
+
   try {
     const { account_id, assets_id } = ctx.request.body
 
@@ -562,6 +601,27 @@ router.post('/add-event', async ctx => {
     }
 
     const cookie = await getJiliangCookie()
+    console.log(`${logPrefix} 开始添加付费事件:`, { account_id, assets_id })
+
+    const requestBody = {
+      link_name: DAILY_BUILD_CONFIG.event.linkName,
+      events: [
+        {
+          event_enum: DAILY_BUILD_CONFIG.event.eventEnum,
+          event_type: DAILY_BUILD_CONFIG.event.eventType,
+          event_name: DAILY_BUILD_CONFIG.event.eventName,
+          track_types: DAILY_BUILD_CONFIG.event.trackTypes,
+          statistical_method_type: DAILY_BUILD_CONFIG.event.statisticalMethodType,
+          discrimination_value: {
+            value_type: 0,
+            dimension: 0,
+            groups: [],
+          },
+        },
+      ],
+      assets_id: assets_id,
+    }
+    console.log(`${logPrefix} 请求体:`, requestBody)
 
     const response = await fetch(
       `https://ad.oceanengine.com/event_manager/v2/api/event/config/create?aadvid=${account_id}`,
@@ -572,31 +632,18 @@ router.post('/add-event', async ctx => {
           Cookie: cookie,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          link_name: DAILY_BUILD_CONFIG.event.linkName,
-          events: [
-            {
-              event_enum: DAILY_BUILD_CONFIG.event.eventEnum,
-              event_type: DAILY_BUILD_CONFIG.event.eventType,
-              event_name: DAILY_BUILD_CONFIG.event.eventName,
-              track_types: DAILY_BUILD_CONFIG.event.trackTypes,
-              statistical_method_type: DAILY_BUILD_CONFIG.event.statisticalMethodType,
-              discrimination_value: {
-                value_type: 0,
-                dimension: 0,
-                groups: [],
-              },
-            },
-          ],
-          assets_id: assets_id,
-        }),
+        body: JSON.stringify(requestBody),
       }
     )
 
     const result = await response.json()
+    console.log(`${logPrefix} 上游响应状态: ${response.status} ${response.statusText}`)
+    console.log(`${logPrefix} 添加付费事件结果:`, JSON.stringify(result, null, 2))
+    console.log(`${logPrefix} 完成, 耗时: ${Date.now() - startedAt}ms`)
+
     ctx.body = result
   } catch (error) {
-    console.error('添加付费事件失败:', error)
+    console.error(`${logPrefix} 添加付费事件失败, 耗时: ${Date.now() - startedAt}ms`, error)
     ctx.status = 500
     ctx.body = { error: error.message || '添加付费事件失败' }
   }
