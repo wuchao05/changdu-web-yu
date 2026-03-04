@@ -12,8 +12,10 @@ export const DAILY_BUILD_CONFIG = {
 
   // 巨量API配置
   jiliang: {
-    microAppId: 'tt9c36ea8b0305b6c401',
-    microAppName: '每日剧场',
+    ccId: '1849832732821859',
+    operator: '1849832732821859',
+    microAppId: 'tt366340dea95001ea01',
+    microAppName: '甜荔剧场',
   },
 
   // 创建推广链接固定参数
@@ -43,14 +45,14 @@ export const DAILY_BUILD_CONFIG = {
       smart_bid_type: 7, // 自定义出价
       flow_control_mode: 0,
       budget_mode: 0, // 0 表示日预算
-      product_platform_id: '1969743078737707', // 待后续修改
-      product_id: '1764165838361148283', // 待后续修改
+      product_platform_id: '1249425120839434', // 待后续修改
+      product_id: '1772536953535319108', // 待后续修改
     },
 
     // 广告固定参数
     promotion: {
-      external_url: 'https://www.chengzijianzhan.com/tetris/page/7552876685726089254/',
-      source: '合肥山宥麦网络',
+      external_url: 'https://www.chengzijianzhan.com/tetris/page/7594336418756476938',
+      source: '泰州晴天',
       product_name: '热播短剧',
       selling_point: '爆款短剧推荐',
       call_to_action: '精彩继续',

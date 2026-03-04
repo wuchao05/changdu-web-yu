@@ -153,9 +153,7 @@ router.post('/query-microapp', async ctx => {
     console.log('========== 查询小程序 ==========')
     console.log('account_id:', account_id)
 
-    // 固定值配置
-    const CC_ID = '1849832732821859'
-    const OPERATOR = '1849832732821859'
+    const { ccId, operator } = DAILY_BUILD_CONFIG.jiliang
 
     // 构建URL和查询参数
     const url = new URL('https://business.oceanengine.com/app_package/microapp/applet/list')
@@ -165,8 +163,8 @@ router.post('/query-microapp', async ctx => {
     url.searchParams.set('search_type', '1')
     url.searchParams.set('status', '-1') // 查询所有状态的小程序
     url.searchParams.set('adv_id', account_id)
-    url.searchParams.set('cc_id', CC_ID)
-    url.searchParams.set('operator', OPERATOR)
+    url.searchParams.set('cc_id', ccId)
+    url.searchParams.set('operator', operator)
     url.searchParams.set('operation_type', '1')
 
     console.log('请求URL:', url.toString())
@@ -241,8 +239,7 @@ router.post('/query-approved-microapp', async ctx => {
     console.log('========== 查询被共享的已审核通过的小程序 ==========')
     console.log('account_id:', account_id)
 
-    const CC_ID = '1849832732821859'
-    const OPERATOR = '1849832732821859'
+    const { ccId, operator } = DAILY_BUILD_CONFIG.jiliang
 
     // 使用 search_type=2 查询被共享的已审核通过的小程序
     const url = new URL('https://business.oceanengine.com/app_package/microapp/applet/list')
@@ -252,8 +249,8 @@ router.post('/query-approved-microapp', async ctx => {
     url.searchParams.set('search_type', '2') // search_type=2 查询被共享的已审核通过的小程序
     url.searchParams.set('status', '-1')
     url.searchParams.set('adv_id', account_id)
-    url.searchParams.set('cc_id', CC_ID)
-    url.searchParams.set('operator', OPERATOR)
+    url.searchParams.set('cc_id', ccId)
+    url.searchParams.set('operator', operator)
     url.searchParams.set('operation_type', '1')
 
     console.log('请求URL:', url.toString())
@@ -1286,7 +1283,8 @@ router.post('/create-microapp', async ctx => {
       },
     }
 
-    const url = `https://business.oceanengine.com/app_package/microapp/applet/create?cc_id=1849832732821859&operator=${account_id}&operation_type=1`
+    const { ccId, operator } = DAILY_BUILD_CONFIG.jiliang
+    const url = `https://business.oceanengine.com/app_package/microapp/applet/create?cc_id=${ccId}&operator=${operator}&operation_type=1`
     const headers = {
       'Content-Type': 'application/json',
       Cookie: cookie,
@@ -1586,8 +1584,7 @@ router.post('/validate-and-create-microapp', async ctx => {
  * 查询账户的小程序状态
  */
 async function queryMicroAppForAccount(accountId, cookie) {
-  const CC_ID = '1849832732821859'
-  const OPERATOR = '1849832732821859'
+  const { ccId, operator } = DAILY_BUILD_CONFIG.jiliang
 
   const url = new URL('https://business.oceanengine.com/app_package/microapp/applet/list')
   url.searchParams.set('page_no', '1')
@@ -1596,8 +1593,8 @@ async function queryMicroAppForAccount(accountId, cookie) {
   url.searchParams.set('search_type', '1')
   url.searchParams.set('status', '-1')
   url.searchParams.set('adv_id', accountId)
-  url.searchParams.set('cc_id', CC_ID)
-  url.searchParams.set('operator', OPERATOR)
+  url.searchParams.set('cc_id', ccId)
+  url.searchParams.set('operator', operator)
   url.searchParams.set('operation_type', '1')
 
   const response = await fetch(url.toString(), {
@@ -1687,7 +1684,8 @@ async function createMicroAppForAccount(accountId, params, cookie) {
     },
   }
 
-  const url = `https://business.oceanengine.com/app_package/microapp/applet/create?cc_id=1849832732821859&operator=${accountId}&operation_type=1`
+  const { ccId, operator } = DAILY_BUILD_CONFIG.jiliang
+  const url = `https://business.oceanengine.com/app_package/microapp/applet/create?cc_id=${ccId}&operator=${operator}&operation_type=1`
 
   const response = await fetch(url, {
     method: 'POST',
