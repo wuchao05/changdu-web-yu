@@ -509,11 +509,7 @@ async function getDramaListTableId() {
  */
 async function getSubjectCookie() {
   const authConfig = await readAuthConfig()
-  const unifiedCookie = authConfig.platforms?.changdu?.cookie || ''
-  if (unifiedCookie) {
-    return unifiedCookie
-  }
-  return authConfig.platforms?.changdu?.mr?.cookie || ''
+  return authConfig.changduCookie || ''
 }
 
 function extractCsrfToken(cookie = '') {
@@ -523,11 +519,7 @@ function extractCsrfToken(cookie = '') {
 
 async function getJiliangAuth() {
   const authConfig = await readAuthConfig()
-  const cookie =
-    authConfig.platforms?.jiliang?.cookie ||
-    authConfig.platforms?.ocean?.mr ||
-    authConfig.platforms?.ocean?.sr ||
-    ''
+  const cookie = authConfig.juliangCookie || ''
 
   return {
     cookie,
@@ -691,20 +683,32 @@ async function getDownloadTaskList(startTime, endTime) {
 
   // 获取cookie
   const authConfig = await readAuthConfig()
-  const mrConfig = authConfig.platforms?.changdu?.mr || {}
+  const headerAuthConfig = authConfig.headers || {}
   const cookie = await getSubjectCookie()
 
-  // 仅使用 auth 配置中的 distributorId，不再使用本地默认兜底
-  if (!mrConfig.distributorId) {
-    throw new Error('自动提交配置缺失: auth.platforms.changdu.mr.distributorId')
+  // 仅使用 auth 配置中的 headers.*，不再使用旧结构兜底
+  if (!headerAuthConfig.appid) {
+    throw new Error('自动提交配置缺失: auth.headers.appid')
+  }
+  if (!headerAuthConfig.apptype) {
+    throw new Error('自动提交配置缺失: auth.headers.apptype')
+  }
+  if (!headerAuthConfig.distributorId) {
+    throw new Error('自动提交配置缺失: auth.headers.distributorId')
+  }
+  if (!headerAuthConfig.adUserId) {
+    throw new Error('自动提交配置缺失: auth.headers.adUserId')
+  }
+  if (!headerAuthConfig.rootAdUserId) {
+    throw new Error('自动提交配置缺失: auth.headers.rootAdUserId')
   }
 
   const headerConfig = {
-    Appid: AUTO_SUBMIT_CONFIG.downloadCenter.appId,
-    Apptype: AUTO_SUBMIT_CONFIG.downloadCenter.appType,
-    Distributorid: mrConfig.distributorId,
-    Aduserid: mrConfig.adUserId || AUTO_SUBMIT_CONFIG.downloadCenter.adUserId,
-    Rootaduserid: mrConfig.rootAdUserId || AUTO_SUBMIT_CONFIG.downloadCenter.rootAdUserId,
+    Appid: headerAuthConfig.appid,
+    Apptype: headerAuthConfig.apptype,
+    Distributorid: headerAuthConfig.distributorId,
+    Aduserid: headerAuthConfig.adUserId,
+    Rootaduserid: headerAuthConfig.rootAdUserId,
   }
 
   const response = await fetch(url, {
