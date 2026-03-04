@@ -29,7 +29,6 @@ export interface AppConfig {
     microAppName: string
     microAppId: string
     ccId: string
-    operator: string
     rechargeTemplateId: string
   }
   feishu: {

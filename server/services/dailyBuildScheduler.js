@@ -289,7 +289,6 @@ async function getBuildConfig() {
 
   const requiredKeys = [
     'ccId',
-    'operator',
     'microAppName',
     'microAppId',
     'productId',
@@ -306,7 +305,6 @@ async function getBuildConfig() {
 
   return {
     ccId: buildConfig.ccId,
-    operator: buildConfig.operator,
     microAppName: buildConfig.microAppName,
     microAppId: buildConfig.microAppId,
     productId: buildConfig.productId,
@@ -363,7 +361,7 @@ async function createPromotionLink(params) {
  * 返回格式：{ hasValidMicroApp: boolean, result: any }
  */
 async function queryMicroApp(accountId) {
-  const { ccId, operator } = await getBuildConfig()
+  const { ccId } = await getBuildConfig()
 
   const url = new URL('https://business.oceanengine.com/app_package/microapp/applet/list')
   url.searchParams.set('page_no', '1')
@@ -373,7 +371,7 @@ async function queryMicroApp(accountId) {
   url.searchParams.set('status', '-1') // 查询所有状态的小程序
   url.searchParams.set('adv_id', accountId)
   url.searchParams.set('cc_id', ccId)
-  url.searchParams.set('operator', operator)
+  url.searchParams.set('operator', ccId)
   url.searchParams.set('operation_type', '1')
 
   const response = await fetch(url.toString(), {
@@ -418,7 +416,7 @@ async function queryMicroApp(accountId) {
  * 用于优化资产化流程，优先使用被共享的已审核通过的小程序
  */
 async function queryApprovedMicroApp(accountId) {
-  const { ccId, operator } = await getBuildConfig()
+  const { ccId } = await getBuildConfig()
 
   const url = new URL('https://business.oceanengine.com/app_package/microapp/applet/list')
   url.searchParams.set('page_no', '1')
@@ -428,7 +426,7 @@ async function queryApprovedMicroApp(accountId) {
   url.searchParams.set('status', '-1')
   url.searchParams.set('adv_id', accountId)
   url.searchParams.set('cc_id', ccId)
-  url.searchParams.set('operator', operator)
+  url.searchParams.set('operator', ccId)
   url.searchParams.set('operation_type', '1')
 
   console.log('[查询被共享的小程序] 开始查询 (search_type=2)...')
@@ -498,8 +496,8 @@ async function createMicroApp(params) {
     },
   }
 
-  const { ccId, operator } = await getBuildConfig()
-  const url = `https://business.oceanengine.com/app_package/microapp/applet/create?cc_id=${ccId}&operator=${operator}&operation_type=1`
+  const { ccId } = await getBuildConfig()
+  const url = `https://business.oceanengine.com/app_package/microapp/applet/create?cc_id=${ccId}&operator=${ccId}&operation_type=1`
 
   const response = await fetch(url, {
     method: 'POST',

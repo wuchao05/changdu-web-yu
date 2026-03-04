@@ -16,7 +16,6 @@
     "microAppName": "your_micro_app_name",
     "microAppId": "your_micro_app_id",
     "ccId": "your_cc_id",
-    "operator": "your_operator",
     "rechargeTemplateId": "your_recharge_template_id"
   },
   "tokens": {

@@ -42,7 +42,6 @@ const DEFAULT_SIMPLE_CONFIG = {
     microAppName: '',
     microAppId: '',
     ccId: '',
-    operator: '',
     rechargeTemplateId: '',
   },
   feishu: {
@@ -165,10 +164,6 @@ function normalizeSimpleConfig(config = {}) {
         typeof buildConfig.ccId === 'string'
           ? buildConfig.ccId
           : DEFAULT_SIMPLE_CONFIG.buildConfig.ccId,
-      operator:
-        typeof buildConfig.operator === 'string'
-          ? buildConfig.operator
-          : DEFAULT_SIMPLE_CONFIG.buildConfig.operator,
       rechargeTemplateId:
         typeof buildConfig.rechargeTemplateId === 'string'
           ? buildConfig.rechargeTemplateId
@@ -445,14 +440,6 @@ router.put('/config', async ctx => {
                             typeof payload.buildConfig.ccId === 'string'
                               ? payload.buildConfig.ccId
                               : currentSimple.buildConfig.ccId,
-                        }
-                      : {}),
-                    ...(Object.prototype.hasOwnProperty.call(payload.buildConfig, 'operator')
-                      ? {
-                          operator:
-                            typeof payload.buildConfig.operator === 'string'
-                              ? payload.buildConfig.operator
-                              : currentSimple.buildConfig.operator,
                         }
                       : {}),
                     ...(Object.prototype.hasOwnProperty.call(

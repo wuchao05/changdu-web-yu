@@ -112,13 +112,6 @@
                 />
               </div>
               <div class="config-item">
-                <label class="config-label">operator</label>
-                <n-input
-                  v-model:value="localConfig.buildConfig.operator"
-                  placeholder="buildConfig.operator"
-                />
-              </div>
-              <div class="config-item">
                 <label class="config-label">rechargeTemplateId</label>
                 <n-input
                   v-model:value="localConfig.buildConfig.rechargeTemplateId"
@@ -210,7 +203,6 @@ interface AuthConfig {
     microAppName: string
     microAppId: string
     ccId: string
-    operator: string
     rechargeTemplateId: string
   }
   feishu: {
@@ -248,7 +240,6 @@ const createEmptyConfig = (): AuthConfig => ({
     microAppName: '',
     microAppId: '',
     ccId: '',
-    operator: '',
     rechargeTemplateId: '',
   },
   feishu: {
@@ -293,7 +284,6 @@ const normalizeConfig = (config: any): AuthConfig => ({
     microAppId:
       typeof config?.buildConfig?.microAppId === 'string' ? config.buildConfig.microAppId : '',
     ccId: typeof config?.buildConfig?.ccId === 'string' ? config.buildConfig.ccId : '',
-    operator: typeof config?.buildConfig?.operator === 'string' ? config.buildConfig.operator : '',
     rechargeTemplateId:
       typeof config?.buildConfig?.rechargeTemplateId === 'string'
         ? config.buildConfig.rechargeTemplateId

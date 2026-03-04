@@ -60,7 +60,6 @@ async function getBuildConfig() {
 
   const requiredKeys = [
     'ccId',
-    'operator',
     'microAppName',
     'microAppId',
     'productId',
@@ -77,7 +76,6 @@ async function getBuildConfig() {
 
   return {
     ccId: buildConfig.ccId,
-    operator: buildConfig.operator,
     microAppName: buildConfig.microAppName,
     microAppId: buildConfig.microAppId,
     productId: buildConfig.productId,
@@ -195,7 +193,7 @@ router.post('/query-microapp', async ctx => {
     console.log('========== 查询小程序 ==========')
     console.log('account_id:', account_id)
 
-    const { ccId, operator } = await getBuildConfig()
+    const { ccId } = await getBuildConfig()
 
     // 构建URL和查询参数
     const url = new URL('https://business.oceanengine.com/app_package/microapp/applet/list')
@@ -206,7 +204,7 @@ router.post('/query-microapp', async ctx => {
     url.searchParams.set('status', '-1') // 查询所有状态的小程序
     url.searchParams.set('adv_id', account_id)
     url.searchParams.set('cc_id', ccId)
-    url.searchParams.set('operator', operator)
+    url.searchParams.set('operator', ccId)
     url.searchParams.set('operation_type', '1')
 
     console.log('请求URL:', url.toString())
@@ -281,7 +279,7 @@ router.post('/query-approved-microapp', async ctx => {
     console.log('========== 查询被共享的已审核通过的小程序 ==========')
     console.log('account_id:', account_id)
 
-    const { ccId, operator } = await getBuildConfig()
+    const { ccId } = await getBuildConfig()
 
     // 使用 search_type=2 查询被共享的已审核通过的小程序
     const url = new URL('https://business.oceanengine.com/app_package/microapp/applet/list')
@@ -292,7 +290,7 @@ router.post('/query-approved-microapp', async ctx => {
     url.searchParams.set('status', '-1')
     url.searchParams.set('adv_id', account_id)
     url.searchParams.set('cc_id', ccId)
-    url.searchParams.set('operator', operator)
+    url.searchParams.set('operator', ccId)
     url.searchParams.set('operation_type', '1')
 
     console.log('请求URL:', url.toString())
@@ -1328,8 +1326,8 @@ router.post('/create-microapp', async ctx => {
       },
     }
 
-    const { ccId, operator } = await getBuildConfig()
-    const url = `https://business.oceanengine.com/app_package/microapp/applet/create?cc_id=${ccId}&operator=${operator}&operation_type=1`
+    const { ccId } = await getBuildConfig()
+    const url = `https://business.oceanengine.com/app_package/microapp/applet/create?cc_id=${ccId}&operator=${ccId}&operation_type=1`
     const headers = {
       'Content-Type': 'application/json',
       Cookie: cookie,
@@ -1629,7 +1627,7 @@ router.post('/validate-and-create-microapp', async ctx => {
  * 查询账户的小程序状态
  */
 async function queryMicroAppForAccount(accountId, cookie) {
-  const { ccId, operator } = await getBuildConfig()
+  const { ccId } = await getBuildConfig()
 
   const url = new URL('https://business.oceanengine.com/app_package/microapp/applet/list')
   url.searchParams.set('page_no', '1')
@@ -1639,7 +1637,7 @@ async function queryMicroAppForAccount(accountId, cookie) {
   url.searchParams.set('status', '-1')
   url.searchParams.set('adv_id', accountId)
   url.searchParams.set('cc_id', ccId)
-  url.searchParams.set('operator', operator)
+  url.searchParams.set('operator', ccId)
   url.searchParams.set('operation_type', '1')
 
   const response = await fetch(url.toString(), {
@@ -1731,8 +1729,8 @@ async function createMicroAppForAccount(accountId, params, cookie) {
     },
   }
 
-  const { ccId, operator } = await getBuildConfig()
-  const url = `https://business.oceanengine.com/app_package/microapp/applet/create?cc_id=${ccId}&operator=${operator}&operation_type=1`
+  const { ccId } = await getBuildConfig()
+  const url = `https://business.oceanengine.com/app_package/microapp/applet/create?cc_id=${ccId}&operator=${ccId}&operation_type=1`
 
   const response = await fetch(url, {
     method: 'POST',

@@ -154,10 +154,6 @@
               <label class="text-sm font-medium text-gray-700">cc_id</label>
               <n-input v-model:value="form.buildConfig.ccId" placeholder="请输入 ccId" />
             </div>
-            <div class="space-y-2">
-              <label class="text-sm font-medium text-gray-700">operator</label>
-              <n-input v-model:value="form.buildConfig.operator" placeholder="请输入 operator" />
-            </div>
             <div class="space-y-2 md:col-span-2">
               <label class="text-sm font-medium text-gray-700">recharge_template_id</label>
               <n-input
@@ -379,7 +375,6 @@ const form = reactive<AppConfig>({
     microAppName: '',
     microAppId: '',
     ccId: '',
-    operator: '',
     rechargeTemplateId: '',
   },
   feishu: {
@@ -444,7 +439,6 @@ async function loadConfig() {
       form.buildConfig.microAppName = result.data.buildConfig?.microAppName || ''
       form.buildConfig.microAppId = result.data.buildConfig?.microAppId || ''
       form.buildConfig.ccId = result.data.buildConfig?.ccId || ''
-      form.buildConfig.operator = result.data.buildConfig?.operator || ''
       form.buildConfig.rechargeTemplateId = result.data.buildConfig?.rechargeTemplateId || ''
       form.feishu.app_token = result.data.feishu?.app_token || ''
       form.feishu.table_ids.drama_list = result.data.feishu?.table_ids?.drama_list || ''
