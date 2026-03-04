@@ -30,23 +30,27 @@
 
           <div class="space-y-4">
             <div class="space-y-2">
-              <label class="text-sm font-medium text-gray-700">常读 Cookie</label>
+              <label class="text-sm font-medium text-gray-700">{{
+                CONFIG_LABELS.changduCookie
+              }}</label>
               <n-input
                 v-model:value="form.changduCookie"
                 type="textarea"
                 :rows="4"
-                placeholder="请输入常读平台 Cookie"
+                :placeholder="CONFIG_PLACEHOLDERS.changduCookie"
                 class="font-mono text-sm"
               />
             </div>
 
             <div class="space-y-2">
-              <label class="text-sm font-medium text-gray-700">巨量 Cookie</label>
+              <label class="text-sm font-medium text-gray-700">{{
+                CONFIG_LABELS.juliangCookie
+              }}</label>
               <n-input
                 v-model:value="form.juliangCookie"
                 type="textarea"
                 :rows="4"
-                placeholder="请输入巨量平台 Cookie"
+                :placeholder="CONFIG_PLACEHOLDERS.juliangCookie"
                 class="font-mono text-sm"
               />
             </div>
@@ -67,29 +71,48 @@
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="space-y-2">
-              <label class="text-sm font-medium text-gray-700">Appid</label>
-              <n-input v-model:value="form.headers.appid" placeholder="请输入 Appid" />
-            </div>
-            <div class="space-y-2">
-              <label class="text-sm font-medium text-gray-700">Apptype</label>
-              <n-input v-model:value="form.headers.apptype" placeholder="请输入 Apptype" />
-            </div>
-            <div class="space-y-2">
-              <label class="text-sm font-medium text-gray-700">DistributorId</label>
+              <label class="text-sm font-medium text-gray-700">{{
+                CONFIG_LABELS.headers.appid
+              }}</label>
               <n-input
-                v-model:value="form.headers.distributorId"
-                placeholder="请输入 DistributorId"
+                v-model:value="form.headers.appid"
+                :placeholder="CONFIG_PLACEHOLDERS.headers.appid"
               />
             </div>
             <div class="space-y-2">
-              <label class="text-sm font-medium text-gray-700">AdUserId</label>
-              <n-input v-model:value="form.headers.adUserId" placeholder="请输入 AdUserId" />
+              <label class="text-sm font-medium text-gray-700">{{
+                CONFIG_LABELS.headers.apptype
+              }}</label>
+              <n-input
+                v-model:value="form.headers.apptype"
+                :placeholder="CONFIG_PLACEHOLDERS.headers.apptype"
+              />
+            </div>
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-gray-700">
+                {{ CONFIG_LABELS.headers.distributorId }}
+              </label>
+              <n-input
+                v-model:value="form.headers.distributorId"
+                :placeholder="CONFIG_PLACEHOLDERS.headers.distributorId"
+              />
+            </div>
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-gray-700">{{
+                CONFIG_LABELS.headers.adUserId
+              }}</label>
+              <n-input
+                v-model:value="form.headers.adUserId"
+                :placeholder="CONFIG_PLACEHOLDERS.headers.adUserId"
+              />
             </div>
             <div class="space-y-2 md:col-span-2">
-              <label class="text-sm font-medium text-gray-700">RootAdUserId</label>
+              <label class="text-sm font-medium text-gray-700">
+                {{ CONFIG_LABELS.headers.rootAdUserId }}
+              </label>
               <n-input
                 v-model:value="form.headers.rootAdUserId"
-                placeholder="请输入 RootAdUserId"
+                :placeholder="CONFIG_PLACEHOLDERS.headers.rootAdUserId"
               />
             </div>
           </div>
@@ -110,55 +133,86 @@
           </template>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="space-y-2 md:col-span-2">
-              <label class="text-sm font-medium text-gray-700">Secret密钥</label>
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-gray-700">
+                {{ CONFIG_LABELS.buildConfig.secretKey }}
+              </label>
               <n-input
                 v-model:value="form.buildConfig.secretKey"
-                placeholder="请输入 buildConfig.secretKey"
+                :placeholder="CONFIG_PLACEHOLDERS.buildConfig.secretKey"
               />
             </div>
             <div class="space-y-2">
-              <label class="text-sm font-medium text-gray-700">商品ID</label>
-              <n-input v-model:value="form.buildConfig.productId" placeholder="请输入 productId" />
+              <label class="text-sm font-medium text-gray-700">{{
+                CONFIG_LABELS.buildConfig.source
+              }}</label>
+              <n-input
+                v-model:value="form.buildConfig.source"
+                :placeholder="CONFIG_PLACEHOLDERS.buildConfig.source"
+              />
             </div>
             <div class="space-y-2">
-              <label class="text-sm font-medium text-gray-700">商品库ID</label>
+              <label class="text-sm font-medium text-gray-700">{{
+                CONFIG_LABELS.buildConfig.productId
+              }}</label>
+              <n-input
+                v-model:value="form.buildConfig.productId"
+                :placeholder="CONFIG_PLACEHOLDERS.buildConfig.productId"
+              />
+            </div>
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-gray-700">
+                {{ CONFIG_LABELS.buildConfig.productPlatformId }}
+              </label>
               <n-input
                 v-model:value="form.buildConfig.productPlatformId"
-                placeholder="请输入 productPlatformId"
+                :placeholder="CONFIG_PLACEHOLDERS.buildConfig.productPlatformId"
               />
             </div>
-            <div class="space-y-2 md:col-span-2">
-              <label class="text-sm font-medium text-gray-700">落地页 URL</label>
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-gray-700">
+                {{ CONFIG_LABELS.buildConfig.landingUrl }}
+              </label>
               <n-input
                 v-model:value="form.buildConfig.landingUrl"
-                placeholder="请输入 landingUrl"
+                :placeholder="CONFIG_PLACEHOLDERS.buildConfig.landingUrl"
                 class="font-mono text-sm"
               />
             </div>
             <div class="space-y-2">
-              <label class="text-sm font-medium text-gray-700">小程序名称</label>
+              <label class="text-sm font-medium text-gray-700">
+                {{ CONFIG_LABELS.buildConfig.microAppName }}
+              </label>
               <n-input
                 v-model:value="form.buildConfig.microAppName"
-                placeholder="请输入 microAppName"
+                :placeholder="CONFIG_PLACEHOLDERS.buildConfig.microAppName"
               />
             </div>
             <div class="space-y-2">
-              <label class="text-sm font-medium text-gray-700">小程序 AppID</label>
+              <label class="text-sm font-medium text-gray-700">
+                {{ CONFIG_LABELS.buildConfig.microAppId }}
+              </label>
               <n-input
                 v-model:value="form.buildConfig.microAppId"
-                placeholder="请输入 microAppId"
+                :placeholder="CONFIG_PLACEHOLDERS.buildConfig.microAppId"
               />
             </div>
             <div class="space-y-2">
-              <label class="text-sm font-medium text-gray-700">cc_id</label>
-              <n-input v-model:value="form.buildConfig.ccId" placeholder="请输入 ccId" />
+              <label class="text-sm font-medium text-gray-700">{{
+                CONFIG_LABELS.buildConfig.ccId
+              }}</label>
+              <n-input
+                v-model:value="form.buildConfig.ccId"
+                :placeholder="CONFIG_PLACEHOLDERS.buildConfig.ccId"
+              />
             </div>
-            <div class="space-y-2 md:col-span-2">
-              <label class="text-sm font-medium text-gray-700">首充模板ID</label>
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-gray-700">
+                {{ CONFIG_LABELS.buildConfig.rechargeTemplateId }}
+              </label>
               <n-input
                 v-model:value="form.buildConfig.rechargeTemplateId"
-                placeholder="请输入 rechargeTemplateId"
+                :placeholder="CONFIG_PLACEHOLDERS.buildConfig.rechargeTemplateId"
               />
             </div>
           </div>
@@ -246,37 +300,45 @@
 
           <div class="space-y-4">
             <div class="space-y-2">
-              <label class="text-sm font-medium text-gray-700">App Token</label>
+              <label class="text-sm font-medium text-gray-700">{{
+                CONFIG_LABELS.feishu.appToken
+              }}</label>
               <n-input
                 v-model:value="form.feishu.app_token"
-                placeholder="请输入飞书多维表格 App Token"
+                :placeholder="CONFIG_PLACEHOLDERS.feishu.appToken"
                 class="font-mono text-sm"
               />
             </div>
 
             <div class="space-y-2">
-              <label class="text-sm font-medium text-gray-700">剧集清单表 ID</label>
+              <label class="text-sm font-medium text-gray-700">
+                {{ CONFIG_LABELS.feishu.dramaListTableId }}
+              </label>
               <n-input
                 v-model:value="form.feishu.table_ids.drama_list"
-                placeholder="请输入剧集清单表 Table ID"
+                :placeholder="CONFIG_PLACEHOLDERS.feishu.dramaListTableId"
                 class="font-mono text-sm"
               />
             </div>
 
             <div class="space-y-2">
-              <label class="text-sm font-medium text-gray-700">剧集状态表 ID</label>
+              <label class="text-sm font-medium text-gray-700">
+                {{ CONFIG_LABELS.feishu.dramaStatusTableId }}
+              </label>
               <n-input
                 v-model:value="form.feishu.table_ids.drama_status"
-                placeholder="请输入剧集状态表 Table ID"
+                :placeholder="CONFIG_PLACEHOLDERS.feishu.dramaStatusTableId"
                 class="font-mono text-sm"
               />
             </div>
 
             <div class="space-y-2">
-              <label class="text-sm font-medium text-gray-700">账户表 ID</label>
+              <label class="text-sm font-medium text-gray-700">
+                {{ CONFIG_LABELS.feishu.accountTableId }}
+              </label>
               <n-input
                 v-model:value="form.feishu.table_ids.account"
-                placeholder="请输入账户表 Table ID"
+                :placeholder="CONFIG_PLACEHOLDERS.feishu.accountTableId"
                 class="font-mono text-sm"
               />
             </div>
@@ -344,6 +406,7 @@ import { useRouter } from 'vue-router'
 import { Icon } from '@iconify/vue'
 import { useMessage } from 'naive-ui'
 import { configApi, type AppConfig, type DouyinMaterialMatch } from '@/api/config'
+import { CONFIG_LABELS, CONFIG_PLACEHOLDERS } from '@/constants/configLabels'
 
 const router = useRouter()
 const message = useMessage()
@@ -369,6 +432,7 @@ const form = reactive<AppConfig>({
   },
   buildConfig: {
     secretKey: '',
+    source: '',
     productId: '',
     productPlatformId: '',
     landingUrl: '',
@@ -433,6 +497,7 @@ async function loadConfig() {
       form.headers.adUserId = result.data.headers?.adUserId || ''
       form.headers.rootAdUserId = result.data.headers?.rootAdUserId || ''
       form.buildConfig.secretKey = result.data.buildConfig?.secretKey || ''
+      form.buildConfig.source = result.data.buildConfig?.source || ''
       form.buildConfig.productId = result.data.buildConfig?.productId || ''
       form.buildConfig.productPlatformId = result.data.buildConfig?.productPlatformId || ''
       form.buildConfig.landingUrl = result.data.buildConfig?.landingUrl || ''

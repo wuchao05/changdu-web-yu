@@ -36,6 +36,7 @@ const DEFAULT_SIMPLE_CONFIG = {
   },
   buildConfig: {
     secretKey: '',
+    source: '',
     productId: '',
     productPlatformId: '',
     landingUrl: '',
@@ -140,6 +141,10 @@ function normalizeSimpleConfig(config = {}) {
         typeof buildConfig.secretKey === 'string'
           ? buildConfig.secretKey
           : DEFAULT_SIMPLE_CONFIG.buildConfig.secretKey,
+      source:
+        typeof buildConfig.source === 'string'
+          ? buildConfig.source
+          : DEFAULT_SIMPLE_CONFIG.buildConfig.source,
       productId:
         typeof buildConfig.productId === 'string'
           ? buildConfig.productId
@@ -389,6 +394,14 @@ router.put('/config', async ctx => {
                             typeof payload.buildConfig.secretKey === 'string'
                               ? payload.buildConfig.secretKey
                               : currentSimple.buildConfig.secretKey,
+                        }
+                      : {}),
+                    ...(Object.prototype.hasOwnProperty.call(payload.buildConfig, 'source')
+                      ? {
+                          source:
+                            typeof payload.buildConfig.source === 'string'
+                              ? payload.buildConfig.source
+                              : currentSimple.buildConfig.source,
                         }
                       : {}),
                     ...(Object.prototype.hasOwnProperty.call(payload.buildConfig, 'productId')

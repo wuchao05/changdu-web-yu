@@ -6,22 +6,22 @@
           <n-card title="🔐 基础认证" class="config-section" :bordered="false">
             <div class="space-y-4">
               <div class="config-item">
-                <label class="config-label">常读 Cookie</label>
+                <label class="config-label">{{ CONFIG_LABELS.changduCookie }}</label>
                 <n-input
                   v-model:value="localConfig.changduCookie"
                   type="textarea"
                   :rows="3"
-                  placeholder="changduCookie"
+                  :placeholder="CONFIG_PLACEHOLDERS.changduCookie"
                   class="font-mono text-sm"
                 />
               </div>
               <div class="config-item">
-                <label class="config-label">巨量 Cookie</label>
+                <label class="config-label">{{ CONFIG_LABELS.juliangCookie }}</label>
                 <n-input
                   v-model:value="localConfig.juliangCookie"
                   type="textarea"
                   :rows="3"
-                  placeholder="juliangCookie"
+                  :placeholder="CONFIG_PLACEHOLDERS.juliangCookie"
                   class="font-mono text-sm"
                 />
               </div>
@@ -31,91 +31,105 @@
           <n-card title="🧾 请求头与搭建配置" class="config-section" :bordered="false">
             <div class="space-y-4">
               <div class="config-item">
-                <label class="config-label">appid</label>
-                <n-input v-model:value="localConfig.headers.appid" placeholder="headers.appid" />
+                <label class="config-label">{{ CONFIG_LABELS.headers.appid }}</label>
+                <n-input
+                  v-model:value="localConfig.headers.appid"
+                  :placeholder="CONFIG_PLACEHOLDERS.headers.appid"
+                />
               </div>
               <div class="config-item">
-                <label class="config-label">apptype</label>
+                <label class="config-label">{{ CONFIG_LABELS.headers.apptype }}</label>
                 <n-input
                   v-model:value="localConfig.headers.apptype"
-                  placeholder="headers.apptype"
+                  :placeholder="CONFIG_PLACEHOLDERS.headers.apptype"
                 />
               </div>
               <div class="config-item">
-                <label class="config-label">distributorId</label>
+                <label class="config-label">{{ CONFIG_LABELS.headers.distributorId }}</label>
                 <n-input
                   v-model:value="localConfig.headers.distributorId"
-                  placeholder="headers.distributorId"
+                  :placeholder="CONFIG_PLACEHOLDERS.headers.distributorId"
                 />
               </div>
               <div class="config-item">
-                <label class="config-label">adUserId</label>
+                <label class="config-label">{{ CONFIG_LABELS.headers.adUserId }}</label>
                 <n-input
                   v-model:value="localConfig.headers.adUserId"
-                  placeholder="headers.adUserId"
+                  :placeholder="CONFIG_PLACEHOLDERS.headers.adUserId"
                 />
               </div>
               <div class="config-item">
-                <label class="config-label">rootAdUserId</label>
+                <label class="config-label">{{ CONFIG_LABELS.headers.rootAdUserId }}</label>
                 <n-input
                   v-model:value="localConfig.headers.rootAdUserId"
-                  placeholder="headers.rootAdUserId"
+                  :placeholder="CONFIG_PLACEHOLDERS.headers.rootAdUserId"
                 />
               </div>
               <div class="config-item">
-                <label class="config-label">Secret密钥</label>
+                <label class="config-label">{{ CONFIG_LABELS.buildConfig.secretKey }}</label>
                 <n-input
                   v-model:value="localConfig.buildConfig.secretKey"
-                  placeholder="buildConfig.secretKey"
+                  :placeholder="CONFIG_PLACEHOLDERS.buildConfig.secretKey"
                 />
               </div>
               <div class="config-item">
-                <label class="config-label">商品ID</label>
+                <label class="config-label">{{ CONFIG_LABELS.buildConfig.source }}</label>
+                <n-input
+                  v-model:value="localConfig.buildConfig.source"
+                  :placeholder="CONFIG_PLACEHOLDERS.buildConfig.source"
+                />
+              </div>
+              <div class="config-item">
+                <label class="config-label">{{ CONFIG_LABELS.buildConfig.productId }}</label>
                 <n-input
                   v-model:value="localConfig.buildConfig.productId"
-                  placeholder="buildConfig.productId"
+                  :placeholder="CONFIG_PLACEHOLDERS.buildConfig.productId"
                 />
               </div>
               <div class="config-item">
-                <label class="config-label">商品库ID</label>
+                <label class="config-label">{{
+                  CONFIG_LABELS.buildConfig.productPlatformId
+                }}</label>
                 <n-input
                   v-model:value="localConfig.buildConfig.productPlatformId"
-                  placeholder="buildConfig.productPlatformId"
+                  :placeholder="CONFIG_PLACEHOLDERS.buildConfig.productPlatformId"
                 />
               </div>
               <div class="config-item">
-                <label class="config-label">landingUrl</label>
+                <label class="config-label">{{ CONFIG_LABELS.buildConfig.landingUrl }}</label>
                 <n-input
                   v-model:value="localConfig.buildConfig.landingUrl"
-                  placeholder="buildConfig.landingUrl"
+                  :placeholder="CONFIG_PLACEHOLDERS.buildConfig.landingUrl"
                 />
               </div>
               <div class="config-item">
-                <label class="config-label">microAppName</label>
+                <label class="config-label">{{ CONFIG_LABELS.buildConfig.microAppName }}</label>
                 <n-input
                   v-model:value="localConfig.buildConfig.microAppName"
-                  placeholder="buildConfig.microAppName"
+                  :placeholder="CONFIG_PLACEHOLDERS.buildConfig.microAppName"
                 />
               </div>
               <div class="config-item">
-                <label class="config-label">microAppId</label>
+                <label class="config-label">{{ CONFIG_LABELS.buildConfig.microAppId }}</label>
                 <n-input
                   v-model:value="localConfig.buildConfig.microAppId"
-                  placeholder="buildConfig.microAppId"
+                  :placeholder="CONFIG_PLACEHOLDERS.buildConfig.microAppId"
                 />
               </div>
               <div class="config-item">
-                <label class="config-label">ccId</label>
+                <label class="config-label">{{ CONFIG_LABELS.buildConfig.ccId }}</label>
                 <n-input
                   v-model:value="localConfig.buildConfig.ccId"
-                  placeholder="buildConfig.ccId"
+                  :placeholder="CONFIG_PLACEHOLDERS.buildConfig.ccId"
                 />
               </div>
               <div class="config-item">
-                <label class="config-label">首充模板ID</label>
+                <label class="config-label">{{
+                  CONFIG_LABELS.buildConfig.rechargeTemplateId
+                }}</label>
                 <n-input
                   v-model:value="localConfig.buildConfig.rechargeTemplateId"
-                  placeholder="buildConfig.rechargeTemplateId"
+                  :placeholder="CONFIG_PLACEHOLDERS.buildConfig.rechargeTemplateId"
                 />
               </div>
             </div>
@@ -124,32 +138,32 @@
           <n-card title="🗂 飞书配置" class="config-section" :bordered="false">
             <div class="space-y-4">
               <div class="config-item">
-                <label class="config-label">app_token</label>
+                <label class="config-label">{{ CONFIG_LABELS.feishu.appToken }}</label>
                 <n-input
                   v-model:value="localConfig.feishu.app_token"
-                  placeholder="feishu.app_token"
+                  :placeholder="CONFIG_PLACEHOLDERS.feishu.appToken"
                   class="font-mono text-sm"
                 />
               </div>
               <div class="config-item">
-                <label class="config-label">table_ids.drama_list</label>
+                <label class="config-label">{{ CONFIG_LABELS.feishu.dramaListTableId }}</label>
                 <n-input
                   v-model:value="localConfig.feishu.table_ids.drama_list"
-                  placeholder="feishu.table_ids.drama_list"
+                  :placeholder="CONFIG_PLACEHOLDERS.feishu.dramaListTableId"
                 />
               </div>
               <div class="config-item">
-                <label class="config-label">table_ids.drama_status</label>
+                <label class="config-label">{{ CONFIG_LABELS.feishu.dramaStatusTableId }}</label>
                 <n-input
                   v-model:value="localConfig.feishu.table_ids.drama_status"
-                  placeholder="feishu.table_ids.drama_status"
+                  :placeholder="CONFIG_PLACEHOLDERS.feishu.dramaStatusTableId"
                 />
               </div>
               <div class="config-item">
-                <label class="config-label">table_ids.account</label>
+                <label class="config-label">{{ CONFIG_LABELS.feishu.accountTableId }}</label>
                 <n-input
                   v-model:value="localConfig.feishu.table_ids.account"
-                  placeholder="feishu.table_ids.account"
+                  :placeholder="CONFIG_PLACEHOLDERS.feishu.accountTableId"
                 />
               </div>
             </div>
@@ -184,6 +198,7 @@
 import { ref, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import { NCard, NInput, NButton, NSpace, NSpin, NScrollbar, useMessage } from 'naive-ui'
+import { CONFIG_LABELS, CONFIG_PLACEHOLDERS } from '@/constants/configLabels'
 
 interface AuthConfig {
   changduCookie: string
@@ -197,6 +212,7 @@ interface AuthConfig {
   }
   buildConfig: {
     secretKey: string
+    source: string
     productId: string
     productPlatformId: string
     landingUrl: string
@@ -234,6 +250,7 @@ const createEmptyConfig = (): AuthConfig => ({
   },
   buildConfig: {
     secretKey: '',
+    source: '',
     productId: '',
     productPlatformId: '',
     landingUrl: '',
@@ -271,6 +288,7 @@ const normalizeConfig = (config: any): AuthConfig => ({
   buildConfig: {
     secretKey:
       typeof config?.buildConfig?.secretKey === 'string' ? config.buildConfig.secretKey : '',
+    source: typeof config?.buildConfig?.source === 'string' ? config.buildConfig.source : '',
     productId:
       typeof config?.buildConfig?.productId === 'string' ? config.buildConfig.productId : '',
     productPlatformId:

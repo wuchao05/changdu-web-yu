@@ -307,6 +307,7 @@ async function getBuildConfig() {
     ccId: buildConfig.ccId,
     microAppName: buildConfig.microAppName,
     microAppId: buildConfig.microAppId,
+    source: buildConfig.source || DAILY_BUILD_CONFIG.build.promotion.source,
     productId: buildConfig.productId,
     productPlatformId: buildConfig.productPlatformId,
     landingUrl: buildConfig.landingUrl,
@@ -959,7 +960,7 @@ async function createPromotion(params) {
         params: start_params || '',
         url: link || '',
       },
-      source: promotionConfig.source,
+      source: buildConfig.source,
     },
     material_group: {
       playable_material_info: [],
