@@ -111,7 +111,6 @@ import { useCreatorStore } from '@/stores/creator'
 import { useDataStore } from '@/stores/data'
 import { useSettingsStore } from '@/stores/settings'
 import { useAccountStore } from '@/stores/account'
-import { useDarenStore } from '@/stores/daren'
 import { getReport } from '@/api'
 import type { DailyData, ReportParams } from '@/api/types'
 import type { ExtendedError } from '@/api/http'
@@ -130,7 +129,6 @@ const creatorStore = useCreatorStore()
 const dataStore = useDataStore()
 const settingsStore = useSettingsStore()
 const accountStore = useAccountStore()
-const darenStore = useDarenStore()
 
 // 使用全局日期范围管理
 const { sanrouDateRange, setSanrouDateRange, sanrouDefaultRange } = useGlobalDateRange()
@@ -357,14 +355,6 @@ async function fetchReportData() {
       end: endDate,
       page_index: currentPage.value - 1, // API使用0基索引
       page_size: pageSize.value,
-    }
-
-    // 达人账号：添加抖音号过滤（注意：报表数据过滤可能不准确，建议使用订单明细）
-    // 抖音号过滤已禁用
-    const shouldFilterByDouyin = false
-
-    if (shouldFilterByDouyin) {
-      params.daren_douyin_accounts = darenStore.douyinAccountsParam
     }
 
     const data = await getReport(params)

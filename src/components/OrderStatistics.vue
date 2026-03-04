@@ -550,7 +550,6 @@ import { useCreatorStore } from '@/stores/creator'
 import { useDataStore } from '@/stores/data'
 import { useSettingsStore } from '@/stores/settings'
 import { useAccountStore } from '@/stores/account'
-import { useDarenStore } from '@/stores/daren'
 import { getOrders } from '@/api'
 import type { OrderItem, OrderParams } from '@/api/types'
 import type { ExtendedError } from '@/api/http'
@@ -597,7 +596,6 @@ const optimizeUnpaidOrders = (orders: OrderItem[]): OrderItem[] => {
 }
 import DateRangePicker from './DateRangePicker.vue'
 import { useGlobalDateRange } from '@/composables/useGlobalDateRange'
-import { useUserAuth } from '@/composables/useUserAuth'
 
 interface ParsedOrderItem extends OrderItem {
   parsedInfo?: {
@@ -613,8 +611,6 @@ const creatorStore = useCreatorStore()
 const dataStore = useDataStore()
 const settingsStore = useSettingsStore()
 const accountStore = useAccountStore()
-const darenStore = useDarenStore()
-const { isAdmin } = useUserAuth()
 
 // 使用全局日期范围管理
 const { sanrouDateRange, setSanrouDateRange, sanrouDefaultRange } = useGlobalDateRange()
@@ -841,22 +837,9 @@ const paginationPageCount = computed(() => {
 
 const displayOrderTotal = computed(() => paginationTotal.value)
 
-// 当前选中达人的名称
-const currentDarenLabel = computed(() => {
-  if (!darenStore.selectedDarenUserId) return ''
-  const daren = darenStore.findDarenByUserId(darenStore.selectedDarenUserId)
-  return daren?.label || ''
-})
-
 // 充值卡片标题（管理员显示达人名，达人视图省略达人名）
 const rechargeCardTitle = computed(() => {
-  if (isAdmin.value && darenStore.selectedDarenUserId) {
-    // 管理员视图：显示达人名 - 日期总充值
-    return `${currentDarenLabel.value} - ${dateRangeTitle.value}总充值`
-  } else {
-    // 达人视图：只显示日期总充值
-    return `${dateRangeTitle.value}总充值`
-  }
+  return `${dateRangeTitle.value}总充值`
 })
 
 // 快捷日期标签（从 DateRangePicker 组件传递过来）
@@ -1589,18 +1572,7 @@ async function fetchOrderData() {
       params.pay_status = payStatus.value
     }
 
-    // 达人账号：添加抖音号过滤
-    // 只有在以下情况才过滤：
-    // 1. 达人用户（非管理员）
-    // 抖音号过滤已禁用
-    const shouldFilterByDouyin = false
-
-    if (shouldFilterByDouyin) {
-      params.daren_douyin_accounts = darenStore.douyinAccountsParam
-      console.log('🔍 [达人过滤] 抖音号参数:', darenStore.douyinAccountsParam)
-    } else {
-      console.log('🔍 查看全部数据，不过滤')
-    }
+    console.log('🔍 查看全部数据，不过滤')
 
     const data = await getOrders(params)
     // API数据获取成功
@@ -1859,11 +1831,11 @@ watch(
       return
     }
 
-    // 优先选择"小红"，如果不存在则选择第一个
-    const xiaohong = options.find(name => name === '小红')
+    // 优先选择"小鱼"，如果不存在则选择第一个
+    const xiaohong = options.find(name => name === '小鱼')
     const targetCollaborator = xiaohong || options[0]
 
-    // 如果当前没有选择，或者当前选择不在列表中，或者"小红"出现了但未被选中，则重新选择
+    // 如果当前没有选择，或者当前选择不在列表中，或者"小鱼"出现了但未被选中，则重新选择
     if (
       !selectedCollaborator.value ||
       !options.includes(selectedCollaborator.value) ||
@@ -1983,31 +1955,6 @@ watch(
 )
 
 // 监听默认查询天数变化 - 现在由全局日期范围管理自动处理
-
-// 监听达人抖音号参数变化（用于达人用户首次加载）
-watch(
-  () => darenStore.douyinAccountsParam,
-  (newParam, oldParam) => {
-    // 达人功能已禁用
-    if (false && !isAdmin.value && !oldParam && newParam && accountStore.isSanrouLikeAccount) {
-      console.log('🎯 [达人用户] 抖音号配置已加载，自动获取订单数据')
-      fetchOrderData()
-    }
-  }
-)
-
-// 监听管理员选择的达人变化
-watch(
-  () => darenStore.selectedDarenUserId,
-  newUserId => {
-    // 达人功能已禁用
-    if (false && isAdmin.value && accountStore.isSanrouLikeAccount) {
-      console.log('🎯 [管理员] 达人选择变化，重新获取订单数据:', newUserId || '全部')
-      currentPage.value = 1 // 重置到第一页
-      fetchOrderData()
-    }
-  }
-)
 
 onMounted(() => {
   pageSize.value = settingsStore.settings.pageSize

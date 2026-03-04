@@ -1,13 +1,14 @@
 import { computed, ref } from 'vue'
-import { useDarenStore } from '@/stores/daren'
+
+interface DarenUserInfo {
+  label: string
+}
 
 /**
  * 用户身份管理 Composable
  * 负责管理用户身份相关的状态和逻辑
  */
 export function useUserAuth() {
-  const darenStore = useDarenStore()
-
   const currentUserId = computed(() => undefined as string | undefined)
 
   // 管理员用户 ID（从服务器配置读取，有默认值）
@@ -32,14 +33,12 @@ export function useUserAuth() {
 
   // 计算属性：是否为达人用户（在达人列表中）
   const isDarenUser = computed(() => {
-    if (!currentUserId.value) return false
-    return darenStore.findDarenByUserId(currentUserId.value) !== undefined
+    return false
   })
 
   // 计算属性：当前达人信息
-  const currentDaren = computed(() => {
-    if (!currentUserId.value) return undefined
-    return darenStore.findDarenByUserId(currentUserId.value)
+  const currentDaren = computed<DarenUserInfo | undefined>(() => {
+    return undefined
   })
 
   // 保留旧的兼容性 API（已弃用）
@@ -54,21 +53,18 @@ export function useUserAuth() {
   // 计算属性：用户身份描述（普通用户不显示身份）
   const userRole = computed(() => {
     if (isAdmin.value) return '管理员'
-    if (currentDaren.value) return currentDaren.value.label
     return null
   })
 
   // 计算属性：用户身份颜色主题
   const userRoleTheme = computed(() => {
     if (isAdmin.value) return 'blue'
-    if (isDarenUser.value) return 'cyan'
     return null
   })
 
   // 计算属性：用户身份图标
   const userRoleIcon = computed(() => {
     if (isAdmin.value) return 'mdi:shield-crown'
-    if (isDarenUser.value) return 'mdi:account-star'
     return null
   })
 
@@ -78,19 +74,16 @@ export function useUserAuth() {
     if (isAdmin.value) {
       labels.push('管理员')
     }
-    if (currentDaren.value) {
-      labels.push(currentDaren.value.label)
-    }
     return labels
   })
 
   // 计算属性：是否为有效用户（管理员或已配置的达人）
   const isValidUser = computed(() => {
-    // 没有用户ID，或者用户ID既不是管理员也不是达人
+    // 没有用户ID，或者用户ID不是管理员
     if (!currentUserId.value) {
       return false
     }
-    return isAdmin.value || isDarenUser.value
+    return isAdmin.value
   })
 
   return {

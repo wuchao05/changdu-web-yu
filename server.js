@@ -21,7 +21,6 @@ import xtRoutes from './server/routes/xt.js'
 import materialRoutes from './server/routes/material.js'
 import djdataRoutes from './server/routes/djdata.js'
 import jiliangRoutes from './server/routes/jiliang.js'
-import darenRoutes from './server/routes/daren.js'
 import dailyBuildRoutes from './server/routes/dailyBuild.js'
 import douyinMaterialRoutes from './server/routes/douyinMaterial.js'
 import authRoutes from './server/routes/auth.js'
@@ -101,7 +100,6 @@ router.use('/api/novelsale', novelsaleRoutes.routes(), novelsaleRoutes.allowedMe
 router.use('/api/node/api', nodeRoutes.routes(), nodeRoutes.allowedMethods())
 router.use('/api/xt', xtRoutes.routes(), xtRoutes.allowedMethods())
 router.use('/api/djdata', djdataRoutes.routes(), djdataRoutes.allowedMethods())
-router.use('/api/daren', darenRoutes.routes(), darenRoutes.allowedMethods())
 router.use('/api/auth', authRoutes.routes(), authRoutes.allowedMethods())
 router.use('/api/adx', adxRoutes.routes(), adxRoutes.allowedMethods())
 router.use(

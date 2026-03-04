@@ -24,14 +24,10 @@ import {
   type SmartSchedulerTask,
 } from '@/api/dailyBuild'
 import { useAccountStore } from '@/stores/account'
-import { useDarenStore } from '@/stores/daren'
-import { useUserAuth } from '@/composables/useUserAuth'
 
 const message = useMessage()
 const dialog = useDialog()
 const accountStore = useAccountStore()
-const darenStore = useDarenStore()
-const { currentUserId } = useUserAuth()
 
 interface Props {
   show: boolean
@@ -54,11 +50,6 @@ const isSubmitting = ref(false)
 
 // 获取当前用户名称（用于API调用）
 const userName = computed(() => {
-  // 达人账号：使用达人的 shortName
-  if (accountStore.isDarenAccount) {
-    const currentDaren = darenStore.darenList.find(d => d.id === currentUserId.value)
-    return currentDaren?.shortName || 'xh-sr'
-  }
   // 散柔账号：固定返回 'xh-sr'
   return 'xh-sr'
 })
