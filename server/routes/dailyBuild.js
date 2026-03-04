@@ -90,10 +90,25 @@ async function getBuildConfig() {
  * 创建推广链接（常读openapi）
  */
 router.post('/create-promotion-link', async ctx => {
+  const startedAt = Date.now()
+  const traceId = `promotion-link-${startedAt}-${Math.random().toString(36).slice(2, 8)}`
+  const logPrefix = `[create-promotion-link][${traceId}]`
+
   try {
     const { book_id, drama_name, promotion_name } = ctx.request.body
 
+    console.log(`${logPrefix} 开始处理请求`)
+    console.log(`${logPrefix} 入参:`, {
+      book_id,
+      drama_name,
+      promotion_name,
+      method: ctx.method,
+      path: ctx.path,
+      ip: ctx.ip,
+    })
+
     if (!book_id || !drama_name) {
+      console.warn(`${logPrefix} 参数缺失: book_id 或 drama_name`)
       ctx.status = 400
       ctx.body = { error: '缺少必要参数: book_id, drama_name' }
       return
@@ -102,14 +117,19 @@ router.post('/create-promotion-link', async ctx => {
     // 使用传入的 promotion_name，如果没有则使用默认格式
     const finalPromotionName = promotion_name || generatePromotionName(drama_name)
 
-    console.log('========== 创建推广链接 ==========')
-    console.log('book_id:', book_id)
-    console.log('drama_name:', drama_name)
-    console.log('promotion_name:', finalPromotionName)
-    console.log('请求URL:', `${DAILY_BUILD_CONFIG.changdu.baseUrl}/promotion/create/v1`)
+    console.log(`${logPrefix} 最终推广名: ${finalPromotionName}`)
+    console.log(`${logPrefix} 请求URL: ${DAILY_BUILD_CONFIG.changdu.baseUrl}/promotion/create/v1`)
 
     const { distributorId, secretKey } = await getChangduSignConfig()
     const buildConfig = await getBuildConfig()
+    console.log(`${logPrefix} 配置快照:`, {
+      distributorId,
+      secretKeyLength: secretKey.length,
+      rechargeTemplateId: buildConfig.rechargeTemplateId,
+      mediaSource: DAILY_BUILD_CONFIG.promotion.mediaSource,
+      price: DAILY_BUILD_CONFIG.promotion.price,
+      startChapter: DAILY_BUILD_CONFIG.promotion.startChapter,
+    })
 
     // 构建请求体
     const requestBody = {
@@ -123,7 +143,7 @@ router.post('/create-promotion-link', async ctx => {
       start_chapter: DAILY_BUILD_CONFIG.promotion.startChapter,
     }
 
-    console.log('请求体:', JSON.stringify(requestBody, null, 2))
+    console.log(`${logPrefix} 请求体:`, requestBody)
 
     // 生成签名头部
     const { headers: signHeaders } = buildChangduPostHeaders(
@@ -133,9 +153,10 @@ router.post('/create-promotion-link', async ctx => {
       secretKey
     )
 
-    console.log('签名头部:', signHeaders)
+    console.log(`${logPrefix} 签名头部:`, signHeaders)
 
     // 调用常读openapi
+    const upstreamStartAt = Date.now()
     const response = await fetch(`${DAILY_BUILD_CONFIG.changdu.baseUrl}/promotion/create/v1`, {
       method: 'POST',
       headers: {
@@ -145,18 +166,21 @@ router.post('/create-promotion-link', async ctx => {
       body: JSON.stringify(requestBody),
     })
 
-    console.log('常读API响应状态:', response.status, response.statusText)
+    const upstreamCost = Date.now() - upstreamStartAt
+    console.log(
+      `${logPrefix} 上游响应状态: ${response.status} ${response.statusText}, 耗时: ${upstreamCost}ms`
+    )
 
     // 获取响应文本
     const responseText = await response.text()
-    console.log('常读API响应内容:', responseText)
+    console.log(`${logPrefix} 上游响应内容:`, responseText)
 
     // 尝试解析JSON
     let result
     try {
       result = JSON.parse(responseText)
     } catch (parseError) {
-      console.error('解析常读API响应失败:', parseError)
+      console.error(`${logPrefix} 解析常读API响应失败:`, parseError)
       ctx.status = 500
       ctx.body = {
         error: '常读API返回了无效的JSON响应',
@@ -165,11 +189,14 @@ router.post('/create-promotion-link', async ctx => {
       return
     }
 
-    console.log('创建推广链接成功:', result)
-    console.log('====================================')
+    console.log(`${logPrefix} 创建推广链接完成:`, {
+      code: result?.code,
+      message: result?.message || result?.msg,
+      totalCost: `${Date.now() - startedAt}ms`,
+    })
     ctx.body = result
   } catch (error) {
-    console.error('创建推广链接失败:', error)
+    console.error(`${logPrefix} 创建推广链接失败, 耗时: ${Date.now() - startedAt}ms`, error)
     ctx.status = 500
     ctx.body = { error: error.message || '创建推广链接失败' }
   }
