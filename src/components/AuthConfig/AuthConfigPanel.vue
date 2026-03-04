@@ -119,7 +119,7 @@
                   <div class="config-item">
                     <label class="config-label">Distributor ID</label>
                     <n-input
-                      v-model:value="localConfig.platforms.changdu.mr.distributorId"
+                      v-model:value="localConfig.headers.distributorId"
                       placeholder="1844565955364887"
                       class="font-mono text-sm"
                     />
@@ -253,6 +253,11 @@ interface AuthConfig {
   users: {
     admin: string
   }
+  headers: {
+    distributorId: string
+    adUserId: string
+    rootAdUserId: string
+  }
   platforms: {
     changdu: {
       sr: { cookie: string; distributorId: string }
@@ -282,6 +287,11 @@ const saving = ref(false)
 const localConfig = ref<AuthConfig>({
   tokens: { xh: '', daren: '' },
   users: { admin: '' },
+  headers: {
+    distributorId: '',
+    adUserId: '',
+    rootAdUserId: '',
+  },
   platforms: {
     changdu: {
       sr: { cookie: '', distributorId: '' },
@@ -312,6 +322,13 @@ async function loadConfig() {
           users: {
             admin: config.users?.admin || '',
           },
+          headers: {
+            distributorId:
+              config.headers?.distributorId || config.platforms?.changdu?.mr?.distributorId || '',
+            adUserId: config.headers?.adUserId || config.platforms?.changdu?.mr?.adUserId || '',
+            rootAdUserId:
+              config.headers?.rootAdUserId || config.platforms?.changdu?.mr?.rootAdUserId || '',
+          },
           platforms: {
             changdu: {
               sr: {
@@ -324,7 +341,7 @@ async function loadConfig() {
               },
               mr: {
                 cookie: config.platforms?.changdu?.mr?.cookie || '',
-                distributorId: config.platforms?.changdu?.mr?.distributorId || '',
+                distributorId: config.headers?.distributorId || '',
               },
               dr: {
                 cookie: config.platforms?.changdu?.dr?.cookie || '',
