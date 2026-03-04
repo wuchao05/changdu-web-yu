@@ -694,10 +694,15 @@ async function getDownloadTaskList(startTime, endTime) {
   const mrConfig = authConfig.platforms?.changdu?.mr || {}
   const cookie = await getSubjectCookie()
 
+  // 仅使用 auth 配置中的 distributorId，不再使用本地默认兜底
+  if (!mrConfig.distributorId) {
+    throw new Error('自动提交配置缺失: auth.platforms.changdu.mr.distributorId')
+  }
+
   const headerConfig = {
     Appid: AUTO_SUBMIT_CONFIG.downloadCenter.appId,
     Apptype: AUTO_SUBMIT_CONFIG.downloadCenter.appType,
-    Distributorid: mrConfig.distributorId || AUTO_SUBMIT_CONFIG.changdu.daily.distributorId,
+    Distributorid: mrConfig.distributorId,
     Aduserid: mrConfig.adUserId || AUTO_SUBMIT_CONFIG.downloadCenter.adUserId,
     Rootaduserid: mrConfig.rootAdUserId || AUTO_SUBMIT_CONFIG.downloadCenter.rootAdUserId,
   }

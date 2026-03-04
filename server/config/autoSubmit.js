@@ -2,16 +2,6 @@
  * 自动提交下载配置
  */
 export const AUTO_SUBMIT_CONFIG = {
-  // 常读平台 API 配置
-  changdu: {
-    baseUrl: 'https://www.changdupingtai.com',
-    // 每日渠道配置
-    daily: {
-      distributorId: '1844565955364887',
-      secretKey: 'H53iZltmBXDndYt5ONW2h6tgCUxbG7kX',
-    },
-  },
-
   // 下载中心请求头默认配置（可被 auth.json 中的 mr 配置覆盖）
   downloadCenter: {
     appId: '40011566',
