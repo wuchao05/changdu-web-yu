@@ -2,7 +2,6 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { AccountType, AccountConfig } from '@/api/types'
 import { ACCOUNT_CONFIGS, DEFAULT_ACCOUNT } from '@/config/accounts'
-import { ACCOUNT_API_DEFAULTS } from '@/config/accountApiDefaults'
 import { useApiConfigStore } from './apiConfig'
 
 export const useAccountStore = defineStore('account', () => {
@@ -53,7 +52,7 @@ export const useAccountStore = defineStore('account', () => {
     const config = apiConfigStore.getConfigByAccount('daily')
     return {
       cookie: config.cookie,
-      distributorId: config.distributorId || ACCOUNT_API_DEFAULTS.daily.distributorId,
+      distributorId: config.distributorId || '',
     }
   }
 

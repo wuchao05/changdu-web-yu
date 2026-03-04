@@ -10,7 +10,7 @@ export const ACCOUNT_CONFIGS: Record<AccountType, AccountConfig> = {
       cookie: '',
       appid: '40011566',
       apptype: '7',
-      distributorId: '1844565955364887',
+      distributorId: '',
     },
   },
 }
