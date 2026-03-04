@@ -285,7 +285,6 @@ async function createPromotionLink(params) {
     index: DAILY_BUILD_CONFIG.promotion.index,
     promotion_name: finalPromotionName,
     recharge_template_id: DAILY_BUILD_CONFIG.changdu.rechargeTemplateId,
-    ad_callback_config_id: DAILY_BUILD_CONFIG.changdu.adCallbackConfigId,
     media_source: DAILY_BUILD_CONFIG.promotion.mediaSource,
     price: DAILY_BUILD_CONFIG.promotion.price,
     start_chapter: DAILY_BUILD_CONFIG.promotion.startChapter,

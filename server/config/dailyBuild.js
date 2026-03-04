@@ -7,7 +7,6 @@ export const DAILY_BUILD_CONFIG = {
     distributorId: 1844565955364887,
     baseUrl: 'https://www.changdupingtai.com/novelsale/openapi',
     rechargeTemplateId: 1126190,
-    adCallbackConfigId: 1845407746151576,
   },
 
   // 巨量API配置
