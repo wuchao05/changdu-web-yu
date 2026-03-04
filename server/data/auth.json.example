@@ -8,6 +8,17 @@
     "adUserId": "",
     "rootAdUserId": ""
   },
+  "buildConfig": {
+    "secretKey": "your_secret_key_here",
+    "productId": "your_product_id_here",
+    "productPlatformId": "your_product_platform_id_here",
+    "landingUrl": "https://example.com/landing-page",
+    "microAppName": "your_micro_app_name",
+    "microAppId": "your_micro_app_id",
+    "ccId": "your_cc_id",
+    "operator": "your_operator",
+    "rechargeTemplateId": "your_recharge_template_id"
+  },
   "tokens": {
     "xh": "your_xh_token_here"
   },

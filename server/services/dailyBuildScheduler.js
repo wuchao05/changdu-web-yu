@@ -276,11 +276,44 @@ async function getChangduSignConfig() {
   if (!distributorId) {
     throw new Error('缺少 auth.headers.distributorId 配置')
   }
-  const secretKey = DAILY_BUILD_CONFIG.changdu.secretKey
+  const secretKey = authConfig.buildConfig?.secretKey
   if (!secretKey) {
-    throw new Error('缺少 DAILY_BUILD_CONFIG.changdu.secretKey 配置')
+    throw new Error('缺少 auth.buildConfig.secretKey 配置')
   }
   return { distributorId, secretKey }
+}
+
+async function getBuildConfig() {
+  const authConfig = await readAuthConfig()
+  const buildConfig = authConfig.buildConfig || {}
+
+  const requiredKeys = [
+    'ccId',
+    'operator',
+    'microAppName',
+    'microAppId',
+    'productId',
+    'productPlatformId',
+    'landingUrl',
+    'rechargeTemplateId',
+  ]
+
+  for (const key of requiredKeys) {
+    if (!buildConfig[key]) {
+      throw new Error(`缺少 auth.buildConfig.${key} 配置`)
+    }
+  }
+
+  return {
+    ccId: buildConfig.ccId,
+    operator: buildConfig.operator,
+    microAppName: buildConfig.microAppName,
+    microAppId: buildConfig.microAppId,
+    productId: buildConfig.productId,
+    productPlatformId: buildConfig.productPlatformId,
+    landingUrl: buildConfig.landingUrl,
+    rechargeTemplateId: buildConfig.rechargeTemplateId,
+  }
 }
 
 // ============== API 调用函数 ==============
@@ -292,13 +325,14 @@ async function createPromotionLink(params) {
   const { book_id, drama_name, promotion_name } = params
   const finalPromotionName = promotion_name || `小鱼-${sanitizeDramaName(drama_name)}`
   const { distributorId, secretKey } = await getChangduSignConfig()
+  const buildConfig = await getBuildConfig()
 
   const requestBody = {
     distributor_id: distributorId,
     book_id: book_id,
     index: DAILY_BUILD_CONFIG.promotion.index,
     promotion_name: finalPromotionName,
-    recharge_template_id: DAILY_BUILD_CONFIG.changdu.rechargeTemplateId,
+    recharge_template_id: buildConfig.rechargeTemplateId,
     media_source: DAILY_BUILD_CONFIG.promotion.mediaSource,
     price: DAILY_BUILD_CONFIG.promotion.price,
     start_chapter: DAILY_BUILD_CONFIG.promotion.startChapter,
@@ -329,7 +363,7 @@ async function createPromotionLink(params) {
  * 返回格式：{ hasValidMicroApp: boolean, result: any }
  */
 async function queryMicroApp(accountId) {
-  const { ccId, operator } = DAILY_BUILD_CONFIG.jiliang
+  const { ccId, operator } = await getBuildConfig()
 
   const url = new URL('https://business.oceanengine.com/app_package/microapp/applet/list')
   url.searchParams.set('page_no', '1')
@@ -384,7 +418,7 @@ async function queryMicroApp(accountId) {
  * 用于优化资产化流程，优先使用被共享的已审核通过的小程序
  */
 async function queryApprovedMicroApp(accountId) {
-  const { ccId, operator } = DAILY_BUILD_CONFIG.jiliang
+  const { ccId, operator } = await getBuildConfig()
 
   const url = new URL('https://business.oceanengine.com/app_package/microapp/applet/list')
   url.searchParams.set('page_no', '1')
@@ -464,7 +498,7 @@ async function createMicroApp(params) {
     },
   }
 
-  const { ccId, operator } = DAILY_BUILD_CONFIG.jiliang
+  const { ccId, operator } = await getBuildConfig()
   const url = `https://business.oceanengine.com/app_package/microapp/applet/create?cc_id=${ccId}&operator=${operator}&operation_type=1`
 
   const response = await fetch(url, {
@@ -514,6 +548,7 @@ async function listMicroAppAssets(accountId) {
  */
 async function createMicroAppAsset(params) {
   const { account_id, micro_app_instance_id } = params
+  const buildConfig = await getBuildConfig()
 
   const response = await fetch(
     `https://ad.oceanengine.com/event_manager/api/assets/create?aadvid=${account_id}`,
@@ -527,9 +562,9 @@ async function createMicroAppAsset(params) {
       body: JSON.stringify({
         assets_type: 4,
         micro_app: {
-          assets_name: DAILY_BUILD_CONFIG.jiliang.microAppName,
-          micro_app_id: DAILY_BUILD_CONFIG.jiliang.microAppId,
-          micro_app_name: DAILY_BUILD_CONFIG.jiliang.microAppName,
+          assets_name: buildConfig.microAppName,
+          micro_app_id: buildConfig.microAppId,
+          micro_app_name: buildConfig.microAppName,
           micro_app_type: 1,
           micro_app_instance_id: micro_app_instance_id,
         },
@@ -706,6 +741,7 @@ async function createProject(params) {
     project_name,
   } = params
   const projectConfig = DAILY_BUILD_CONFIG.build.project
+  const buildConfig = await getBuildConfig()
 
   const finalProjectName =
     project_name || (douyin_account_name ? `${drama_name}-小鱼-${douyin_account_name}` : drama_name)
@@ -731,8 +767,8 @@ async function createProject(params) {
     schedule_type: 1,
     week_schedule_type: 0,
     pricing_type: 9,
-    product_platform_id: projectConfig.product_platform_id,
-    product_id: projectConfig.product_id,
+    product_platform_id: buildConfig.productPlatformId,
+    product_id: buildConfig.productId,
     district: 'all',
     gender: '0',
     age: [['0', '17']],
@@ -860,6 +896,7 @@ async function createPromotion(params) {
   } = params
 
   const promotionConfig = DAILY_BUILD_CONFIG.build.promotion
+  const buildConfig = await getBuildConfig()
 
   const videoMaterialInfo = materials.map(material => {
     let imageInfo
@@ -931,7 +968,7 @@ async function createPromotion(params) {
       video_material_info: videoMaterialInfo,
       image_material_info: [],
       aweme_photo_material_info: [],
-      external_material_info: [{ external_url: promotionConfig.external_url }],
+      external_material_info: [{ external_url: buildConfig.landingUrl }],
       component_material_info: [],
       call_to_action_material_info: [
         { call_to_action: promotionConfig.call_to_action, suggestion_usage_type: 0 },

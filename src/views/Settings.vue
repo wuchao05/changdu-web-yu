@@ -95,6 +95,79 @@
           </div>
         </n-card>
 
+        <!-- 搭建参数配置 -->
+        <n-card class="shadow-sm border border-gray-200" :bordered="false">
+          <template #header>
+            <div class="flex items-center space-x-3">
+              <Icon icon="mdi:cog" class="w-5 h-5 text-gray-600" />
+              <div>
+                <h3 class="text-lg font-semibold text-gray-900">搭建参数配置</h3>
+                <p class="text-sm text-gray-500">
+                  配置商品信息、落地页、小程序和推广链接所需的关键参数
+                </p>
+              </div>
+            </div>
+          </template>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-2 md:col-span-2">
+              <label class="text-sm font-medium text-gray-700">SecretKey</label>
+              <n-input
+                v-model:value="form.buildConfig.secretKey"
+                placeholder="请输入 buildConfig.secretKey"
+              />
+            </div>
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-gray-700">商品 Product ID</label>
+              <n-input v-model:value="form.buildConfig.productId" placeholder="请输入 productId" />
+            </div>
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-gray-700">商品 Platform ID</label>
+              <n-input
+                v-model:value="form.buildConfig.productPlatformId"
+                placeholder="请输入 productPlatformId"
+              />
+            </div>
+            <div class="space-y-2 md:col-span-2">
+              <label class="text-sm font-medium text-gray-700">落地页 URL</label>
+              <n-input
+                v-model:value="form.buildConfig.landingUrl"
+                placeholder="请输入 landingUrl"
+                class="font-mono text-sm"
+              />
+            </div>
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-gray-700">小程序名称</label>
+              <n-input
+                v-model:value="form.buildConfig.microAppName"
+                placeholder="请输入 microAppName"
+              />
+            </div>
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-gray-700">小程序 AppID</label>
+              <n-input
+                v-model:value="form.buildConfig.microAppId"
+                placeholder="请输入 microAppId"
+              />
+            </div>
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-gray-700">cc_id</label>
+              <n-input v-model:value="form.buildConfig.ccId" placeholder="请输入 ccId" />
+            </div>
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-gray-700">operator</label>
+              <n-input v-model:value="form.buildConfig.operator" placeholder="请输入 operator" />
+            </div>
+            <div class="space-y-2 md:col-span-2">
+              <label class="text-sm font-medium text-gray-700">recharge_template_id</label>
+              <n-input
+                v-model:value="form.buildConfig.rechargeTemplateId"
+                placeholder="请输入 rechargeTemplateId"
+              />
+            </div>
+          </div>
+        </n-card>
+
         <!-- 抖音号匹配素材 -->
         <n-card class="shadow-sm border border-gray-200" :bordered="false">
           <template #header>
@@ -298,6 +371,17 @@ const form = reactive<AppConfig>({
     adUserId: '',
     rootAdUserId: '',
   },
+  buildConfig: {
+    secretKey: '',
+    productId: '',
+    productPlatformId: '',
+    landingUrl: '',
+    microAppName: '',
+    microAppId: '',
+    ccId: '',
+    operator: '',
+    rechargeTemplateId: '',
+  },
   feishu: {
     app_token: '',
     table_ids: {
@@ -353,6 +437,15 @@ async function loadConfig() {
       form.headers.distributorId = result.data.headers?.distributorId || ''
       form.headers.adUserId = result.data.headers?.adUserId || ''
       form.headers.rootAdUserId = result.data.headers?.rootAdUserId || ''
+      form.buildConfig.secretKey = result.data.buildConfig?.secretKey || ''
+      form.buildConfig.productId = result.data.buildConfig?.productId || ''
+      form.buildConfig.productPlatformId = result.data.buildConfig?.productPlatformId || ''
+      form.buildConfig.landingUrl = result.data.buildConfig?.landingUrl || ''
+      form.buildConfig.microAppName = result.data.buildConfig?.microAppName || ''
+      form.buildConfig.microAppId = result.data.buildConfig?.microAppId || ''
+      form.buildConfig.ccId = result.data.buildConfig?.ccId || ''
+      form.buildConfig.operator = result.data.buildConfig?.operator || ''
+      form.buildConfig.rechargeTemplateId = result.data.buildConfig?.rechargeTemplateId || ''
       form.feishu.app_token = result.data.feishu?.app_token || ''
       form.feishu.table_ids.drama_list = result.data.feishu?.table_ids?.drama_list || ''
       form.feishu.table_ids.drama_status = result.data.feishu?.table_ids?.drama_status || ''

@@ -34,6 +34,17 @@ const DEFAULT_SIMPLE_CONFIG = {
     adUserId: '',
     rootAdUserId: '',
   },
+  buildConfig: {
+    secretKey: '',
+    productId: '',
+    productPlatformId: '',
+    landingUrl: '',
+    microAppName: '',
+    microAppId: '',
+    ccId: '',
+    operator: '',
+    rechargeTemplateId: '',
+  },
   feishu: {
     app_token: '',
     table_ids: {
@@ -97,6 +108,8 @@ function normalizeDouyinMaterialMatches(matches = []) {
 
 function normalizeSimpleConfig(config = {}) {
   const headers = config.headers && typeof config.headers === 'object' ? config.headers : {}
+  const buildConfig =
+    config.buildConfig && typeof config.buildConfig === 'object' ? config.buildConfig : {}
   const feishu = config.feishu && typeof config.feishu === 'object' ? config.feishu : {}
   const tableIds = feishu.table_ids && typeof feishu.table_ids === 'object' ? feishu.table_ids : {}
 
@@ -122,6 +135,44 @@ function normalizeSimpleConfig(config = {}) {
         typeof headers.rootAdUserId === 'string'
           ? headers.rootAdUserId
           : DEFAULT_SIMPLE_CONFIG.headers.rootAdUserId,
+    },
+    buildConfig: {
+      secretKey:
+        typeof buildConfig.secretKey === 'string'
+          ? buildConfig.secretKey
+          : DEFAULT_SIMPLE_CONFIG.buildConfig.secretKey,
+      productId:
+        typeof buildConfig.productId === 'string'
+          ? buildConfig.productId
+          : DEFAULT_SIMPLE_CONFIG.buildConfig.productId,
+      productPlatformId:
+        typeof buildConfig.productPlatformId === 'string'
+          ? buildConfig.productPlatformId
+          : DEFAULT_SIMPLE_CONFIG.buildConfig.productPlatformId,
+      landingUrl:
+        typeof buildConfig.landingUrl === 'string'
+          ? buildConfig.landingUrl
+          : DEFAULT_SIMPLE_CONFIG.buildConfig.landingUrl,
+      microAppName:
+        typeof buildConfig.microAppName === 'string'
+          ? buildConfig.microAppName
+          : DEFAULT_SIMPLE_CONFIG.buildConfig.microAppName,
+      microAppId:
+        typeof buildConfig.microAppId === 'string'
+          ? buildConfig.microAppId
+          : DEFAULT_SIMPLE_CONFIG.buildConfig.microAppId,
+      ccId:
+        typeof buildConfig.ccId === 'string'
+          ? buildConfig.ccId
+          : DEFAULT_SIMPLE_CONFIG.buildConfig.ccId,
+      operator:
+        typeof buildConfig.operator === 'string'
+          ? buildConfig.operator
+          : DEFAULT_SIMPLE_CONFIG.buildConfig.operator,
+      rechargeTemplateId:
+        typeof buildConfig.rechargeTemplateId === 'string'
+          ? buildConfig.rechargeTemplateId
+          : DEFAULT_SIMPLE_CONFIG.buildConfig.rechargeTemplateId,
     },
     feishu: {
       app_token: typeof feishu.app_token === 'string' ? feishu.app_token : '',
@@ -153,6 +204,7 @@ function buildRuntimeConfig(rawConfig = {}) {
       admin: typeof users.admin === 'string' && users.admin ? users.admin : DEFAULT_ADMIN_USER_ID,
     },
     headers: headerConfig,
+    buildConfig: simple.buildConfig,
     platforms: {
       changdu: {
         cookie: platforms.changdu?.cookie || platforms.changdu?.mr?.cookie || simple.changduCookie,
@@ -323,6 +375,95 @@ router.put('/config', async ctx => {
                             payload.headers.rootAdUserId
                               ? payload.headers.rootAdUserId
                               : currentSimple.headers.rootAdUserId,
+                        }
+                      : {}),
+                  }
+                : {}),
+            },
+          }
+        : {}),
+      ...(Object.prototype.hasOwnProperty.call(payload, 'buildConfig')
+        ? {
+            buildConfig: {
+              ...currentSimple.buildConfig,
+              ...(payload.buildConfig && typeof payload.buildConfig === 'object'
+                ? {
+                    ...(Object.prototype.hasOwnProperty.call(payload.buildConfig, 'secretKey')
+                      ? {
+                          secretKey:
+                            typeof payload.buildConfig.secretKey === 'string'
+                              ? payload.buildConfig.secretKey
+                              : currentSimple.buildConfig.secretKey,
+                        }
+                      : {}),
+                    ...(Object.prototype.hasOwnProperty.call(payload.buildConfig, 'productId')
+                      ? {
+                          productId:
+                            typeof payload.buildConfig.productId === 'string'
+                              ? payload.buildConfig.productId
+                              : currentSimple.buildConfig.productId,
+                        }
+                      : {}),
+                    ...(Object.prototype.hasOwnProperty.call(
+                      payload.buildConfig,
+                      'productPlatformId'
+                    )
+                      ? {
+                          productPlatformId:
+                            typeof payload.buildConfig.productPlatformId === 'string'
+                              ? payload.buildConfig.productPlatformId
+                              : currentSimple.buildConfig.productPlatformId,
+                        }
+                      : {}),
+                    ...(Object.prototype.hasOwnProperty.call(payload.buildConfig, 'landingUrl')
+                      ? {
+                          landingUrl:
+                            typeof payload.buildConfig.landingUrl === 'string'
+                              ? payload.buildConfig.landingUrl
+                              : currentSimple.buildConfig.landingUrl,
+                        }
+                      : {}),
+                    ...(Object.prototype.hasOwnProperty.call(payload.buildConfig, 'microAppName')
+                      ? {
+                          microAppName:
+                            typeof payload.buildConfig.microAppName === 'string'
+                              ? payload.buildConfig.microAppName
+                              : currentSimple.buildConfig.microAppName,
+                        }
+                      : {}),
+                    ...(Object.prototype.hasOwnProperty.call(payload.buildConfig, 'microAppId')
+                      ? {
+                          microAppId:
+                            typeof payload.buildConfig.microAppId === 'string'
+                              ? payload.buildConfig.microAppId
+                              : currentSimple.buildConfig.microAppId,
+                        }
+                      : {}),
+                    ...(Object.prototype.hasOwnProperty.call(payload.buildConfig, 'ccId')
+                      ? {
+                          ccId:
+                            typeof payload.buildConfig.ccId === 'string'
+                              ? payload.buildConfig.ccId
+                              : currentSimple.buildConfig.ccId,
+                        }
+                      : {}),
+                    ...(Object.prototype.hasOwnProperty.call(payload.buildConfig, 'operator')
+                      ? {
+                          operator:
+                            typeof payload.buildConfig.operator === 'string'
+                              ? payload.buildConfig.operator
+                              : currentSimple.buildConfig.operator,
+                        }
+                      : {}),
+                    ...(Object.prototype.hasOwnProperty.call(
+                      payload.buildConfig,
+                      'rechargeTemplateId'
+                    )
+                      ? {
+                          rechargeTemplateId:
+                            typeof payload.buildConfig.rechargeTemplateId === 'string'
+                              ? payload.buildConfig.rechargeTemplateId
+                              : currentSimple.buildConfig.rechargeTemplateId,
                         }
                       : {}),
                   }

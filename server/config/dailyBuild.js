@@ -1,21 +1,10 @@
 /**
- * 每日主体搭建系统配置
+ * 搭建系统配置
  */
 export const DAILY_BUILD_CONFIG = {
   // 常读openapi配置
   changdu: {
-    distributorId: 1853736552241288,
-    secretKey: 'H53iZltmBXDndYt5ONW2h6tgCUxbG7kX',
     baseUrl: 'https://www.changdupingtai.com/novelsale/openapi',
-    rechargeTemplateId: 1242710,
-  },
-
-  // 巨量API配置
-  jiliang: {
-    ccId: '1836040363127815',
-    operator: '1836040363127815',
-    microAppId: 'tt366340dea95001ea01',
-    microAppName: '甜荔剧场',
   },
 
   // 创建推广链接固定参数
@@ -45,13 +34,10 @@ export const DAILY_BUILD_CONFIG = {
       smart_bid_type: 7, // 自定义出价
       flow_control_mode: 0,
       budget_mode: 0, // 0 表示日预算
-      product_platform_id: '1249425120839434', // 待后续修改
-      product_id: '1772536953535319108', // 待后续修改
     },
 
     // 广告固定参数
     promotion: {
-      external_url: 'https://www.chengzijianzhan.com/tetris/page/7594336418756476938',
       source: '泰州晴天',
       product_name: '热播短剧',
       selling_point: '爆款短剧推荐',

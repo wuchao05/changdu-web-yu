@@ -28,7 +28,7 @@
             </div>
           </n-card>
 
-          <n-card title="🧾 请求头配置" class="config-section" :bordered="false">
+          <n-card title="🧾 请求头与搭建配置" class="config-section" :bordered="false">
             <div class="space-y-4">
               <div class="config-item">
                 <label class="config-label">appid</label>
@@ -60,6 +60,69 @@
                 <n-input
                   v-model:value="localConfig.headers.rootAdUserId"
                   placeholder="headers.rootAdUserId"
+                />
+              </div>
+              <div class="config-item">
+                <label class="config-label">secretKey</label>
+                <n-input
+                  v-model:value="localConfig.buildConfig.secretKey"
+                  placeholder="buildConfig.secretKey"
+                />
+              </div>
+              <div class="config-item">
+                <label class="config-label">productId</label>
+                <n-input
+                  v-model:value="localConfig.buildConfig.productId"
+                  placeholder="buildConfig.productId"
+                />
+              </div>
+              <div class="config-item">
+                <label class="config-label">productPlatformId</label>
+                <n-input
+                  v-model:value="localConfig.buildConfig.productPlatformId"
+                  placeholder="buildConfig.productPlatformId"
+                />
+              </div>
+              <div class="config-item">
+                <label class="config-label">landingUrl</label>
+                <n-input
+                  v-model:value="localConfig.buildConfig.landingUrl"
+                  placeholder="buildConfig.landingUrl"
+                />
+              </div>
+              <div class="config-item">
+                <label class="config-label">microAppName</label>
+                <n-input
+                  v-model:value="localConfig.buildConfig.microAppName"
+                  placeholder="buildConfig.microAppName"
+                />
+              </div>
+              <div class="config-item">
+                <label class="config-label">microAppId</label>
+                <n-input
+                  v-model:value="localConfig.buildConfig.microAppId"
+                  placeholder="buildConfig.microAppId"
+                />
+              </div>
+              <div class="config-item">
+                <label class="config-label">ccId</label>
+                <n-input
+                  v-model:value="localConfig.buildConfig.ccId"
+                  placeholder="buildConfig.ccId"
+                />
+              </div>
+              <div class="config-item">
+                <label class="config-label">operator</label>
+                <n-input
+                  v-model:value="localConfig.buildConfig.operator"
+                  placeholder="buildConfig.operator"
+                />
+              </div>
+              <div class="config-item">
+                <label class="config-label">rechargeTemplateId</label>
+                <n-input
+                  v-model:value="localConfig.buildConfig.rechargeTemplateId"
+                  placeholder="buildConfig.rechargeTemplateId"
                 />
               </div>
             </div>
@@ -139,6 +202,17 @@ interface AuthConfig {
     adUserId: string
     rootAdUserId: string
   }
+  buildConfig: {
+    secretKey: string
+    productId: string
+    productPlatformId: string
+    landingUrl: string
+    microAppName: string
+    microAppId: string
+    ccId: string
+    operator: string
+    rechargeTemplateId: string
+  }
   feishu: {
     app_token: string
     table_ids: {
@@ -166,6 +240,17 @@ const createEmptyConfig = (): AuthConfig => ({
     adUserId: '',
     rootAdUserId: '',
   },
+  buildConfig: {
+    secretKey: '',
+    productId: '',
+    productPlatformId: '',
+    landingUrl: '',
+    microAppName: '',
+    microAppId: '',
+    ccId: '',
+    operator: '',
+    rechargeTemplateId: '',
+  },
   feishu: {
     app_token: '',
     table_ids: {
@@ -191,6 +276,28 @@ const normalizeConfig = (config: any): AuthConfig => ({
     adUserId: typeof config?.headers?.adUserId === 'string' ? config.headers.adUserId : '',
     rootAdUserId:
       typeof config?.headers?.rootAdUserId === 'string' ? config.headers.rootAdUserId : '',
+  },
+  buildConfig: {
+    secretKey:
+      typeof config?.buildConfig?.secretKey === 'string' ? config.buildConfig.secretKey : '',
+    productId:
+      typeof config?.buildConfig?.productId === 'string' ? config.buildConfig.productId : '',
+    productPlatformId:
+      typeof config?.buildConfig?.productPlatformId === 'string'
+        ? config.buildConfig.productPlatformId
+        : '',
+    landingUrl:
+      typeof config?.buildConfig?.landingUrl === 'string' ? config.buildConfig.landingUrl : '',
+    microAppName:
+      typeof config?.buildConfig?.microAppName === 'string' ? config.buildConfig.microAppName : '',
+    microAppId:
+      typeof config?.buildConfig?.microAppId === 'string' ? config.buildConfig.microAppId : '',
+    ccId: typeof config?.buildConfig?.ccId === 'string' ? config.buildConfig.ccId : '',
+    operator: typeof config?.buildConfig?.operator === 'string' ? config.buildConfig.operator : '',
+    rechargeTemplateId:
+      typeof config?.buildConfig?.rechargeTemplateId === 'string'
+        ? config.buildConfig.rechargeTemplateId
+        : '',
   },
   feishu: {
     app_token: typeof config?.feishu?.app_token === 'string' ? config.feishu.app_token : '',
@@ -237,6 +344,7 @@ async function handleSave() {
       changduCookie: localConfig.value.changduCookie,
       juliangCookie: localConfig.value.juliangCookie,
       headers: localConfig.value.headers,
+      buildConfig: localConfig.value.buildConfig,
       feishu: localConfig.value.feishu,
       douyinMaterialMatches: localConfig.value.douyinMaterialMatches,
     }

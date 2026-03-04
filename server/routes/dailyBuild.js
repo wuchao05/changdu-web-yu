@@ -47,11 +47,44 @@ async function getChangduSignConfig() {
   if (!distributorId) {
     throw new Error('缺少 auth.headers.distributorId 配置')
   }
-  const secretKey = DAILY_BUILD_CONFIG.changdu.secretKey
+  const secretKey = config.buildConfig?.secretKey
   if (!secretKey) {
-    throw new Error('缺少 DAILY_BUILD_CONFIG.changdu.secretKey 配置')
+    throw new Error('缺少 auth.buildConfig.secretKey 配置')
   }
   return { distributorId, secretKey }
+}
+
+async function getBuildConfig() {
+  const config = await readAuthConfig()
+  const buildConfig = config.buildConfig || {}
+
+  const requiredKeys = [
+    'ccId',
+    'operator',
+    'microAppName',
+    'microAppId',
+    'productId',
+    'productPlatformId',
+    'landingUrl',
+    'rechargeTemplateId',
+  ]
+
+  for (const key of requiredKeys) {
+    if (!buildConfig[key]) {
+      throw new Error(`缺少 auth.buildConfig.${key} 配置`)
+    }
+  }
+
+  return {
+    ccId: buildConfig.ccId,
+    operator: buildConfig.operator,
+    microAppName: buildConfig.microAppName,
+    microAppId: buildConfig.microAppId,
+    productId: buildConfig.productId,
+    productPlatformId: buildConfig.productPlatformId,
+    landingUrl: buildConfig.landingUrl,
+    rechargeTemplateId: buildConfig.rechargeTemplateId,
+  }
 }
 
 /**
@@ -77,6 +110,7 @@ router.post('/create-promotion-link', async ctx => {
     console.log('请求URL:', `${DAILY_BUILD_CONFIG.changdu.baseUrl}/promotion/create/v1`)
 
     const { distributorId, secretKey } = await getChangduSignConfig()
+    const buildConfig = await getBuildConfig()
 
     // 构建请求体
     const requestBody = {
@@ -84,7 +118,7 @@ router.post('/create-promotion-link', async ctx => {
       book_id: book_id,
       index: DAILY_BUILD_CONFIG.promotion.index,
       promotion_name: finalPromotionName,
-      recharge_template_id: DAILY_BUILD_CONFIG.changdu.rechargeTemplateId,
+      recharge_template_id: buildConfig.rechargeTemplateId,
       media_source: DAILY_BUILD_CONFIG.promotion.mediaSource,
       price: DAILY_BUILD_CONFIG.promotion.price,
       start_chapter: DAILY_BUILD_CONFIG.promotion.startChapter,
@@ -161,7 +195,7 @@ router.post('/query-microapp', async ctx => {
     console.log('========== 查询小程序 ==========')
     console.log('account_id:', account_id)
 
-    const { ccId, operator } = DAILY_BUILD_CONFIG.jiliang
+    const { ccId, operator } = await getBuildConfig()
 
     // 构建URL和查询参数
     const url = new URL('https://business.oceanengine.com/app_package/microapp/applet/list')
@@ -247,7 +281,7 @@ router.post('/query-approved-microapp', async ctx => {
     console.log('========== 查询被共享的已审核通过的小程序 ==========')
     console.log('account_id:', account_id)
 
-    const { ccId, operator } = DAILY_BUILD_CONFIG.jiliang
+    const { ccId, operator } = await getBuildConfig()
 
     // 使用 search_type=2 查询被共享的已审核通过的小程序
     const url = new URL('https://business.oceanengine.com/app_package/microapp/applet/list')
@@ -372,6 +406,7 @@ router.post('/create-asset', async ctx => {
     }
 
     const cookie = await getJiliangCookie()
+    const buildConfig = await getBuildConfig()
 
     const response = await fetch(
       `https://ad.oceanengine.com/event_manager/api/assets/create?aadvid=${account_id}`,
@@ -385,9 +420,9 @@ router.post('/create-asset', async ctx => {
         body: JSON.stringify({
           assets_type: 4,
           micro_app: {
-            assets_name: DAILY_BUILD_CONFIG.jiliang.microAppName,
-            micro_app_id: DAILY_BUILD_CONFIG.jiliang.microAppId,
-            micro_app_name: DAILY_BUILD_CONFIG.jiliang.microAppName,
+            assets_name: buildConfig.microAppName,
+            micro_app_id: buildConfig.microAppId,
+            micro_app_name: buildConfig.microAppName,
             micro_app_type: 1,
             micro_app_instance_id: micro_app_instance_id,
           },
@@ -825,6 +860,7 @@ router.post('/create-project', async ctx => {
 
     const cookie = await getJiliangCookie()
     const projectConfig = DAILY_BUILD_CONFIG.build.project
+    const buildConfig = await getBuildConfig()
 
     console.log('========== 创建项目 ==========')
     console.log('account_id:', account_id)
@@ -861,8 +897,8 @@ router.post('/create-project', async ctx => {
       schedule_type: 1,
       week_schedule_type: 0,
       pricing_type: 9,
-      product_platform_id: projectConfig.product_platform_id,
-      product_id: projectConfig.product_id,
+      product_platform_id: buildConfig.productPlatformId,
+      product_id: buildConfig.productId,
       district: 'all',
       gender: '0',
       age: [['0', '17']],
@@ -1084,6 +1120,7 @@ router.post('/create-promotion', async ctx => {
 
     const cookie = await getJiliangCookie()
     const promotionConfig = DAILY_BUILD_CONFIG.build.promotion
+    const buildConfig = await getBuildConfig()
 
     console.log('========== 创建广告 ==========')
     console.log('account_id:', account_id)
@@ -1173,7 +1210,7 @@ router.post('/create-promotion', async ctx => {
         aweme_photo_material_info: [],
         external_material_info: [
           {
-            external_url: promotionConfig.external_url,
+            external_url: buildConfig.landingUrl,
           },
         ],
         component_material_info: [],
@@ -1291,7 +1328,7 @@ router.post('/create-microapp', async ctx => {
       },
     }
 
-    const { ccId, operator } = DAILY_BUILD_CONFIG.jiliang
+    const { ccId, operator } = await getBuildConfig()
     const url = `https://business.oceanengine.com/app_package/microapp/applet/create?cc_id=${ccId}&operator=${operator}&operation_type=1`
     const headers = {
       'Content-Type': 'application/json',
@@ -1592,7 +1629,7 @@ router.post('/validate-and-create-microapp', async ctx => {
  * 查询账户的小程序状态
  */
 async function queryMicroAppForAccount(accountId, cookie) {
-  const { ccId, operator } = DAILY_BUILD_CONFIG.jiliang
+  const { ccId, operator } = await getBuildConfig()
 
   const url = new URL('https://business.oceanengine.com/app_package/microapp/applet/list')
   url.searchParams.set('page_no', '1')
@@ -1632,13 +1669,14 @@ async function queryMicroAppForAccount(accountId, cookie) {
  */
 async function createPromotionLinkForMicroapp(drama_name, book_id) {
   const { distributorId, secretKey } = await getChangduSignConfig()
+  const buildConfig = await getBuildConfig()
 
   const requestBody = {
     distributor_id: distributorId,
     book_id: book_id || '', // 使用传入的 book_id
     index: DAILY_BUILD_CONFIG.promotion.index,
     promotion_name: `小鱼-${cleanDramaName(drama_name)}`,
-    recharge_template_id: DAILY_BUILD_CONFIG.changdu.rechargeTemplateId,
+    recharge_template_id: buildConfig.rechargeTemplateId,
     media_source: DAILY_BUILD_CONFIG.promotion.mediaSource,
     price: DAILY_BUILD_CONFIG.promotion.price,
     start_chapter: DAILY_BUILD_CONFIG.promotion.startChapter,
@@ -1693,7 +1731,7 @@ async function createMicroAppForAccount(accountId, params, cookie) {
     },
   }
 
-  const { ccId, operator } = DAILY_BUILD_CONFIG.jiliang
+  const { ccId, operator } = await getBuildConfig()
   const url = `https://business.oceanengine.com/app_package/microapp/applet/create?cc_id=${ccId}&operator=${operator}&operation_type=1`
 
   const response = await fetch(url, {

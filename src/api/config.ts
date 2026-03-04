@@ -21,6 +21,17 @@ export interface AppConfig {
     adUserId: string
     rootAdUserId: string
   }
+  buildConfig: {
+    secretKey: string
+    productId: string
+    productPlatformId: string
+    landingUrl: string
+    microAppName: string
+    microAppId: string
+    ccId: string
+    operator: string
+    rechargeTemplateId: string
+  }
   feishu: {
     app_token: string
     table_ids: {

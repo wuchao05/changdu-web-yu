@@ -8,7 +8,6 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import { FEISHU_CONFIG, getFeishuConfig } from '../config/feishu.js'
 import { AUTO_SUBMIT_CONFIG } from '../config/autoSubmit.js'
-import { DAILY_BUILD_CONFIG } from '../config/dailyBuild.js'
 import { buildChangduGetHeaders } from '../utils/changduSign.js'
 import { CHANGDU_BASE_URL } from '../config/changdu.js'
 import { readAuthConfig } from '../routes/auth.js'
@@ -530,9 +529,9 @@ async function getChangduSignConfig() {
   if (!distributorId) {
     throw new Error('缺少 auth.headers.distributorId 配置')
   }
-  const secretKey = DAILY_BUILD_CONFIG.changdu.secretKey
+  const secretKey = authConfig.buildConfig?.secretKey
   if (!secretKey) {
-    throw new Error('缺少 DAILY_BUILD_CONFIG.changdu.secretKey 配置')
+    throw new Error('缺少 auth.buildConfig.secretKey 配置')
   }
   return { distributorId, secretKey }
 }
