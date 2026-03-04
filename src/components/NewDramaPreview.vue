@@ -26,7 +26,7 @@
           <!-- 右侧：操作按钮 -->
           <div class="flex items-center space-x-3">
             <button
-              v-if="false && accountStore.isSanrouLikeAccount && canUpload"
+              v-if="false && canUpload"
               @click="handleOpenUpload"
               class="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-300 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
@@ -1615,7 +1615,7 @@ async function handleAddDownload(drama: NewDramaItem | RankingDramaItem) {
           dramaName,
           targetPublishTime,
           finalAccountId,
-          subjectValue, // 达人固定为"欣雅"
+          subjectValue,
           feishuStatus,
           douyinMaterial || undefined // 如果为空字符串则传 undefined
         )
@@ -1627,7 +1627,7 @@ async function handleAddDownload(drama: NewDramaItem | RankingDramaItem) {
         // 如果是每日主体，更新巨量账户备注（账户字段即为巨量账户ID）
         if (dramaSubjectStore.isDailySubject && finalAccountId) {
           try {
-            const remark = `小红-${dramaName}`
+            const remark = `小鱼-${dramaName}`
             const { editJiliangAccountRemark } = await import('@/api/jiliang')
             await editJiliangAccountRemark({
               account_id: finalAccountId,

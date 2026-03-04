@@ -233,7 +233,7 @@
           <label class="text-sm font-medium text-gray-700">抖音号</label>
           <n-input
             v-model:value="materialMatchForm.douyinAccount"
-            placeholder="例如：小红看剧"
+            placeholder="例如：小鱼看剧"
             clearable
           />
         </div>

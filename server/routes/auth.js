@@ -48,17 +48,12 @@ const DEFAULT_SIMPLE_CONFIG = {
 const DEFAULT_PLATFORM_CONFIG = {
   changdu: {
     cookie: '',
-    sr: { cookie: '', distributorId: '', adUserId: '', rootAdUserId: '' },
-    ql: { cookie: '', distributorId: '', adUserId: '', rootAdUserId: '' },
     mr: { cookie: '', distributorId: '', adUserId: '', rootAdUserId: '' },
-    dr: { cookie: '', distributorId: '' },
   },
   jiliang: {
     cookie: '',
   },
   ocean: {
-    sr: '',
-    ql: '',
     mr: '',
   },
   adx: {
@@ -153,7 +148,6 @@ function buildRuntimeConfig(rawConfig = {}) {
     ...simple,
     tokens: {
       xh: typeof tokens.xh === 'string' ? tokens.xh : '',
-      daren: typeof tokens.daren === 'string' ? tokens.daren : '',
     },
     users: {
       admin: typeof users.admin === 'string' && users.admin ? users.admin : DEFAULT_ADMIN_USER_ID,
@@ -161,21 +155,7 @@ function buildRuntimeConfig(rawConfig = {}) {
     headers: headerConfig,
     platforms: {
       changdu: {
-        cookie:
-          platforms.changdu?.cookie ||
-          platforms.changdu?.mr?.cookie ||
-          platforms.changdu?.sr?.cookie ||
-          simple.changduCookie,
-        sr: {
-          ...DEFAULT_PLATFORM_CONFIG.changdu.sr,
-          ...(platforms.changdu?.sr || {}),
-          cookie: platforms.changdu?.sr?.cookie || simple.changduCookie,
-        },
-        ql: {
-          ...DEFAULT_PLATFORM_CONFIG.changdu.ql,
-          ...(platforms.changdu?.ql || {}),
-          cookie: platforms.changdu?.ql?.cookie || simple.changduCookie,
-        },
+        cookie: platforms.changdu?.cookie || platforms.changdu?.mr?.cookie || simple.changduCookie,
         mr: {
           ...DEFAULT_PLATFORM_CONFIG.changdu.mr,
           ...(platforms.changdu?.mr || {}),
@@ -183,11 +163,6 @@ function buildRuntimeConfig(rawConfig = {}) {
           distributorId: platforms.changdu?.mr?.distributorId || headerConfig.distributorId,
           adUserId: platforms.changdu?.mr?.adUserId || headerConfig.adUserId,
           rootAdUserId: platforms.changdu?.mr?.rootAdUserId || headerConfig.rootAdUserId,
-        },
-        dr: {
-          ...DEFAULT_PLATFORM_CONFIG.changdu.dr,
-          ...(platforms.changdu?.dr || {}),
-          cookie: platforms.changdu?.dr?.cookie || simple.changduCookie,
         },
       },
       jiliang: {
@@ -198,8 +173,6 @@ function buildRuntimeConfig(rawConfig = {}) {
       ocean: {
         ...DEFAULT_PLATFORM_CONFIG.ocean,
         ...(platforms.ocean || {}),
-        sr: platforms.ocean?.sr || simple.juliangCookie,
-        ql: platforms.ocean?.ql || simple.juliangCookie,
         mr: platforms.ocean?.mr || simple.juliangCookie,
       },
       adx: {

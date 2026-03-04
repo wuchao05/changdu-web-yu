@@ -13,11 +13,7 @@ function extractCsrfToken(cookie = '') {
 
 async function getJiliangAuth() {
   const config = await readAuthConfig()
-  const cookie =
-    config.platforms?.jiliang?.cookie ||
-    config.platforms?.ocean?.mr ||
-    config.platforms?.ocean?.sr ||
-    ''
+  const cookie = config.platforms?.jiliang?.cookie || ''
   return {
     cookie,
     csrfToken: extractCsrfToken(cookie),

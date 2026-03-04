@@ -38,13 +38,6 @@ export default async function apiHandler(ctx, config) {
     // }
 
     if (ctx.method === 'GET') {
-      // console.log('🌐 [apiHandler] GET请求')
-      // console.log('🌐 [apiHandler] ctx.query:', ctx.query)
-      // console.log(
-      //   '🌐 [apiHandler] 包含 daren_douyin_accounts:',
-      //   'daren_douyin_accounts' in ctx.query
-      // )
-
       // GET 请求：构建查询参数
       if (filterCookie) {
         // 过滤掉cookie参数（cookie会被设置到请求头中）

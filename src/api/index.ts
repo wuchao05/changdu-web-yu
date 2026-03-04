@@ -10,7 +10,6 @@ import type {
   OrderParams,
   DramaRankingData,
   DramaRankingParams,
-  DistributorData,
   NewDramaData,
   NewDramaParams,
   DownloadTaskResponse,
@@ -73,7 +72,6 @@ export function getOrders(params: OrderParams): Promise<OrderData> {
     ...params,
   }
   console.log('📡 [API] getOrders 最终参数:', finalParams)
-  console.log('📡 [API] 包含 daren_douyin_accounts:', 'daren_douyin_accounts' in finalParams)
 
   return httpInstance
     .get('/novelsale/distributor/promotion/detail/v2', {
@@ -94,22 +92,6 @@ export function getOrders(params: OrderParams): Promise<OrderData> {
 //     })
 //     .then(res => res.data)
 // }
-
-/**
- * 接口E - 获取达人列表
- * 注意：此接口需要设置 Distributorid 为 0 来获取管理员权限
- */
-export function getDistributors(): Promise<DistributorData> {
-  return httpInstance
-    .get('/novelsale/distributor/login/v1/', {
-      params: {},
-      headers: {
-        // 重要：设置 Distributorid 为 0 表示管理员身份，可以获取所有达人信息
-        Distributorid: '0',
-      },
-    })
-    .then(res => res.data)
-}
 
 /**
  * 新剧抢跑 - 获取新剧列表（使用常读开放平台 API）

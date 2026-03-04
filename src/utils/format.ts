@@ -113,8 +113,8 @@ export function getDefaultDateRange(
       start.setDate(start.getDate() - 29)
       return [start, end]
     case 'all':
-      // 至今（9月1日至今）
-      return getQianlongDefaultDateRange()
+      // 至今（本年1月1日至今）
+      return getAllDateRange()
     default:
       // 默认近7日
       start.setDate(start.getDate() - 6)
@@ -123,40 +123,16 @@ export function getDefaultDateRange(
 }
 
 /**
- * 获取牵龙数据的默认日期范围（9月1日到当前日期）
+ * 获取全量日期范围（本年1月1日到当前日期）
  */
-export function getQianlongDefaultDateRange(): [Date, Date] {
+export function getAllDateRange(): [Date, Date] {
   const end = new Date()
   const currentYear = end.getFullYear()
-
-  // 9月1日
-  const start = new Date(currentYear, 8, 1) // 月份从0开始，所以8表示9月
-
-  // 如果当前日期在9月1日之前，则使用去年的9月1日
-  if (end < start) {
-    start.setFullYear(currentYear - 1)
-  }
+  const start = new Date(currentYear, 0, 1)
 
   // 规范化到整天边界
   const normalizedStart = normalizeToDayStart(start)
   const normalizedEnd = normalizeToDayEnd(end)
 
   return [normalizedStart, normalizedEnd]
-}
-
-/**
- * 根据设置获取牵龙日期范围
- * @param mode 日期范围模式
- */
-export function getQianlongDateRangeByMode(mode: 'today' | 'september_1st'): [Date, Date] {
-  if (mode === 'today') {
-    // 当日数据：今天 00:00:00 到 23:59:59
-    const today = new Date()
-    const start = normalizeToDayStart(today)
-    const end = normalizeToDayEnd(today)
-    return [start, end]
-  } else {
-    // 9月1日至今
-    return getQianlongDefaultDateRange()
-  }
 }

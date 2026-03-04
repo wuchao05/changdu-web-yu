@@ -58,7 +58,7 @@ export function formatDate(date: Date): string {
  * @returns 推广链接名称
  */
 export function generatePromotionName(dramaName: string): string {
-  return `小红-${cleanDramaName(dramaName)}`
+  return `小鱼-${cleanDramaName(dramaName)}`
 }
 
 /**
@@ -88,7 +88,7 @@ function isValidMaterialRange(materialRange: string): boolean {
  * @returns 解析后的抖音素���配置数组
  *
  * 字段格式示例:
- * 小红看剧 25655660267 01-05
+ * 小鱼看剧 25655660267 01-05
  * 斯娜看剧 34996393230 06-10
  * 葸辉好剧 63222312178 11-15
  */

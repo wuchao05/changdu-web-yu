@@ -24,16 +24,6 @@
                 class="w-32"
                 @update:value="handleStatisticsTypeChange"
               />
-
-              <!-- 模式选择器 - 仅每日账号的订单统计显示 -->
-              <n-select
-                v-if="statisticsType === 'orders' && accountStore.isDailyAccount"
-                v-model:value="dailyOrderMode"
-                :options="dailyOrderModeOptions"
-                size="small"
-                class="w-28"
-                @update:value="handleDailyModeChange"
-              />
             </div>
             <p class="text-sm text-gray-500 mt-1">
               {{
@@ -62,7 +52,7 @@
               class="w-full sm:w-32"
               :options="payStatusOptions"
               :default-value="-1"
-              :disabled="isCollaboratorMode || statisticsType !== 'orders'"
+              :disabled="statisticsType !== 'orders'"
             />
 
             <!-- 短剧排行排序选择器 -->
@@ -105,131 +95,12 @@
         </div>
       </template>
 
-      <!-- 达人选择区域 - 卡片形式 -->
-      <div v-if="isCollaboratorMode" class="px-6 pb-6 border-b border-gray-100">
-        <!-- 加载状态 -->
-        <div
-          v-if="orderLoading"
-          class="flex flex-col items-center justify-center py-12 text-gray-400"
-        >
-          <n-spin size="large" />
-          <p class="mt-4 text-sm">正在加载达人数据...</p>
-        </div>
-
-        <!-- 达人卡片列表 -->
-        <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          <div
-            v-for="(collaborator, index) in collaboratorDetailsOptions"
-            :key="collaborator.name"
-            @click="selectCollaborator(collaborator.name)"
-            :class="[
-              'relative cursor-pointer rounded-2xl p-4 transition-all duration-300 border',
-              'hover:shadow-lg hover:-translate-y-1 transform',
-              selectedCollaborator === collaborator.name
-                ? 'bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-300 shadow-md shadow-emerald-200/50'
-                : 'bg-white border-gray-200 hover:border-emerald-200 hover:bg-emerald-50/30',
-            ]"
-          >
-            <!-- 排名徽章 -->
-            <div class="absolute -top-2 -left-2">
-              <div
-                :class="[
-                  'relative w-7 h-7 rounded-full flex items-center justify-center font-bold shadow-md transition-all duration-300',
-                  'ring-2 ring-white',
-                  index === 0
-                    ? 'bg-gradient-to-br from-yellow-400 via-yellow-500 to-amber-600 text-white'
-                    : index === 1
-                      ? 'bg-gradient-to-br from-gray-300 via-gray-400 to-gray-500 text-white'
-                      : index === 2
-                        ? 'bg-gradient-to-br from-orange-400 via-orange-500 to-amber-600 text-white'
-                        : 'bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700',
-                ]"
-              >
-                <!-- 前三名显示图标 -->
-                <Icon v-if="index === 0" icon="mdi:trophy" class="w-4 h-4 drop-shadow-sm" />
-                <Icon v-else-if="index === 1" icon="mdi:medal" class="w-4 h-4 drop-shadow-sm" />
-                <Icon
-                  v-else-if="index === 2"
-                  icon="mdi:medal-outline"
-                  class="w-4 h-4 drop-shadow-sm"
-                />
-                <!-- 其他排名显示数字 -->
-                <span v-else class="text-xs">{{ index + 1 }}</span>
-
-                <!-- 前三名闪光效果 -->
-                <div
-                  v-if="index < 3"
-                  class="absolute inset-0 rounded-full bg-white opacity-0 animate-ping"
-                  style="animation-duration: 2s"
-                ></div>
-              </div>
-            </div>
-
-            <!-- 选中标记 -->
-            <div
-              v-if="selectedCollaborator === collaborator.name"
-              class="absolute top-3 right-3 w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center shadow-md"
-            >
-              <Icon icon="mdi:check" class="w-4 h-4 text-white" />
-            </div>
-
-            <!-- 达人名称 -->
-            <div
-              :class="[
-                'text-lg font-bold mb-3 mt-2 truncate',
-                selectedCollaborator === collaborator.name ? 'text-emerald-900' : 'text-gray-800',
-              ]"
-            >
-              {{ collaborator.name }}
-            </div>
-
-            <!-- 已支付金额 -->
-            <div class="flex items-baseline gap-1">
-              <span
-                :class="[
-                  'text-xs font-medium',
-                  selectedCollaborator === collaborator.name ? 'text-emerald-600' : 'text-gray-500',
-                ]"
-              >
-                ¥
-              </span>
-              <span
-                :class="[
-                  'text-xl font-bold',
-                  selectedCollaborator === collaborator.name
-                    ? 'text-emerald-700'
-                    : 'text-emerald-600',
-                ]"
-              >
-                {{ collaborator.amount }}
-              </span>
-            </div>
-
-            <!-- 底部装饰条 - 使用内边距避免圆角冲突 -->
-            <div
-              v-if="selectedCollaborator === collaborator.name"
-              class="absolute bottom-2 left-2 right-2 h-1 bg-gradient-to-r from-emerald-400 to-green-400 rounded-full transition-all duration-300"
-            ></div>
-          </div>
-
-          <!-- 空状态 -->
-          <div
-            v-if="!collaboratorDetailsOptions.length"
-            class="col-span-full text-center py-8 text-gray-400"
-          >
-            <Icon icon="mdi:account-off" class="w-12 h-12 mx-auto mb-2 opacity-50" />
-            <p class="text-sm">暂无达人数据</p>
-          </div>
-        </div>
-        <!-- 结束：达人卡片列表 -->
-      </div>
-
       <!-- 错误状态 -->
       <n-alert v-if="orderError" type="error" :title="orderError" show-icon class="mb-6" />
 
       <!-- 数据展示区域 -->
       <div class="data-display-area">
-        <!-- 达人总充值金额卡片（已禁用） -->
+        <!-- 总充值金额卡片（已禁用） -->
         <div v-if="false" class="mb-6">
           <n-card :bordered="false" class="bg-gradient-to-br from-cyan-50 to-blue-50">
             <div class="flex items-center justify-between">
@@ -546,7 +417,6 @@
 import { ref, computed, onMounted, onUnmounted, watch, h } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useMessage, type DataTableColumns, NTag, NTooltip } from 'naive-ui'
-import { useCreatorStore } from '@/stores/creator'
 import { useDataStore } from '@/stores/data'
 import { useSettingsStore } from '@/stores/settings'
 import { useAccountStore } from '@/stores/account'
@@ -607,40 +477,26 @@ interface ParsedOrderItem extends OrderItem {
 }
 
 const message = useMessage()
-const creatorStore = useCreatorStore()
 const dataStore = useDataStore()
 const settingsStore = useSettingsStore()
 const accountStore = useAccountStore()
 
 // 使用全局日期范围管理
-const { sanrouDateRange, setSanrouDateRange, sanrouDefaultRange } = useGlobalDateRange()
+const { dailyDateRange, setDailyDateRange, dailyDefaultRange } = useGlobalDateRange()
 
 // 响应式数据 - 使用全局日期范围
 const dateRange = computed({
-  get: () => sanrouDateRange.value,
-  set: value => setSanrouDateRange(value),
+  get: () => dailyDateRange.value,
+  set: value => setDailyDateRange(value),
 })
 const payStatus = ref<number>(-1)
 const currentPage = ref(1)
 const pageSize = ref(10)
 const showColumnManager = ref(false)
 const columnConfig = ref<ColumnConfig[]>([])
-const selectedCollaborator = ref<string | null>(null)
-// 默认使用达人模式（仅每日账号会用到此选项）
-const dailyOrderMode = ref<'normal' | 'collaborator'>('collaborator')
-const lastNormalPayStatus = ref<number | null>(null)
-
-const COLLABORATOR_PAGE_SIZE = 10000
 
 // 统计类型选择
 const statisticsType = ref<'orders' | 'douyin' | 'drama'>('orders')
-
-const isCollaboratorMode = computed(
-  () =>
-    accountStore.isDailyAccount &&
-    statisticsType.value === 'orders' &&
-    dailyOrderMode.value === 'collaborator'
-)
 
 // 短剧排行排序类型
 const dramaSortType = ref<'amount' | 'orders' | 'rate'>('amount')
@@ -668,17 +524,8 @@ const payStatusOptions = [
   { label: '未支付', value: 1 },
 ]
 
-// 每日订单模式选项
-const dailyOrderModeOptions = [
-  { label: '普通模式', value: 'normal' },
-  { label: '达人模式', value: 'collaborator' },
-]
-
 // 统计类型选项
 const statisticsTypeOptions = computed(() => {
-  if (accountStore.isDailyAccount) {
-    return [{ label: '订单统计', value: 'orders' }]
-  }
   return [
     { label: '订单统计', value: 'orders' },
     { label: '抖音号排行', value: 'douyin' },
@@ -686,11 +533,7 @@ const statisticsTypeOptions = computed(() => {
   ]
 })
 
-const columnConfigStorageKey = computed(() =>
-  accountStore.isDailyAccount
-    ? 'orderStatistics_columnConfig_daily'
-    : 'orderStatistics_columnConfig'
-)
+const columnConfigStorageKey = computed(() => 'orderStatistics_columnConfig_daily')
 
 // 获取统计类型标题
 function getStatisticsTypeTitle(type: string): string {
@@ -727,11 +570,6 @@ const dramaSortOptions = [
   { label: '按充值率', value: 'rate' },
 ]
 
-const DEFAULT_SANROU_CREATOR_ID = '1842865091654731'
-const sanrouDistributorId = computed(
-  () => settingsStore.settings.sanrouDistributorId || DEFAULT_SANROU_CREATOR_ID
-)
-
 // 计算属性
 const orderData = computed(() => dataStore.orderData)
 const orderLoading = computed(() => dataStore.orderLoading)
@@ -742,7 +580,7 @@ const tableData = computed(() => {
 
   // 解析 promotion_name 并添加解析结果
   return orderData.value.data.map((item: OrderItem) => {
-    const parsedInfo = parsePromotionName(item.promotion_name, creatorStore.activeCreatorName)
+    const parsedInfo = parsePromotionName(item.promotion_name)
 
     return {
       ...item,
@@ -751,69 +589,13 @@ const tableData = computed(() => {
   })
 })
 
-function extractPromotionCreator(promotionName?: string) {
-  if (!promotionName) return ''
-  const index = promotionName.indexOf('-')
-  const creatorName = index >= 0 ? promotionName.slice(0, index) : promotionName
-  return creatorName.trim()
-}
-
-function extractCollaboratorName(promotionName?: string) {
-  const creatorName = extractPromotionCreator(promotionName)
-  if (!creatorName) return ''
-  return creatorName.slice(0, 2)
-}
-
-// 达人详细信息（包含名称和金额）
-const collaboratorDetailsOptions = computed(() => {
-  if (!isCollaboratorMode.value) return []
-
-  // 统计每个达人的已支付金额
-  const collaboratorAmounts = new Map<string, number>()
-
-  tableData.value.forEach(item => {
-    if (item.pay_status !== 0) return // 只统计已支付订单
-
-    const collaboratorName = extractCollaboratorName(item.promotion_name)
-    if (collaboratorName) {
-      const currentAmount = collaboratorAmounts.get(collaboratorName) || 0
-      collaboratorAmounts.set(collaboratorName, currentAmount + (item.pay_amount || 0))
-    }
-  })
-
-  // 调试日志：查看所有达人及其金额
-  console.log('📊 所有达人统计:', Array.from(collaboratorAmounts.entries()))
-
-  // 按照已支付金额降序排序，返回包含名称和金额的对象
-  return Array.from(collaboratorAmounts.entries())
-    .sort((a, b) => b[1] - a[1]) // 降序：金额大的在前
-    .map(([name, amount]) => ({
-      name,
-      amount: formatCentToYuan(amount),
-      rawAmount: amount,
-    }))
-})
-
-// 达人名称列表（仅用于向后兼容）
-const collaboratorOptions = computed(() => {
-  return collaboratorDetailsOptions.value.map(item => item.name)
-})
-
 const filteredTableData = computed(() => {
-  if (isCollaboratorMode.value) {
-    if (!selectedCollaborator.value) return []
-    return tableData.value.filter(
-      item =>
-        item.pay_status === 0 &&
-        extractCollaboratorName(item.promotion_name) === selectedCollaborator.value
-    )
-  }
   return tableData.value
 })
 
 const paginatedTableData = computed(() => {
-  // 达人过滤或合作者模式：使用前端分页
-  if (isCollaboratorMode.value || false) {
+  // 排行模式使用前端分页
+  if (statisticsType.value === 'douyin' || statisticsType.value === 'drama') {
     const startIndex = (currentPage.value - 1) * pageSize.value
     return filteredTableData.value.slice(startIndex, startIndex + pageSize.value)
   }
@@ -822,8 +604,8 @@ const paginatedTableData = computed(() => {
 })
 
 const paginationTotal = computed(() => {
-  // 达人过滤或合作者模式：使用前端数据的总数
-  if (isCollaboratorMode.value || false) {
+  // 排行模式使用前端数据总数
+  if (statisticsType.value === 'douyin' || statisticsType.value === 'drama') {
     return filteredTableData.value.length
   }
   // 其他情况：使用后端返回的 total
@@ -837,7 +619,7 @@ const paginationPageCount = computed(() => {
 
 const displayOrderTotal = computed(() => paginationTotal.value)
 
-// 充值卡片标题（管理员显示达人名，达人视图省略达人名）
+// 充值卡片标题
 const rechargeCardTitle = computed(() => {
   return `${dateRangeTitle.value}总充值`
 })
@@ -906,19 +688,13 @@ function handlePresetLabelChange(label: string | null) {
   presetLabel.value = label
 }
 
-// 达人总充值金额（从后端返回的数据中读取）
+// 总充值金额（从后端返回的数据中读取）
 const totalRechargeAmount = computed(() => {
   // 后端返回的 total_amount 字段（单位：分）
   const totalAmount = orderData.value?.total_amount || 0
   // 转换为元
   return totalAmount / 100
 })
-
-function selectCollaborator(collaborator: string) {
-  if (selectedCollaborator.value === collaborator) return
-  selectedCollaborator.value = collaborator
-  currentPage.value = 1
-}
 
 // 树形数据结构类型
 interface DouyinTreeNode {
@@ -977,7 +753,7 @@ const douyinRankingData = computed(() => {
   const optimizedOrders = optimizeUnpaidOrders(orderData.value.data)
 
   optimizedOrders.forEach((order: OrderItem) => {
-    const parsedInfo = parsePromotionName(order.promotion_name, creatorStore.activeCreatorName)
+    const parsedInfo = parsePromotionName(order.promotion_name)
     if (!parsedInfo?.douyinName) return
 
     const douyinName = parsedInfo.douyinName
@@ -1331,7 +1107,7 @@ const orderColumnMap: Record<string, OrderColumn> = {
   },
 }
 
-const sanrouOrderColumns: DataTableColumns<ParsedOrderItem> = [
+const defaultOrderColumns: DataTableColumns<ParsedOrderItem> = [
   orderColumnMap.order_create_time,
   orderColumnMap.order_paid_time,
   orderColumnMap.device_id,
@@ -1343,19 +1119,7 @@ const sanrouOrderColumns: DataTableColumns<ParsedOrderItem> = [
   orderColumnMap.promotion_name,
 ]
 
-const dailyOrderColumns: DataTableColumns<ParsedOrderItem> = [
-  orderColumnMap.order_create_time,
-  orderColumnMap.order_paid_time,
-  orderColumnMap.promotion_name,
-  orderColumnMap.pay_amount,
-  orderColumnMap.pay_status,
-  orderColumnMap.pay_way,
-  orderColumnMap.device_id,
-]
-
-const orderColumns = computed(() =>
-  accountStore.isDailyAccount ? dailyOrderColumns : sanrouOrderColumns
-)
+const orderColumns = computed(() => defaultOrderColumns)
 
 // 抖音号排行表格列配置
 const douyinRankingColumns: DataTableColumns<DouyinTreeNode> = [
@@ -1500,19 +1264,11 @@ const displayColumns = computed(() => {
 
 // 获取订单数据
 async function fetchOrderData() {
-  // 散柔账号需要选择达人，牵龙使用固定配置
-  const needCreator = accountStore.isSanrouAccount
-  if (!accountStore.isSanrouLikeAccount && !accountStore.isQianlongAccount) {
+  if (!accountStore.isDailyAccount) {
     return
   }
-  if (needCreator && !creatorStore.activeCreatorId) {
-    creatorStore.setActiveCreator(sanrouDistributorId.value)
-    if (!creatorStore.activeCreatorId) {
-      return
-    }
-  }
   if (!dateRange.value) {
-    setSanrouDateRange(sanrouDefaultRange.value)
+    setDailyDateRange(dailyDefaultRange.value)
     return
   }
 
@@ -1537,35 +1293,18 @@ async function fetchOrderData() {
     const beginTime = dateToTimestamp(startDateObj)
     const endTime_ts = dateToTimestamp(endDateObj)
 
-    const collaboratorMode = isCollaboratorMode.value
-
-    if (collaboratorMode && payStatus.value !== 0) {
-      payStatus.value = 0
-    }
-
-    // 根据统计类型设置页面大小
-    // 达人过滤模式已禁用
-    const isDarenFilter = false
-
-    const actualPageSize = collaboratorMode
-      ? COLLABORATOR_PAGE_SIZE
-      : isDarenFilter
-        ? 1000 // 达人过滤：后端每次拉取1000条
-        : statisticsType.value === 'douyin' || statisticsType.value === 'drama'
-          ? 10000
-          : pageSize.value
+    const rankingMode = statisticsType.value === 'douyin' || statisticsType.value === 'drama'
+    const actualPageSize = rankingMode ? 10000 : pageSize.value
 
     const params: OrderParams = {
       begin_time: beginTime,
       end_time: endTime_ts,
-      page_index: collaboratorMode || isDarenFilter ? 0 : currentPage.value - 1, // API使用0基索引
+      page_index: rankingMode ? 0 : currentPage.value - 1, // API使用0基索引
       page_size: actualPageSize,
     }
 
     // 如果选择了支付状态，添加到参数中
-    if (collaboratorMode) {
-      params.pay_status = 0
-    } else if (statisticsType.value === 'douyin' || statisticsType.value === 'drama') {
+    if (rankingMode) {
       // 抖音号排行和短剧排行只查看支付成功的订单
       params.pay_status = 0
     } else if (payStatus.value !== -1) {
@@ -1577,10 +1316,6 @@ async function fetchOrderData() {
     const data = await getOrders(params)
     // API数据获取成功
     dataStore.setOrderData(data)
-
-    if (collaboratorMode && data.total > actualPageSize) {
-      message.warning(`订单数为${data.total}条，只能展示前1w条。`)
-    }
   } catch (error: unknown) {
     const errorMsg = (error as Error)?.message || '获取订单统计失败'
     dataStore.setOrderError(errorMsg)
@@ -1599,22 +1334,7 @@ function handleDateChange() {
 }
 
 function handleStatusChange() {
-  if (isCollaboratorMode.value) return
   currentPage.value = 1
-  fetchOrderData()
-}
-
-function handleDailyModeChange(mode: 'normal' | 'collaborator') {
-  currentPage.value = 1
-  if (mode === 'collaborator') {
-    lastNormalPayStatus.value = payStatus.value
-    payStatus.value = 0
-    selectedCollaborator.value = null
-  } else {
-    payStatus.value = lastNormalPayStatus.value ?? -1
-    lastNormalPayStatus.value = null
-    selectedCollaborator.value = null
-  }
   fetchOrderData()
 }
 
@@ -1626,17 +1346,13 @@ async function handleStatisticsTypeChange() {
 }
 
 function handlePageChange() {
-  // 达人过滤已禁用
-  const isDarenFilter = false
-  if (isCollaboratorMode.value || isDarenFilter) return
+  if (statisticsType.value === 'douyin' || statisticsType.value === 'drama') return
   fetchOrderData()
 }
 
 function handlePageSizeChange() {
   currentPage.value = 1
-  // 达人过滤已禁用
-  const isDarenFilter = false
-  if (isCollaboratorMode.value || isDarenFilter) return
+  if (statisticsType.value === 'douyin' || statisticsType.value === 'drama') return
   fetchOrderData()
 }
 
@@ -1766,7 +1482,7 @@ function getRechargeDisplayName(recharge: OrderItem): string {
       dramaIndex = 5
     }
 
-    // 抖音号：达人名称后面剩余的所有字符（保留中间的 -）
+    // 抖音号：名称后面剩余的所有字符（保留中间的 -）
     const douyinParts = parts.slice(dramaIndex + 2)
     const douyinName = douyinParts.join('-')
 
@@ -1822,95 +1538,12 @@ function initColumnConfig() {
   columnConfig.value = []
 }
 
-watch(
-  collaboratorOptions,
-  options => {
-    if (!isCollaboratorMode.value) return
-    if (!options.length) {
-      selectedCollaborator.value = null
-      return
-    }
-
-    // 优先选择"小鱼"，如果不存在则选择第一个
-    const xiaohong = options.find(name => name === '小鱼')
-    const targetCollaborator = xiaohong || options[0]
-
-    // 如果当前没有选择，或者当前选择不在列表中，或者"小鱼"出现了但未被选中，则重新选择
-    if (
-      !selectedCollaborator.value ||
-      !options.includes(selectedCollaborator.value) ||
-      (xiaohong && selectedCollaborator.value !== xiaohong)
-    ) {
-      console.log('🎯 达人选择逻辑:', {
-        options,
-        currentSelected: selectedCollaborator.value,
-        foundXiaohong: xiaohong,
-        willSelect: targetCollaborator,
-      })
-      selectedCollaborator.value = targetCollaborator
-    }
-  },
-  { immediate: true }
-)
-
-watch(
-  () => selectedCollaborator.value,
-  () => {
-    if (isCollaboratorMode.value) {
-      currentPage.value = 1
-    }
-  }
-)
-
-watch(
-  () => filteredTableData.value.length,
-  total => {
-    if (!isCollaboratorMode.value) return
-    const pageCount = pageSize.value ? Math.ceil(total / pageSize.value) : 0
-    if (pageCount > 0 && currentPage.value > pageCount) {
-      currentPage.value = 1
-    }
-  }
-)
-
-// 监听活跃达人变化
-watch(
-  () => creatorStore.activeCreatorId,
-  newId => {
-    if ((accountStore.isSanrouLikeAccount || accountStore.isQianlongAccount) && newId) {
-      currentPage.value = 1
-      fetchOrderData()
-    }
-  }
-)
-
 // 监听账号切换
 watch(
   () => accountStore.currentAccount,
   () => {
-    // 切换到非每日账号时，重置为普通模式
-    if (!accountStore.isDailyAccount) {
-      if (dailyOrderMode.value === 'collaborator') {
-        dailyOrderMode.value = 'normal'
-        payStatus.value = lastNormalPayStatus.value ?? -1
-        lastNormalPayStatus.value = null
-        selectedCollaborator.value = null
-      }
-    }
-    // 切换到每日账号时，确保是订单统计，并设置为达人模式
-    if (accountStore.isDailyAccount) {
-      if (statisticsType.value !== 'orders') {
-        statisticsType.value = 'orders'
-      }
-      // 设置为达人模式（默认）
-      if (dailyOrderMode.value !== 'collaborator') {
-        dailyOrderMode.value = 'collaborator'
-        payStatus.value = 0 // 达人模式只看已支付
-        selectedCollaborator.value = null
-      }
-    }
     initColumnConfig()
-    if (accountStore.isSanrouLikeAccount || accountStore.isQianlongAccount) {
+    if (accountStore.isDailyAccount) {
       currentPage.value = 1
       fetchOrderData()
     } else {
@@ -1924,7 +1557,7 @@ watch(
   () => dateRange.value,
   newRange => {
     if (!newRange) return
-    if (accountStore.isSanrouLikeAccount || accountStore.isQianlongAccount) {
+    if (accountStore.isDailyAccount) {
       currentPage.value = 1
       fetchOrderData()
     }
@@ -1948,7 +1581,7 @@ watch(
   newPageSize => {
     pageSize.value = newPageSize
     currentPage.value = 1
-    if (creatorStore.activeCreatorId) {
+    if (accountStore.isDailyAccount) {
       fetchOrderData()
     }
   }
@@ -1959,20 +1592,13 @@ watch(
 onMounted(() => {
   pageSize.value = settingsStore.settings.pageSize
   initColumnConfig()
-  // 设置默认支付状态：达人模式只看已支付，普通模式看全部
-  if (accountStore.isDailyAccount && dailyOrderMode.value === 'collaborator') {
-    payStatus.value = 0
-  } else {
-    payStatus.value = -1
-  }
+  payStatus.value = -1
 
   // 初始化响应式检测
   checkMobile()
   window.addEventListener('resize', checkMobile)
 
-  // 只有散柔类账号和牵龙账号才加载订单数据
-  if (accountStore.isSanrouLikeAccount || accountStore.isQianlongAccount) {
-    // 达人功能已禁用，直接获取数据
+  if (accountStore.isDailyAccount) {
     fetchOrderData()
   }
 })

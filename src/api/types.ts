@@ -112,7 +112,7 @@ export interface OrderData {
   code: number
   message: string
   total: number
-  total_amount?: number // 总充值金额（单位：分，仅达人过滤时返回）
+  total_amount?: number // 总充值金额（单位：分）
   data: OrderItem[]
 }
 
@@ -138,7 +138,6 @@ export interface ReportParams {
   date_type?: number
   page_index: number
   page_size: number
-  daren_douyin_accounts?: string // 达人抖音号过滤（逗号分隔）
 }
 
 export interface OrderParams {
@@ -150,7 +149,6 @@ export interface OrderParams {
   display_type?: number
   page_index: number
   page_size: number
-  daren_douyin_accounts?: string // 达人抖音号过滤（逗号分隔）
 }
 
 // 短剧排行榜相关类型
@@ -207,45 +205,6 @@ export interface DramaRankingParams {
   page_index: number // 页码，从0开始
   page_size: number // 每页大小
   book_name?: string // 短剧名称筛选（可选）
-}
-
-// 达人列表相关类型
-export interface DistributorData {
-  code: number
-  message: string
-  distributor_info_list: DistributorInfo[]
-  screen_name: string
-  avatar_url: string
-}
-
-export interface DistributorInfo {
-  account_id: number
-  ad_params: {
-    media_source_ad_params: {
-      [key: string]: {
-        callback_num_type: number
-      }
-    }
-  }
-  ad_user_id: number
-  ad_user_id_str: string
-  app_id: number
-  app_name: string
-  app_type: number
-  channel: number
-  company_name: string
-  create_time: string
-  distributor_id: number
-  mail: string
-  modify_time: string
-  nick_name: string
-  parent_distributor_id: number
-  register: string
-  release_status: number
-  role: number
-  root_distributor_id: number
-  secret_key: string
-  status: number
 }
 
 // 账号类型定义

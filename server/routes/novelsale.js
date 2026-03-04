@@ -1,11 +1,8 @@
 import Router from '@koa/router'
 import { createGetHandler } from '../utils/apiHandler.js'
 import { buildChangduGetHeaders } from '../utils/changduSign.js'
-import {
-  CHANGDU_BASE_URL,
-  CHANGDU_DAILY_DISTRIBUTOR_ID,
-  CHANGDU_DAILY_SECRET_KEY,
-} from '../config/changdu.js'
+import { CHANGDU_BASE_URL } from '../config/changdu.js'
+import { DAILY_BUILD_CONFIG } from '../config/dailyBuild.js'
 import { readAuthConfig } from './auth.js'
 import { FEISHU_CONFIG, getFeishuConfig } from '../config/feishu.js'
 
@@ -19,52 +16,14 @@ function isNumericId(str) {
   return /^\d+$/.test(str)
 }
 
-/**
- * 从promotion_name提取抖音号
- * promotion_name格式示例: "1842852415368202-CC-欣雅2-4294-小龙-美女总裁不好惹贴身保镖专治不服-小红-葸辉看剧"
- * 抖音号是最后一个"-"后的内容
- * @param {string} promotionName - 推广名称
- * @returns {string|null} 抖音号或null
- */
-function extractDouyinAccount(promotionName) {
-  if (!promotionName || typeof promotionName !== 'string') return null
-  const parts = promotionName.split('-')
-  return parts.length > 0 ? parts[parts.length - 1].trim() : null
-}
-
-/**
- * 根据抖音号列表过滤订单数据
- * @param {Array} orders - 订单列表
- * @param {string} douyinAccountsStr - 逗号分隔的抖音号字符串
- * @returns {Array} 过滤后的订单列表
- */
-function filterOrdersByDouyinAccounts(orders, douyinAccountsStr) {
-  if (!douyinAccountsStr || !orders || !Array.isArray(orders)) {
-    return orders
-  }
-
-  const accountsArray = douyinAccountsStr
-    .split(',')
-    .map(acc => acc.trim())
-    .filter(Boolean)
-  if (accountsArray.length === 0) {
-    return orders
-  }
-
-  return orders.filter(order => {
-    const douyinAccount = extractDouyinAccount(order.promotion_name)
-    return douyinAccount && accountsArray.includes(douyinAccount)
-  })
-}
-
 // 通过短剧名称获取 copyright_content_id
 async function getDramaIdByTitle(title) {
   try {
-    // 从 auth.json 读取 xh xtToken
+    // 从 auth 配置读取 xh xtToken
     const authConfig = await readAuthConfig()
-    const SANROU_XT_TOKEN = authConfig.tokens?.xh
+    const xtToken = authConfig.tokens?.xh
 
-    if (!SANROU_XT_TOKEN) {
+    if (!xtToken) {
       throw new Error('未配置形天 XT Token (tokens.xh)')
     }
 
@@ -88,7 +47,7 @@ async function getDramaIdByTitle(title) {
     const response = await fetch(url.toString(), {
       method: 'GET',
       headers: {
-        token: SANROU_XT_TOKEN,
+        token: xtToken,
       },
     })
 
@@ -131,123 +90,31 @@ async function getDramaIdByTitle(title) {
   }
 }
 
-// 应用概览列表 - 支持达人抖音号过滤
-router.get('/distributor/application_overview_list/v1', async ctx => {
-  // 先调用原始handler获取数据
-  await createGetHandler(
+async function getChangduSignConfig() {
+  const authConfig = await readAuthConfig()
+  const distributorId = authConfig.headers?.distributorId
+  if (!distributorId) {
+    throw new Error('缺少 auth.headers.distributorId 配置')
+  }
+  const secretKey = DAILY_BUILD_CONFIG.changdu.secretKey
+  if (!secretKey) {
+    throw new Error('缺少 DAILY_BUILD_CONFIG.changdu.secretKey 配置')
+  }
+  return { distributorId, secretKey }
+}
+
+router.get(
+  '/distributor/application_overview_list/v1',
+  createGetHandler(
     'Application Overview List',
     '/novelsale/distributor/application_overview_list/v1/'
-  )(ctx)
-
-  // 如果有达人抖音号过滤参数，对daily_data进行过滤
-  // 注意：报表数据的过滤比较复杂，因为需要重新聚合统计数据
-  // 这里暂时不过滤，因为报表数据通常是按日期聚合的，不是按订单明细
-  // 如果需要过滤，应该在前端获取订单明细后自行聚合
-  const darenDouyinAccounts = ctx.query.daren_douyin_accounts
-  if (darenDouyinAccounts && ctx.body && ctx.body.data) {
-    // TODO: 如果需要对报表数据进行过滤，需要重新设计聚合逻辑
-    // 目前报表数据是后端已经聚合好的，无法直接按抖音号过滤
-    // 建议：达人用户查看报表时，使用订单明细数据在前端进行聚合
-  }
-})
-
-// 推广详情 - 支持达人抖音号过滤（前端分页）
-router.get('/distributor/promotion/detail/v2', async ctx => {
-  const darenDouyinAccounts = ctx.query.daren_douyin_accounts
-
-  // 如果没有达人过滤参数，直接使用原始handler
-  if (!darenDouyinAccounts) {
-    await createGetHandler('Promotion Detail', '/novelsale/distributor/promotion/detail/v2/')(ctx)
-    return
-  }
-
-  // 达人过滤：拉取所有数据返回给前端进行分页
-  console.log(`🔍 [达人过滤-前端分页] 开始拉取所有数据，抖音号: ${darenDouyinAccounts}`)
-
-  const allFilteredOrders = []
-  let currentFetchIndex = 0
-  const fetchPageSize = 1000 // 每次请求 1000 条
-  let hasMoreData = true
-
-  // 循环请求直到获取所有数据
-  while (hasMoreData) {
-    console.log(
-      `🔄 [达人过滤] 第 ${currentFetchIndex + 1} 次请求，已有 ${allFilteredOrders.length} 条`
-    )
-
-    // 修改查询参数
-    const modifiedQuery = {
-      ...ctx.query,
-      page_size: fetchPageSize.toString(),
-      page_index: currentFetchIndex.toString(),
-    }
-
-    // 临时修改 ctx.query
-    const originalQuery = ctx.query
-    ctx.query = modifiedQuery
-
-    // 调用原始handler获取数据
-    await createGetHandler('Promotion Detail', '/novelsale/distributor/promotion/detail/v2/')(ctx)
-
-    // 恢复原始query
-    ctx.query = originalQuery
-
-    // 检查是否成功获取数据
-    if (!ctx.body || !Array.isArray(ctx.body.data)) {
-      console.log(`⚠️ [达人过滤] 第 ${currentFetchIndex + 1} 次请求响应格式错误，停止`)
-      break
-    }
-
-    const batchOrders = ctx.body.data
-    const batchTotal = ctx.body.total || 0
-
-    // 如果没有数据了，停止
-    if (batchOrders.length === 0) {
-      console.log(`✅ [达人过滤] 第 ${currentFetchIndex + 1} 次请求无数据，已到末尾`)
-      break
-    }
-
-    // 过滤并添加到结果中
-    const filteredBatch = filterOrdersByDouyinAccounts(batchOrders, darenDouyinAccounts)
-    allFilteredOrders.push(...filteredBatch)
-
-    console.log(
-      `  📦 本批: 获取 ${batchOrders.length} 条，总计 ${batchTotal} 条，过滤后 ${filteredBatch.length} 条，累计 ${allFilteredOrders.length} 条`
-    )
-
-    // 判断是否还有更多数据
-    // 如果已获取的数据量 >= total，说明已经拉完了
-    const fetchedCount = (currentFetchIndex + 1) * fetchPageSize
-    if (fetchedCount >= batchTotal) {
-      console.log(`✅ [达人过滤] 已拉取完所有数据`)
-      hasMoreData = false
-    }
-
-    currentFetchIndex++
-  }
-
-  // 计算总充值金额（只统计支付成功的订单）
-  const totalAmount = allFilteredOrders.reduce((sum, order) => {
-    // pay_status === 0 表示支付成功
-    if (order.pay_status === 0 && order.pay_amount) {
-      return sum + order.pay_amount
-    }
-    return sum
-  }, 0)
-
-  console.log(
-    `✅ [达人过滤] 完成: 共拉取 ${allFilteredOrders.length} 条数据，总充值: ${totalAmount / 100} 元，返回全部数据供前端分页`
   )
+)
 
-  // 返回所有数据给前端
-  ctx.body = {
-    code: 0,
-    message: 'success',
-    data: allFilteredOrders, // 返回所有数据
-    total: allFilteredOrders.length,
-    total_amount: totalAmount, // 总充值金额（单位：分）
-  }
-})
+router.get(
+  '/distributor/promotion/detail/v2',
+  createGetHandler('Promotion Detail', '/novelsale/distributor/promotion/detail/v2/')
+)
 
 // 登录
 router.get('/distributor/login/v1', createGetHandler('Login', '/novelsale/distributor/login/v1/'))
@@ -256,8 +123,7 @@ router.get('/distributor/login/v1', createGetHandler('Login', '/novelsale/distri
 router.get('/distributor/content/series/list/v1', async ctx => {
   try {
     const config = await getFeishuConfig()
-    const distributorId = CHANGDU_DAILY_DISTRIBUTOR_ID
-    const secretKey = CHANGDU_DAILY_SECRET_KEY
+    const { distributorId, secretKey } = await getChangduSignConfig()
 
     // 构建请求参数
     const params = {

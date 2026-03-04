@@ -31,12 +31,12 @@ export function useUserAuth() {
     return currentUserId.value === adminUserId.value
   })
 
-  // 计算属性：是否为达人用户（在达人列表中）
+  // 历史兼容字段，当前固定为 false
   const isDarenUser = computed(() => {
     return false
   })
 
-  // 计算属性：当前达人信息
+  // 历史兼容字段，当前固定为空
   const currentDaren = computed<DarenUserInfo | undefined>(() => {
     return undefined
   })
@@ -77,7 +77,7 @@ export function useUserAuth() {
     return labels
   })
 
-  // 计算属性：是否为有效用户（管理员或已配置的达人）
+  // 计算属性：是否为有效用户（仅管理员）
   const isValidUser = computed(() => {
     // 没有用户ID，或者用户ID不是管理员
     if (!currentUserId.value) {

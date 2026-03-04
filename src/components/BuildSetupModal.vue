@@ -392,8 +392,8 @@ async function buildBatchForDouyin(
 
   // 清理剧名中的特殊标点符号
   const cleanDramaName = sanitizeDramaName(dramaName)
-  // 推广链接命名规则：小红-抖音号-剧名-账户
-  const promotionName = `小红-${config.douyinAccount}-${cleanDramaName}-${accountId}`
+  // 推广链接命名规则：小鱼-抖音号-剧名-账户
+  const promotionName = `小鱼-${config.douyinAccount}-${cleanDramaName}-${accountId}`
   console.log(`创建推广链接: ${promotionName} (原始剧名: ${dramaName})`)
 
   const promotionResult = await dailyBuildApi.createPromotionLink({
@@ -439,8 +439,8 @@ async function buildBatchForDouyin(
 
   // 1. 创建项目
   record.failedStep = '创建项目'
-  // 项目名称格式：小红-抖音号-剧名-日期
-  const projectName = `小红-${config.douyinAccount}-${dramaName}-${buildDate}`
+  // 项目名称格式：小鱼-抖音号-剧名-日期
+  const projectName = `小鱼-${config.douyinAccount}-${dramaName}-${buildDate}`
 
   const projectResult = await dailyBuildApi.createProject({
     account_id: accountId,
@@ -538,8 +538,8 @@ async function buildBatchForDouyin(
 
   // 5. 创建广告（一个抖音号创建一条广告，包含所有筛选出的素材）
   record.failedStep = '创建广告'
-  // 广告名称格式：小红-抖音号-剧名-日期
-  const adName = `小红-${config.douyinAccount}-${dramaName}-${buildDate}`
+  // 广告名称格式：小鱼-抖音号-剧名-日期
+  const adName = `小鱼-${config.douyinAccount}-${dramaName}-${buildDate}`
 
   // 创建广告函数（封装以便重试）
   const createAdPromotion = async () => {

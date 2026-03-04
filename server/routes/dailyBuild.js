@@ -2,7 +2,6 @@ import Router from 'koa-router'
 import { DAILY_BUILD_CONFIG } from '../config/dailyBuild.js'
 import { readAuthConfig } from './auth.js'
 import { buildChangduPostHeaders } from '../utils/changduSign.js'
-import { CHANGDU_DAILY_DISTRIBUTOR_ID, CHANGDU_DAILY_SECRET_KEY } from '../config/changdu.js'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -34,17 +33,25 @@ function cleanDramaName(name) {
 
 // 工具函数：生成推广链接名称
 function generatePromotionName(dramaName) {
-  return `小红-${cleanDramaName(dramaName)}`
+  return `小鱼-${cleanDramaName(dramaName)}`
 }
 
 async function getJiliangCookie() {
   const config = await readAuthConfig()
-  return (
-    config.platforms?.jiliang?.cookie ||
-    config.platforms?.ocean?.mr ||
-    config.platforms?.ocean?.sr ||
-    ''
-  )
+  return config.platforms?.jiliang?.cookie || ''
+}
+
+async function getChangduSignConfig() {
+  const config = await readAuthConfig()
+  const distributorId = config.headers?.distributorId
+  if (!distributorId) {
+    throw new Error('缺少 auth.headers.distributorId 配置')
+  }
+  const secretKey = DAILY_BUILD_CONFIG.changdu.secretKey
+  if (!secretKey) {
+    throw new Error('缺少 DAILY_BUILD_CONFIG.changdu.secretKey 配置')
+  }
+  return { distributorId, secretKey }
 }
 
 /**
@@ -69,9 +76,11 @@ router.post('/create-promotion-link', async ctx => {
     console.log('promotion_name:', finalPromotionName)
     console.log('请求URL:', `${DAILY_BUILD_CONFIG.changdu.baseUrl}/promotion/create/v1`)
 
+    const { distributorId, secretKey } = await getChangduSignConfig()
+
     // 构建请求体
     const requestBody = {
-      distributor_id: DAILY_BUILD_CONFIG.changdu.distributorId,
+      distributor_id: distributorId,
       book_id: book_id,
       index: DAILY_BUILD_CONFIG.promotion.index,
       promotion_name: finalPromotionName,
@@ -87,8 +96,8 @@ router.post('/create-promotion-link', async ctx => {
     const { headers: signHeaders } = buildChangduPostHeaders(
       requestBody,
       undefined,
-      CHANGDU_DAILY_DISTRIBUTOR_ID,
-      CHANGDU_DAILY_SECRET_KEY
+      distributorId,
+      secretKey
     )
 
     console.log('签名头部:', signHeaders)
@@ -828,7 +837,7 @@ router.post('/create-project', async ctx => {
     // 使用前端传递的项目名称，如果没有则使用默认规则
     const finalProjectName =
       project_name ||
-      (douyin_account_name ? `${drama_name}-小红-${douyin_account_name}` : `${drama_name}`)
+      (douyin_account_name ? `${drama_name}-小鱼-${douyin_account_name}` : `${drama_name}`)
 
     // 根据需求文档和 curl 示例构建完整请求体
     const requestBody = {
@@ -1622,11 +1631,13 @@ async function queryMicroAppForAccount(accountId, cookie) {
  * 为小程序创建推广链接
  */
 async function createPromotionLinkForMicroapp(drama_name, book_id) {
+  const { distributorId, secretKey } = await getChangduSignConfig()
+
   const requestBody = {
-    distributor_id: DAILY_BUILD_CONFIG.changdu.distributorId,
+    distributor_id: distributorId,
     book_id: book_id || '', // 使用传入的 book_id
     index: DAILY_BUILD_CONFIG.promotion.index,
-    promotion_name: `小红-${cleanDramaName(drama_name)}`,
+    promotion_name: `小鱼-${cleanDramaName(drama_name)}`,
     recharge_template_id: DAILY_BUILD_CONFIG.changdu.rechargeTemplateId,
     media_source: DAILY_BUILD_CONFIG.promotion.mediaSource,
     price: DAILY_BUILD_CONFIG.promotion.price,
@@ -1636,8 +1647,8 @@ async function createPromotionLinkForMicroapp(drama_name, book_id) {
   const { headers: signHeaders } = buildChangduPostHeaders(
     requestBody,
     undefined,
-    CHANGDU_DAILY_DISTRIBUTOR_ID,
-    CHANGDU_DAILY_SECRET_KEY
+    distributorId,
+    secretKey
   )
 
   const response = await fetch(`${DAILY_BUILD_CONFIG.changdu.baseUrl}/promotion/create/v1`, {

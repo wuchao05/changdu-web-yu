@@ -1327,7 +1327,7 @@ async function buildBatchForDouyin(
   }
 
   const cleanDramaName = sanitizeDramaName(dramaName)
-  const promotionName = `小红-${config.douyinAccount}-${cleanDramaName}-${accountId}`
+  const promotionName = `小鱼-${config.douyinAccount}-${cleanDramaName}-${accountId}`
 
   const promotionResult = await dailyBuildApi.createPromotionLink({
     book_id: bookId,
@@ -1360,7 +1360,7 @@ async function buildBatchForDouyin(
 
   // 1. 创建项目
   record.failedStep = '创建项目'
-  const projectName = `小红-${config.douyinAccount}-${dramaName}-${buildDate.value}`
+  const projectName = `小鱼-${config.douyinAccount}-${dramaName}-${buildDate.value}`
 
   const projectResult = await dailyBuildApi.createProject({
     account_id: accountId,
@@ -1439,7 +1439,7 @@ async function buildBatchForDouyin(
 
   // 5. 创建广告（最多重试1次）
   record.failedStep = '创建广告'
-  const adName = `小红-${config.douyinAccount}-${dramaName}-${buildDate.value}`
+  const adName = `小鱼-${config.douyinAccount}-${dramaName}-${buildDate.value}`
 
   let promotionId: string | undefined
   let retryCount = 0

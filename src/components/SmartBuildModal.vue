@@ -23,11 +23,9 @@ import {
   type SmartSchedulerStatus,
   type SmartSchedulerTask,
 } from '@/api/dailyBuild'
-import { useAccountStore } from '@/stores/account'
 
 const message = useMessage()
 const dialog = useDialog()
-const accountStore = useAccountStore()
 
 interface Props {
   show: boolean
@@ -50,7 +48,7 @@ const isSubmitting = ref(false)
 
 // 获取当前用户名称（用于API调用）
 const userName = computed(() => {
-  // 散柔账号：固定返回 'xh-sr'
+  // 当前仅保留每日账号调度标识
   return 'xh-sr'
 })
 
@@ -314,7 +312,7 @@ watch(
     :mask-closable="!isSubmitting"
     @update:show="handleClose"
     preset="card"
-    :title="accountStore.isDarenAccount ? '达人智能搭建调度' : '散柔智能搭建调度'"
+    title="智能搭建调度"
     class="smart-build-modal"
     style="max-width: 1000px; width: 90vw"
   >

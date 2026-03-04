@@ -6,11 +6,8 @@ export interface AppSettings {
   defaultDateRange: 'today' | '3days' | '7days' | '30days' | 'all' // 默认查询天数
   autoRefresh: boolean
   refreshInterval: number // 自动刷新间隔（秒）
-  // 牵龙达人收入查询日期范围设置
-  qianlongDateRangeMode: 'today' | 'september_1st' // 默认日期范围模式
   autoUploadEnabled: boolean
   autoUploadInterval: number // 自动上传轮询间隔（秒）
-  sanrouDistributorId: string
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -18,10 +15,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   defaultDateRange: 'today',
   autoRefresh: false,
   refreshInterval: 60,
-  qianlongDateRangeMode: 'today', // 默认为今日
   autoUploadEnabled: false,
   autoUploadInterval: 300,
-  sanrouDistributorId: '1842865091654731',
 }
 
 export const useSettingsStore = defineStore('settings', () => {

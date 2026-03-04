@@ -360,7 +360,6 @@ import {
 import { feishuApi } from '@/api/feishu'
 import { getOrders } from '@/api'
 import { editJiliangAccountRemark } from '@/api/jiliang'
-import { useCreatorStore } from '@/stores/creator'
 import { useAccountStore } from '@/stores/account'
 import { useDramaSubjectStore } from '@/stores/dramaSubject'
 import { useGlobalDateRange } from '@/composables/useGlobalDateRange'
@@ -439,13 +438,12 @@ const sortOptions = [
 const searchKeyword = ref<string>('')
 
 // Store 实例
-const creatorStore = useCreatorStore()
 const accountStore = useAccountStore()
 const dramaSubjectStore = useDramaSubjectStore()
 const { isDarenUser } = useUserAuth()
 
 // 使用全局日期范围管理
-const { sanrouDateRange, setSanrouDateRange } = useGlobalDateRange()
+const { dailyDateRange, setDailyDateRange } = useGlobalDateRange()
 
 // 使用 Naive UI 的 message API
 const message = useMessage()
@@ -847,7 +845,7 @@ async function handleCellClick(row: DramaStatusRow, date: string) {
             // 如果是每日主体，更新巨量账户备注（账户字段即为巨量账户ID）
             if (dramaSubjectStore.isDailySubject && availableAccount.account) {
               try {
-                const remark = `小红-${row.dramaName}`
+                const remark = `小鱼-${row.dramaName}`
                 await editJiliangAccountRemark({
                   account_id: availableAccount.account,
                   remark,
@@ -911,20 +909,14 @@ function isCellDisabled(row: DramaStatusRow, date: string): boolean {
 
 // 获取订单数据
 async function fetchOrderData() {
-  // 只有散柔账号才需要加载订单数据
-  const needCreator = accountStore.isSanrouAccount
-  if (
-    !accountStore.isSanrouLikeAccount ||
-    (needCreator && !creatorStore.activeCreatorId) ||
-    !sanrouDateRange.value
-  ) {
+  if (!accountStore.isDailyAccount || !dailyDateRange.value) {
     return
   }
 
   try {
     orderLoading.value = true
 
-    const [startDate, endDate] = sanrouDateRange.value
+    const [startDate, endDate] = dailyDateRange.value
 
     // 验证日期是否有效
     if (!startDate || !endDate) {
@@ -1126,7 +1118,7 @@ function calculateDateRange(range: string): [string, string] {
 // 监听日期范围变化，更新全局日期范围并重新加载数据
 watch(selectedDateRange, async newRange => {
   const [startDate, endDate] = calculateDateRange(newRange)
-  setSanrouDateRange([startDate, endDate])
+  setDailyDateRange([startDate, endDate])
 
   // 日期切换时只重新获取订单数据，不重新获取剧集状态数据
   await loadOrderDataOnly()
@@ -1136,7 +1128,7 @@ watch(selectedDateRange, async newRange => {
 onMounted(() => {
   // 初始化日期范围
   const [startDate, endDate] = calculateDateRange(selectedDateRange.value)
-  setSanrouDateRange([startDate, endDate])
+  setDailyDateRange([startDate, endDate])
 
   // 加载数据
   loadData()

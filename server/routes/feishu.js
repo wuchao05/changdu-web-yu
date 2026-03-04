@@ -488,7 +488,7 @@ router.post('/bitable/records', async ctx => {
 router.post('/bitable/huyu-accounts', async ctx => {
   try {
     const config = await getFeishuConfig()
-    // 从请求体获取账户表 ID，默认使用超琦账户表
+    // 账户表 ID 从配置读取
     const targetTableId = config.table_ids.account
 
     // 首先获取 tenant_access_token
@@ -642,7 +642,7 @@ router.put('/bitable/records/:recordId/account', async ctx => {
     const updateRequestBody = {
       fields: {
         账户: account,
-        主体: '超琦',
+        主体: '每日',
       },
     }
 
@@ -702,7 +702,7 @@ router.put('/bitable/huyu-accounts/:recordId/used', async ctx => {
   try {
     const config = await getFeishuConfig()
     const { recordId } = ctx.params
-    // 从请求体获取账户表 ID，默认使用超琦账户表
+    // 账户表 ID 从配置读取
     const targetTableId = config.table_ids.account
 
     if (!recordId) {
@@ -805,7 +805,7 @@ router.put('/bitable/huyu-accounts/:recordId/unused', async ctx => {
   try {
     const config = await getFeishuConfig()
     const { recordId } = ctx.params
-    // 从请求体获取账户表 ID，默认使用超琦账户表
+    // 账户表 ID 从配置读取
     const targetTableId = config.table_ids.account
 
     if (!recordId) {

@@ -26,38 +26,7 @@ const router = new Router()
 // 默认基础路径配置
 const DEFAULT_BASE_PATH = 'D:\\短剧剪辑\\'
 const SPLAY_BASE_URL = 'https://splay-admin.lnkaishi.cn'
-
-/**
- * 读取达人配置文件
- */
-const readDarenConfig = async () => {
-  try {
-    const configPath =
-      process.env.DAREN_CONFIG_PATH ||
-      path.join(path.dirname(new URL(import.meta.url).pathname), '../data/daren-config.json')
-    const data = await fs.promises.readFile(configPath, 'utf-8')
-    return JSON.parse(data)
-  } catch (error) {
-    console.warn('读取达人配置失败:', error.message)
-    return { darenList: [] }
-  }
-}
-
-/**
- * 根据用户ID获取视频基础路径
- */
-const getVideoBasePath = async userId => {
-  if (!userId) return DEFAULT_BASE_PATH
-
-  try {
-    const config = await readDarenConfig()
-    const daren = config.darenList?.find(d => d.id === userId)
-    return daren?.videoBasePath || DEFAULT_BASE_PATH
-  } catch (error) {
-    console.warn('获取达人视频基础路径失败:', error.message)
-    return DEFAULT_BASE_PATH
-  }
-}
+const getVideoBasePath = () => process.env.XT_VIDEO_BASE_PATH || DEFAULT_BASE_PATH
 
 const resolveProductConfig = ctx => {
   // 从请求头读取前端传递的 user_id 和 subject
@@ -260,11 +229,7 @@ router.get('/video-materials', async ctx => {
     const materials = []
     const { date } = ctx.query // 获取日期参数，如 "10.8"
 
-    // 从请求头获取用户ID，动态确定基础路径
-    const userId = (ctx.headers['x-user-id'] || '').toString()
-    const BASE_PATH = await getVideoBasePath(userId)
-
-    console.log('视频素材查询 - 用户ID:', userId || '未指定')
+    const BASE_PATH = getVideoBasePath()
     console.log('视频素材查询 - 基础路径:', BASE_PATH)
 
     // 读取基础路径下的所有日期文件夹
@@ -487,9 +452,7 @@ router.delete('/drama-dir', async ctx => {
     return
   }
 
-  // 从请求头获取用户ID，动态确定基础路径
-  const userId = (ctx.headers['x-user-id'] || '').toString()
-  const BASE_PATH = await getVideoBasePath(userId)
+  const BASE_PATH = getVideoBasePath()
 
   const resolvedBase = path.resolve(BASE_PATH)
   const targetDir = path.join(BASE_PATH, `${date}导出`, dramaName)
@@ -543,7 +506,7 @@ router.delete('/drama-dir', async ctx => {
 })
 
 // 通过短剧名称查询 copyright_content_id（用于名称转 ID）
-// 使用固定的 sanrou.xtToken，不需要前端传递 token
+// 直接使用 auth 配置中的 tokens.xh
 router.get('/splay/album/search-by-title', async ctx => {
   const { title = '' } = ctx.query
   if (!title) {
@@ -555,15 +518,15 @@ router.get('/splay/album/search-by-title', async ctx => {
     return
   }
 
-  // 从 auth.json 读取 xh xtToken
+  // 从 auth 配置读取 xh token
   const authConfig = await readAuthConfig()
-  const SANROU_XT_TOKEN = authConfig.tokens?.xh
+  const xtToken = authConfig.tokens?.xh
 
-  if (!SANROU_XT_TOKEN) {
+  if (!xtToken) {
     ctx.status = 500
     ctx.body = {
       code: -1,
-      message: '未配置散柔 XT Token',
+      message: '未配置形天 XT Token',
     }
     return
   }
@@ -581,7 +544,7 @@ router.get('/splay/album/search-by-title', async ctx => {
         promotion_status: 1,
       },
       headers: {
-        token: SANROU_XT_TOKEN,
+        token: xtToken,
       },
     })
 

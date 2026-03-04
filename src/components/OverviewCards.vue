@@ -243,7 +243,6 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useMessage } from 'naive-ui'
-import { useCreatorStore } from '@/stores/creator'
 import { useDataStore } from '@/stores/data'
 import { useAccountStore } from '@/stores/account'
 import { getDataOverviewV1, getMonthlyRechargeAnalyze } from '@/api'
@@ -259,7 +258,6 @@ dayjs.extend(utc)
 dayjs.extend(timezone)
 
 const message = useMessage()
-const creatorStore = useCreatorStore()
 const dataStore = useDataStore()
 const accountStore = useAccountStore()
 
@@ -322,11 +320,6 @@ function getCurrentMonthDateRange() {
 
 // 获取概览数据
 async function fetchOverviewData(showLoading = true) {
-  // 散柔账号需要activeCreatorId
-  if (accountStore.isSanrouAccount && !creatorStore.activeCreatorId) return
-  // 乾隆账号需要distributorId
-  if (accountStore.isQianlongAccount && !accountStore.getCurrentApiConfig().distributorId) return
-
   try {
     if (showLoading) {
       dataStore.setOverviewLoading(true)
@@ -404,44 +397,21 @@ async function handleManualRefresh() {
   }
 }
 
-// 监听活跃达人变化，重新获取数据
-watch(
-  () => creatorStore.activeCreatorId,
-  newId => {
-    if (accountStore.isSanrouAccount && newId) {
-      fetchOverviewData() // 概览数据包含新用户数据
-    }
-  },
-  { immediate: true }
-)
-
-// 监听乾隆账号的distributorId变化
-watch(
-  () => accountStore.getCurrentApiConfig().distributorId,
-  newDistributorId => {
-    if (accountStore.isQianlongAccount && newDistributorId) {
-      fetchOverviewData()
-    }
-  },
-  { immediate: true }
-)
-
 // 监听账号切换
 watch(
   () => accountStore.currentAccount,
   () => {
-    if (accountStore.isSanrouLikeAccount) {
+    if (accountStore.isDailyAccount) {
       fetchOverviewData() // 概览数据包含新用户数据
       autoRefresh.startAutoRefresh()
-    } else if (!accountStore.isSanrouLikeAccount) {
+    } else {
       autoRefresh.stopAutoRefresh()
     }
   }
 )
 
 onMounted(() => {
-  // 只有散柔账号才启动数据加载和自动刷新
-  if (accountStore.isSanrouLikeAccount) {
+  if (accountStore.isDailyAccount) {
     fetchOverviewData() // 概览数据包含新用户数据
     autoRefresh.startAutoRefresh()
   }

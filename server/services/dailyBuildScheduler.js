@@ -10,8 +10,8 @@ import { FEISHU_CONFIG, getFeishuConfig } from '../config/feishu.js'
 import { DAILY_BUILD_CONFIG } from '../config/dailyBuild.js'
 import { JILIANG_CONFIG } from '../config/jiliang.js'
 import { buildChangduPostHeaders } from '../utils/changduSign.js'
-import { CHANGDU_DAILY_DISTRIBUTOR_ID, CHANGDU_DAILY_SECRET_KEY } from '../config/changdu.js'
 import FormData from 'form-data'
+import { readAuthConfig } from '../routes/auth.js'
 import {
   parsePromotionUrl,
   generateMicroAppLink,
@@ -270,6 +270,19 @@ async function getDouyinConfigs(drama) {
   return configs
 }
 
+async function getChangduSignConfig() {
+  const authConfig = await readAuthConfig()
+  const distributorId = authConfig.headers?.distributorId
+  if (!distributorId) {
+    throw new Error('缺少 auth.headers.distributorId 配置')
+  }
+  const secretKey = DAILY_BUILD_CONFIG.changdu.secretKey
+  if (!secretKey) {
+    throw new Error('缺少 DAILY_BUILD_CONFIG.changdu.secretKey 配置')
+  }
+  return { distributorId, secretKey }
+}
+
 // ============== API 调用函数 ==============
 
 /**
@@ -277,10 +290,11 @@ async function getDouyinConfigs(drama) {
  */
 async function createPromotionLink(params) {
   const { book_id, drama_name, promotion_name } = params
-  const finalPromotionName = promotion_name || `小红-${sanitizeDramaName(drama_name)}`
+  const finalPromotionName = promotion_name || `小鱼-${sanitizeDramaName(drama_name)}`
+  const { distributorId, secretKey } = await getChangduSignConfig()
 
   const requestBody = {
-    distributor_id: DAILY_BUILD_CONFIG.changdu.distributorId,
+    distributor_id: distributorId,
     book_id: book_id,
     index: DAILY_BUILD_CONFIG.promotion.index,
     promotion_name: finalPromotionName,
@@ -293,8 +307,8 @@ async function createPromotionLink(params) {
   const { headers: signHeaders } = buildChangduPostHeaders(
     requestBody,
     undefined,
-    CHANGDU_DAILY_DISTRIBUTOR_ID,
-    CHANGDU_DAILY_SECRET_KEY
+    distributorId,
+    secretKey
   )
 
   const response = await fetch(`${DAILY_BUILD_CONFIG.changdu.baseUrl}/promotion/create/v1`, {
@@ -315,8 +329,7 @@ async function createPromotionLink(params) {
  * 返回格式：{ hasValidMicroApp: boolean, result: any }
  */
 async function queryMicroApp(accountId) {
-  const CC_ID = '1849832732821859'
-  const OPERATOR = '1849832732821859'
+  const { ccId, operator } = DAILY_BUILD_CONFIG.jiliang
 
   const url = new URL('https://business.oceanengine.com/app_package/microapp/applet/list')
   url.searchParams.set('page_no', '1')
@@ -325,8 +338,8 @@ async function queryMicroApp(accountId) {
   url.searchParams.set('search_type', '1')
   url.searchParams.set('status', '-1') // 查询所有状态的小程序
   url.searchParams.set('adv_id', accountId)
-  url.searchParams.set('cc_id', CC_ID)
-  url.searchParams.set('operator', OPERATOR)
+  url.searchParams.set('cc_id', ccId)
+  url.searchParams.set('operator', operator)
   url.searchParams.set('operation_type', '1')
 
   const response = await fetch(url.toString(), {
@@ -371,8 +384,7 @@ async function queryMicroApp(accountId) {
  * 用于优化资产化流程，优先使用被共享的已审核通过的小程序
  */
 async function queryApprovedMicroApp(accountId) {
-  const CC_ID = '1849832732821859'
-  const OPERATOR = '1849832732821859'
+  const { ccId, operator } = DAILY_BUILD_CONFIG.jiliang
 
   const url = new URL('https://business.oceanengine.com/app_package/microapp/applet/list')
   url.searchParams.set('page_no', '1')
@@ -381,8 +393,8 @@ async function queryApprovedMicroApp(accountId) {
   url.searchParams.set('search_type', '2') // search_type=2 查询被共享的已审核通过的小程序
   url.searchParams.set('status', '-1')
   url.searchParams.set('adv_id', accountId)
-  url.searchParams.set('cc_id', CC_ID)
-  url.searchParams.set('operator', OPERATOR)
+  url.searchParams.set('cc_id', ccId)
+  url.searchParams.set('operator', operator)
   url.searchParams.set('operation_type', '1')
 
   console.log('[查询被共享的小程序] 开始查询 (search_type=2)...')
@@ -452,7 +464,8 @@ async function createMicroApp(params) {
     },
   }
 
-  const url = `https://business.oceanengine.com/app_package/microapp/applet/create?cc_id=1849832732821859&operator=${account_id}&operation_type=1`
+  const { ccId, operator } = DAILY_BUILD_CONFIG.jiliang
+  const url = `https://business.oceanengine.com/app_package/microapp/applet/create?cc_id=${ccId}&operator=${operator}&operation_type=1`
 
   const response = await fetch(url, {
     method: 'POST',
@@ -695,7 +708,7 @@ async function createProject(params) {
   const projectConfig = DAILY_BUILD_CONFIG.build.project
 
   const finalProjectName =
-    project_name || (douyin_account_name ? `${drama_name}-小红-${douyin_account_name}` : drama_name)
+    project_name || (douyin_account_name ? `${drama_name}-小鱼-${douyin_account_name}` : drama_name)
 
   const requestBody = {
     track_url_group_info: {},
@@ -1150,7 +1163,7 @@ async function buildBatchForDouyin(drama, config, initData, dramaName, accountId
   }
 
   const cleanDramaName = sanitizeDramaName(dramaName)
-  const promotionName = `小红-${config.douyinAccount}-${cleanDramaName}-${accountId}`
+  const promotionName = `小鱼-${config.douyinAccount}-${cleanDramaName}-${accountId}`
 
   const promotionResult = await createPromotionLink({
     book_id: bookId,
@@ -1182,7 +1195,7 @@ async function buildBatchForDouyin(drama, config, initData, dramaName, accountId
   initData.app_type = 2
 
   // 1. 创建项目
-  const projectName = `小红-${config.douyinAccount}-${dramaName}-${buildDate}`
+  const projectName = `小鱼-${config.douyinAccount}-${dramaName}-${buildDate}`
   const projectResult = await createProject({
     account_id: accountId,
     drama_name: dramaName,
@@ -1249,7 +1262,7 @@ async function buildBatchForDouyin(drama, config, initData, dramaName, accountId
   }
 
   // 5. 创建广告
-  const adName = `小红-${config.douyinAccount}-${dramaName}-${buildDate}`
+  const adName = `小鱼-${config.douyinAccount}-${dramaName}-${buildDate}`
   const promotionCreateResult = await createPromotion({
     account_id: accountId,
     project_id: projectId,

@@ -83,7 +83,7 @@ curl --location --request POST 'https://ad.oceanengine.com/superior/api/v2/proje
   "delivery_package": 0,
   "landing_type": 16,
   "delivery_related_num": 1,
-  "name": "玄门泰斗开局竟被当凡夫-小红-萍通剧坊", // 剧名-小红-抖音号
+  "name": "玄门泰斗开局竟被当凡夫-小鱼-萍通剧坊", // 剧名-小鱼-抖音号
   "schedule_type": 1,
   "week_schedule_type": 0,
   "pricing_type": 9,
@@ -138,13 +138,13 @@ curl --location --request POST 'https://ad.oceanengine.com/superior/api/v2/proje
 }
 ```
 
-参数中的 name 规则是“剧名-小红-抖音号”，比如这一轮的抖音号是“萍通剧坊”，剧名是“暗香”，那 name 传值就是“暗香-小红-萍通剧坊”
+参数中的 name 规则是“剧名-小鱼-抖音号”，比如这一轮的抖音号是“萍通剧坊”，剧名是“暗香”，那 name 传值就是“暗香-小鱼-萍通剧坊”
 
 接着开始创建广告，创建广告之前，需要确认以下几个数据：
 
 抖音号的原始 ID，也就是ies_core_user_id，小程序信息，素材数据。
 
-首先抖音号的原始 ID 怎么拿呢，可以拿到当前批次的抖音号跟抖音号ID，比如我当前批次的抖音号是“小红看剧”，抖音号ID是“25655660267”，然后调用接口：
+首先抖音号的原始 ID 怎么拿呢，可以拿到当前批次的抖音号跟抖音号ID，比如我当前批次的抖音号是“小鱼看剧”，抖音号ID是“25655660267”，然后调用接口：
 
 ```bash
 curl --location --request POST 'https://ad.oceanengine.com/superior/api/v2/ad/authorize/list?aadvid=1850383309288522' \
@@ -175,7 +175,7 @@ curl --location --request POST 'https://ad.oceanengine.com/superior/api/v2/ad/au
   "code": 0,
   "data": [
     {
-      "ies_user_name": "小红看剧",
+      "ies_user_name": "小鱼看剧",
       "ban_push_item": false,
       "ies_avatar_url": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_38d8268669cbc45985dee8c0b8125b36.jpeg?from=3782654143",
       "ies_core_id": "1418801121595483",
@@ -482,7 +482,7 @@ curl --location --request POST 'https://ad.oceanengine.com/superior/api/v2/promo
       }
     ]
   },
-  "name": "玄门泰斗开局竟被当凡夫-小红-萍通剧坊", // 剧名-小红-抖音号
+  "name": "玄门泰斗开局竟被当凡夫-小鱼-萍通剧坊", // 剧名-小鱼-抖音号
   "project_id": "7592808131504832575", // 上一步创建的项目 id
   "check_hash": "1767838716225",
   "is_auto_delivery_mode": false

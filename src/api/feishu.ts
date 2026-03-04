@@ -614,7 +614,7 @@ class FeishuApiService {
    * @param dramaName 剧名
    * @param publishTime 首发时间 (格式: YYYY-MM-DD HH:mm:ss)
    * @param account 账户（可选）
-   * @param subject 主体（可选，如 "超琦"、"欣雅"）
+   * @param subject 主体（可选，如 "每日"）
    * @param status 当前状态（可选，默认为"待下载"）
    * @param douyinMaterial 抖音素材（可选）
    * @returns 创建结果
@@ -860,7 +860,7 @@ class FeishuApiService {
    * @param timestamp 日期时间戳
    * @param account 账户（可选）
    * @param publishTime 上架时间（可选）
-   * @param subject 主体（可选，如 "超琦"、"欣雅"）
+   * @param subject 主体（可选，如 "每日"）
    * @param douyinMaterial 抖音素材（可选）
    * @param status 当前状态（可选，默认"待剪辑"）
    * @returns 创建结果
@@ -950,7 +950,7 @@ class FeishuApiService {
    * 查询待资产化的剧集列表
    * @param date 日期（可选，格式：YYYY-MM-DD）
    * @param signal 可选的 AbortSignal，用于取消请求
-   * @param useDaily 是否使用每日账号表格（默认false，使用散柔表格）
+   * @param useDaily 是否使用每日账号表格（默认false）
    * @returns 待资产化剧集列表
    */
   async getPendingBuildDramas(

@@ -8,12 +8,9 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import { FEISHU_CONFIG, getFeishuConfig } from '../config/feishu.js'
 import { AUTO_SUBMIT_CONFIG } from '../config/autoSubmit.js'
+import { DAILY_BUILD_CONFIG } from '../config/dailyBuild.js'
 import { buildChangduGetHeaders } from '../utils/changduSign.js'
-import {
-  CHANGDU_BASE_URL,
-  CHANGDU_DAILY_DISTRIBUTOR_ID,
-  CHANGDU_DAILY_SECRET_KEY,
-} from '../config/changdu.js'
+import { CHANGDU_BASE_URL } from '../config/changdu.js'
 import { readAuthConfig } from '../routes/auth.js'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -527,6 +524,19 @@ async function getJiliangAuth() {
   }
 }
 
+async function getChangduSignConfig() {
+  const authConfig = await readAuthConfig()
+  const distributorId = authConfig.headers?.distributorId
+  if (!distributorId) {
+    throw new Error('缺少 auth.headers.distributorId 配置')
+  }
+  const secretKey = DAILY_BUILD_CONFIG.changdu.secretKey
+  if (!secretKey) {
+    throw new Error('缺少 DAILY_BUILD_CONFIG.changdu.secretKey 配置')
+  }
+  return { distributorId, secretKey }
+}
+
 /**
  * 获取新剧列表 - 使用常读开放平台 API（签名认证）
  * @param {Object} params - 请求参数
@@ -536,8 +546,7 @@ async function getJiliangAuth() {
 async function getNewDramaList(params = {}) {
   const { pageIndex = 0, pageSize = 100, dramaListTableId } = params
 
-  const distributorId = CHANGDU_DAILY_DISTRIBUTOR_ID
-  const secretKey = CHANGDU_DAILY_SECRET_KEY
+  const { distributorId, secretKey } = await getChangduSignConfig()
 
   // 构建请求参数（与手动刷新一致）
   const requestParams = {
@@ -927,7 +936,7 @@ async function processDrama(drama, downloadList) {
     // 9. 更新巨量账户备注
     if (availableAccount.account) {
       try {
-        const remark = `小红-${dramaName}`
+        const remark = `小鱼-${dramaName}`
         await editJiliangAccountRemark(availableAccount.account, remark)
         console.log('[自动提交] 更新巨量账户备注成功:', availableAccount.account)
       } catch (jiliangError) {

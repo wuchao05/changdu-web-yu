@@ -4,15 +4,16 @@
 export const DAILY_BUILD_CONFIG = {
   // 常读openapi配置
   changdu: {
-    distributorId: 1844565955364887,
+    distributorId: 1853736552241288,
+    secretKey: 'H53iZltmBXDndYt5ONW2h6tgCUxbG7kX',
     baseUrl: 'https://www.changdupingtai.com/novelsale/openapi',
-    rechargeTemplateId: 1126190,
+    rechargeTemplateId: 1242710,
   },
 
   // 巨量API配置
   jiliang: {
-    ccId: '1849832732821859',
-    operator: '1849832732821859',
+    ccId: '1836040363127815',
+    operator: '1836040363127815',
     microAppId: 'tt366340dea95001ea01',
     microAppName: '甜荔剧场',
   },

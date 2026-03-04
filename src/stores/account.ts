@@ -17,23 +17,7 @@ export const useAccountStore = defineStore('account', () => {
     return ACCOUNT_CONFIGS[currentAccount.value]
   })
 
-  const isQianlongAccount = computed((): boolean => {
-    return false
-  })
-
-  const isDarenAccount = computed((): boolean => {
-    return false
-  })
-
-  const isSanrouAccount = computed((): boolean => {
-    return false
-  })
-
   const isDailyAccount = computed((): boolean => {
-    return currentAccount.value === 'daily'
-  })
-
-  const isSanrouLikeAccount = computed((): boolean => {
     return currentAccount.value === 'daily'
   })
 
@@ -80,11 +64,7 @@ export const useAccountStore = defineStore('account', () => {
 
     // 计算属性
     currentAccountConfig,
-    isQianlongAccount,
-    isDarenAccount,
-    isSanrouAccount,
     isDailyAccount,
-    isSanrouLikeAccount,
 
     // 方法
     switchAccount,

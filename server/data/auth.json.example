@@ -1,45 +1,44 @@
 {
+  "changduCookie": "your_changdu_cookie_here",
+  "juliangCookie": "your_jiliang_cookie_here",
+  "headers": {
+    "appid": "40011605",
+    "apptype": "7",
+    "distributorId": "1853736552241288",
+    "adUserId": "",
+    "rootAdUserId": ""
+  },
   "tokens": {
-    "xh": "your_xh_token_here",
-    "daren": "your_daren_token_here"
+    "xh": "your_xh_token_here"
   },
   "users": {
     "admin": "2peWAuMpDOqXGj8"
   },
+  "feishu": {
+    "app_token": "",
+    "table_ids": {
+      "drama_list": "",
+      "drama_status": "",
+      "account": ""
+    }
+  },
+  "douyinMaterialMatches": [],
   "platforms": {
     "changdu": {
-      "sr": {
-        "cookie": "your_sanrou_cookie_here",
-        "distributorId": "1842865091654731",
-        "adUserId": "",
-        "rootAdUserId": ""
-      },
-      "ql": {
-        "cookie": "your_qianlong_cookie_here",
-        "distributorId": "1841142223098969",
-        "adUserId": "",
-        "rootAdUserId": ""
-      },
       "mr": {
-        "cookie": "your_daily_cookie_here",
-        "distributorId": "1844565955364887",
-        "adUserId": "",
-        "rootAdUserId": ""
-      },
-      "dr": {
-        "cookie": "your_daren_cookie_here",
-        "distributorId": "1841149910426777"
+        "cookie": "your_changdu_cookie_here"
       }
     },
+    "jiliang": {
+      "cookie": "your_jiliang_cookie_here"
+    },
     "ocean": {
-      "sr": "your_ocean_cookie_sanrou_here",
-      "ql": "your_ocean_cookie_qianlong_here",
-      "mr": "your_ocean_cookie_daily_here"
+      "mr": "your_jiliang_cookie_here"
     },
     "adx": {
       "cookie": "your_adx_cookie_here"
     }
   },
-  "lastUpdated": "2026-02-27T00:00:00.000Z",
-  "version": "2.0.0"
+  "lastUpdated": "2026-03-04T00:00:00.000Z",
+  "version": "3.0.0"
 }

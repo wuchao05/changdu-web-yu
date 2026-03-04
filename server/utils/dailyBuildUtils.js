@@ -47,7 +47,7 @@ export function parsePromotionUrl(url) {
  * @returns {string} 推广链接名称
  */
 export function generatePromotionName(dramaName) {
-  return `小红-${cleanDramaName(dramaName)}`
+  return `小鱼-${cleanDramaName(dramaName)}`
 }
 
 // ============== 小程序链接生成工具 ==============
@@ -350,7 +350,7 @@ export function formatBuildDate(date = new Date()) {
 /**
  * 解析飞书状态表中的"抖音素材"字段
  * 格式示例：
- * 小红看剧 25655660267 01-05
+ * 小鱼看剧 25655660267 01-05
  * 斯娜看剧 3499633230 06-10
  * 葸辉好剧 63222312178 11-15
  *

@@ -107,7 +107,6 @@
 import { ref, computed, onMounted, onUnmounted, watch, h } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useMessage, type DataTableColumns } from 'naive-ui'
-import { useCreatorStore } from '@/stores/creator'
 import { useDataStore } from '@/stores/data'
 import { useSettingsStore } from '@/stores/settings'
 import { useAccountStore } from '@/stores/account'
@@ -125,18 +124,17 @@ import DateRangePicker from './DateRangePicker.vue'
 import { useGlobalDateRange } from '@/composables/useGlobalDateRange'
 
 const message = useMessage()
-const creatorStore = useCreatorStore()
 const dataStore = useDataStore()
 const settingsStore = useSettingsStore()
 const accountStore = useAccountStore()
 
 // 使用全局日期范围管理
-const { sanrouDateRange, setSanrouDateRange, sanrouDefaultRange } = useGlobalDateRange()
+const { dailyDateRange, setDailyDateRange, dailyDefaultRange } = useGlobalDateRange()
 
 // 响应式数据 - 使用全局日期范围
 const dateRange = computed({
-  get: () => sanrouDateRange.value,
-  set: value => setSanrouDateRange(value),
+  get: () => dailyDateRange.value,
+  set: value => setDailyDateRange(value),
 })
 const currentPage = ref(1)
 const pageSize = ref(10)
@@ -167,8 +165,7 @@ const originalColumns: DataTableColumns<DailyData> = [
     align: 'center',
     resizable: true,
     render: row => {
-      // 牵龙账号的日期是字符串格式，转换为时间戳后再格式化
-      // 散柔账号的日期是时间戳，直接格式化为可读日期
+      // 兼容字符串时间与数字时间戳
       const timestamp = typeof row.date === 'string' ? dateStringToTimestamp(row.date) : row.date
       return formatTimestamp(timestamp)
     },
@@ -310,28 +307,15 @@ const displayColumns = computed(() => {
   return orderedColumns
 })
 
-const DEFAULT_SANROU_CREATOR_ID = '1842865091654731'
-const sanrouDistributorId = computed(
-  () => settingsStore.settings.sanrouDistributorId || DEFAULT_SANROU_CREATOR_ID
-)
-
 // 初始化日期范围 - 现在由全局日期范围管理自动处理
 
 // 获取报表数据
 async function fetchReportData() {
-  // 散柔类账号和牵龙账号需要加载数据
-  const needCreator = accountStore.isSanrouAccount
-  if (!accountStore.isSanrouLikeAccount && !accountStore.isQianlongAccount) {
+  if (!accountStore.isDailyAccount) {
     return
   }
-  if (needCreator && !creatorStore.activeCreatorId) {
-    creatorStore.setActiveCreator(sanrouDistributorId.value)
-    if (!creatorStore.activeCreatorId) {
-      return
-    }
-  }
   if (!dateRange.value) {
-    setSanrouDateRange(sanrouDefaultRange.value)
+    setDailyDateRange(dailyDefaultRange.value)
     return
   }
 
@@ -425,22 +409,11 @@ function initColumnConfig() {
   }
 }
 
-// 监听活跃达人变化
-watch(
-  () => creatorStore.activeCreatorId,
-  newId => {
-    if ((accountStore.isSanrouLikeAccount || accountStore.isQianlongAccount) && newId) {
-      currentPage.value = 1
-      fetchReportData()
-    }
-  }
-)
-
 // 监听账号切换
 watch(
   () => accountStore.currentAccount,
   () => {
-    if (accountStore.isSanrouLikeAccount || accountStore.isQianlongAccount) {
+    if (accountStore.isDailyAccount) {
       currentPage.value = 1
       fetchReportData()
     } else {
@@ -454,7 +427,7 @@ watch(
   () => dateRange.value,
   newRange => {
     if (!newRange) return
-    if (accountStore.isSanrouLikeAccount || accountStore.isQianlongAccount) {
+    if (accountStore.isDailyAccount) {
       currentPage.value = 1
       fetchReportData()
     }
@@ -467,7 +440,7 @@ watch(
   newPageSize => {
     pageSize.value = newPageSize
     currentPage.value = 1
-    if (creatorStore.activeCreatorId) {
+    if (accountStore.isDailyAccount) {
       fetchReportData()
     }
   }
@@ -483,8 +456,7 @@ onMounted(() => {
   checkMobile()
   window.addEventListener('resize', checkMobile)
 
-  // 只有散柔类账号和牵龙账号才加载报表数据
-  if (accountStore.isSanrouLikeAccount || accountStore.isQianlongAccount) {
+  if (accountStore.isDailyAccount) {
     fetchReportData()
   }
 })
