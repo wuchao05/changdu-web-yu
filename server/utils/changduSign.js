@@ -1,5 +1,4 @@
 import crypto from 'crypto'
-import { CHANGDU_DISTRIBUTOR_ID, CHANGDU_SECRET_KEY } from '../config/changdu.js'
 
 /**
  * 生成小写 md5
@@ -55,20 +54,15 @@ export function buildChangduPostParamsValue(body) {
  * 通用 sign 生成：
  * sign = lower_case(md5(distributor_id + secret_key + ts + params_value))
  *
- * distributor_id / secret_key 默认用固定配置，如需特殊渠道，可显式传入覆盖
+ * distributor_id / secret_key 由调用方显式传入
  *
  * @param {number} ts - 秒级时间戳
  * @param {string} paramsValue - params_value
- * @param {string} [distributorId] - 渠道 ID（可选，默认使用固定配置）
- * @param {string} [secretKey] - 密钥（可选，默认使用固定配置）
+ * @param {string} distributorId - 渠道 ID
+ * @param {string} secretKey - 密钥
  * @returns {string} sign
  */
-export function buildChangduSign(
-  ts,
-  paramsValue,
-  distributorId = CHANGDU_DISTRIBUTOR_ID,
-  secretKey = CHANGDU_SECRET_KEY
-) {
+export function buildChangduSign(ts, paramsValue, distributorId, secretKey) {
   const raw = `${distributorId}${secretKey}${ts}${paramsValue}`
   return md5Lower(raw)
 }
@@ -82,8 +76,8 @@ export function buildChangduSign(
  *
  * @param {string} paramsValue - params_value
  * @param {number} [ts] - 秒级时间戳（可选，默认自动生成）
- * @param {string} [distributorId] - 渠道 ID（可选，默认固定）
- * @param {string} [secretKey] - 密钥（可选，默认固定）
+ * @param {string} distributorId - 渠道 ID
+ * @param {string} secretKey - 密钥
  * @returns {{ sign: string, ts: number, headers: { 'header-sign': string, 'header-ts': string } }}
  */
 export function buildChangduHeaders(paramsValue, ts, distributorId, secretKey) {
@@ -106,8 +100,8 @@ export function buildChangduHeaders(paramsValue, ts, distributorId, secretKey) {
  *
  * @param {Record<string, any>} params - 请求参数对象（必须包含 distributor_id）
  * @param {number} [ts] - 秒级时间戳（可选）
- * @param {string} [distributorId] - 渠道 ID（可选，默认固定）
- * @param {string} [secretKey] - 密钥（可选，默认固定）
+ * @param {string} distributorId - 渠道 ID
+ * @param {string} secretKey - 密钥
  * @returns {{ sign: string, ts: number, headers: { 'header-sign': string, 'header-ts': string } }}
  */
 export function buildChangduGetHeaders(params, ts, distributorId, secretKey) {
@@ -121,8 +115,8 @@ export function buildChangduGetHeaders(params, ts, distributorId, secretKey) {
  *
  * @param {Record<string, any>} body - 请求体对象（必须包含 distributor_id）
  * @param {number} [ts] - 秒级时间戳（可选）
- * @param {string} [distributorId] - 渠道 ID（可选，默认固定）
- * @param {string} [secretKey] - 密钥（可选，默认固定）
+ * @param {string} distributorId - 渠道 ID
+ * @param {string} secretKey - 密钥
  * @returns {{ sign: string, ts: number, headers: { 'header-sign': string, 'header-ts': string } }}
  */
 export function buildChangduPostHeaders(body, ts, distributorId, secretKey) {

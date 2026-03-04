@@ -2,14 +2,6 @@
  * 自动提交下载配置
  */
 export const AUTO_SUBMIT_CONFIG = {
-  // 下载中心请求头默认配置（可被 auth.json 中的 mr 配置覆盖）
-  downloadCenter: {
-    appId: '40011566',
-    appType: '7',
-    adUserId: '1291245239407612',
-    rootAdUserId: '600762415841560',
-  },
-
   // 筛选条件
   filter: {
     // 抖音审核状态：3=审核通过

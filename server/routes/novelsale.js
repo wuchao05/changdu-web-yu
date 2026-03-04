@@ -2,10 +2,9 @@ import Router from '@koa/router'
 import { createGetHandler } from '../utils/apiHandler.js'
 import { buildChangduGetHeaders } from '../utils/changduSign.js'
 import {
-  CHANGDU_DISTRIBUTOR_ID,
   CHANGDU_BASE_URL,
-  CHANGDU_SECRET_KEY_MAP,
-  getChangduSecretKey,
+  CHANGDU_DAILY_DISTRIBUTOR_ID,
+  CHANGDU_DAILY_SECRET_KEY,
 } from '../config/changdu.js'
 import { readAuthConfig } from './auth.js'
 import { FEISHU_CONFIG, getFeishuConfig } from '../config/feishu.js'
@@ -257,12 +256,8 @@ router.get('/distributor/login/v1', createGetHandler('Login', '/novelsale/distri
 router.get('/distributor/content/series/list/v1', async ctx => {
   try {
     const config = await getFeishuConfig()
-    const headerDistributorId = ctx.headers.distributorid || ctx.headers.Distributorid
-    const candidateDistributorId = headerDistributorId ? String(headerDistributorId) : ''
-    const distributorId = CHANGDU_SECRET_KEY_MAP[candidateDistributorId]
-      ? candidateDistributorId
-      : CHANGDU_DISTRIBUTOR_ID
-    const secretKey = getChangduSecretKey(distributorId)
+    const distributorId = CHANGDU_DAILY_DISTRIBUTOR_ID
+    const secretKey = CHANGDU_DAILY_SECRET_KEY
 
     // 构建请求参数
     const params = {
