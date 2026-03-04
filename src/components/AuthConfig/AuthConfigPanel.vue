@@ -63,21 +63,21 @@
                 />
               </div>
               <div class="config-item">
-                <label class="config-label">secretKey</label>
+                <label class="config-label">Secret密钥</label>
                 <n-input
                   v-model:value="localConfig.buildConfig.secretKey"
                   placeholder="buildConfig.secretKey"
                 />
               </div>
               <div class="config-item">
-                <label class="config-label">productId</label>
+                <label class="config-label">商品ID</label>
                 <n-input
                   v-model:value="localConfig.buildConfig.productId"
                   placeholder="buildConfig.productId"
                 />
               </div>
               <div class="config-item">
-                <label class="config-label">productPlatformId</label>
+                <label class="config-label">商品库ID</label>
                 <n-input
                   v-model:value="localConfig.buildConfig.productPlatformId"
                   placeholder="buildConfig.productPlatformId"
@@ -112,7 +112,7 @@
                 />
               </div>
               <div class="config-item">
-                <label class="config-label">rechargeTemplateId</label>
+                <label class="config-label">首充模板ID</label>
                 <n-input
                   v-model:value="localConfig.buildConfig.rechargeTemplateId"
                   placeholder="buildConfig.rechargeTemplateId"

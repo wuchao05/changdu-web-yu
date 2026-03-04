@@ -111,18 +111,18 @@
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="space-y-2 md:col-span-2">
-              <label class="text-sm font-medium text-gray-700">SecretKey</label>
+              <label class="text-sm font-medium text-gray-700">Secret密钥</label>
               <n-input
                 v-model:value="form.buildConfig.secretKey"
                 placeholder="请输入 buildConfig.secretKey"
               />
             </div>
             <div class="space-y-2">
-              <label class="text-sm font-medium text-gray-700">商品 Product ID</label>
+              <label class="text-sm font-medium text-gray-700">商品ID</label>
               <n-input v-model:value="form.buildConfig.productId" placeholder="请输入 productId" />
             </div>
             <div class="space-y-2">
-              <label class="text-sm font-medium text-gray-700">商品 Platform ID</label>
+              <label class="text-sm font-medium text-gray-700">商品库ID</label>
               <n-input
                 v-model:value="form.buildConfig.productPlatformId"
                 placeholder="请输入 productPlatformId"
@@ -155,7 +155,7 @@
               <n-input v-model:value="form.buildConfig.ccId" placeholder="请输入 ccId" />
             </div>
             <div class="space-y-2 md:col-span-2">
-              <label class="text-sm font-medium text-gray-700">recharge_template_id</label>
+              <label class="text-sm font-medium text-gray-700">首充模板ID</label>
               <n-input
                 v-model:value="form.buildConfig.rechargeTemplateId"
                 placeholder="请输入 rechargeTemplateId"
