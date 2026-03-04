@@ -523,6 +523,15 @@ async function getJiliangAuth() {
   }
 }
 
+function toDistributorIdNumber(rawDistributorId) {
+  const value = String(rawDistributorId || '').trim()
+  if (!/^\d+$/.test(value)) {
+    throw new Error('auth.headers.distributorId 必须是数字')
+  }
+
+  return Number(value)
+}
+
 async function getChangduSignConfig() {
   const authConfig = await readAuthConfig()
   const distributorId = authConfig.headers?.distributorId
@@ -533,7 +542,7 @@ async function getChangduSignConfig() {
   if (!secretKey) {
     throw new Error('缺少 auth.buildConfig.secretKey 配置')
   }
-  return { distributorId, secretKey }
+  return { distributorId: toDistributorIdNumber(distributorId), secretKey }
 }
 
 /**
