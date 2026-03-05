@@ -467,12 +467,13 @@ async function queryApprovedMicroApp(accountId) {
 
   // 如果有多个候选，优先匹配配置中的 microAppId（对应返回的 app_id）
   if (approvedApplets.length > 1 && microAppId) {
-    const matchedApplet = approvedApplets.find(
+    const matchedApplets = approvedApplets.filter(
       applet => String(applet.app_id || '') === String(microAppId)
     )
-    if (matchedApplet) {
-      approvedApplet = matchedApplet
+    if (matchedApplets.length > 0) {
+      approvedApplet = matchedApplets[matchedApplets.length - 1]
     }
+    console.log('  - 匹配配置 app_id 的候选数量:', matchedApplets.length)
   }
 
   console.log('[查询被共享的小程序] 查询结果:')
