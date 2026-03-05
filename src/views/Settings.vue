@@ -153,6 +153,15 @@
             </div>
             <div class="space-y-2">
               <label class="text-sm font-medium text-gray-700">{{
+                CONFIG_LABELS.buildConfig.bid
+              }}</label>
+              <n-input
+                v-model:value="form.buildConfig.bid"
+                :placeholder="CONFIG_PLACEHOLDERS.buildConfig.bid"
+              />
+            </div>
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-gray-700">{{
                 CONFIG_LABELS.buildConfig.productId
               }}</label>
               <n-input
@@ -433,6 +442,7 @@ const form = reactive<AppConfig>({
   buildConfig: {
     secretKey: '',
     source: '',
+    bid: '2',
     productId: '',
     productPlatformId: '',
     landingUrl: '',
@@ -498,6 +508,7 @@ async function loadConfig() {
       form.headers.rootAdUserId = result.data.headers?.rootAdUserId || ''
       form.buildConfig.secretKey = result.data.buildConfig?.secretKey || ''
       form.buildConfig.source = result.data.buildConfig?.source || ''
+      form.buildConfig.bid = result.data.buildConfig?.bid || '2'
       form.buildConfig.productId = result.data.buildConfig?.productId || ''
       form.buildConfig.productPlatformId = result.data.buildConfig?.productPlatformId || ''
       form.buildConfig.landingUrl = result.data.buildConfig?.landingUrl || ''

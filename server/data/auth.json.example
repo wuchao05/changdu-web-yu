@@ -11,6 +11,7 @@
   "buildConfig": {
     "secretKey": "your_secret_key_here",
     "source": "your_source_name",
+    "bid": "2",
     "productId": "your_product_id_here",
     "productPlatformId": "your_product_platform_id_here",
     "landingUrl": "https://example.com/landing-page",

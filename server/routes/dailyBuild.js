@@ -72,6 +72,18 @@ function toRechargeTemplateIdNumber(rawRechargeTemplateId) {
   return Number(value)
 }
 
+function toBidNumber(rawBid) {
+  const value = String(rawBid || '').trim()
+  if (!value) {
+    return 2
+  }
+  if (!/^\d+(\.\d+)?$/.test(value)) {
+    throw new Error('auth.buildConfig.bid 必须是数字')
+  }
+
+  return Number(value)
+}
+
 async function getBuildConfig() {
   const config = await readAuthConfig()
   const buildConfig = config.buildConfig || {}
@@ -100,6 +112,7 @@ async function getBuildConfig() {
     productId: buildConfig.productId,
     productPlatformId: buildConfig.productPlatformId,
     landingUrl: buildConfig.landingUrl,
+    bid: toBidNumber(buildConfig.bid),
     rechargeTemplateId: toRechargeTemplateIdNumber(buildConfig.rechargeTemplateId),
   }
 }
@@ -991,7 +1004,8 @@ router.post('/create-project', async ctx => {
       last_frame: [],
       effective_frame: [],
       track_url_send_type: '2',
-      smart_bid_type: projectConfig.smart_bid_type,
+      smart_bid_type: 0,
+      bid: buildConfig.bid,
       is_search_speed_phase_four: false,
       budget: projectConfig.budget,
       inventory_catalog: projectConfig.inventory_catalog,

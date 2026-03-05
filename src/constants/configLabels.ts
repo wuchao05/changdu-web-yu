@@ -11,6 +11,7 @@ export const CONFIG_LABELS = {
   buildConfig: {
     secretKey: 'Secret密钥',
     source: '来源',
+    bid: '出价',
     productId: '商品ID',
     productPlatformId: '商品库ID',
     landingUrl: '落地页 URL',
@@ -40,6 +41,7 @@ export const CONFIG_PLACEHOLDERS = {
   buildConfig: {
     secretKey: '请输入 Secret 密钥',
     source: '请输入来源',
+    bid: '请输入出价（默认 2）',
     productId: '请输入商品ID',
     productPlatformId: '请输入商品库ID',
     landingUrl: '请输入落地页 URL',

@@ -80,6 +80,13 @@
                 />
               </div>
               <div class="config-item">
+                <label class="config-label">{{ CONFIG_LABELS.buildConfig.bid }}</label>
+                <n-input
+                  v-model:value="localConfig.buildConfig.bid"
+                  :placeholder="CONFIG_PLACEHOLDERS.buildConfig.bid"
+                />
+              </div>
+              <div class="config-item">
                 <label class="config-label">{{ CONFIG_LABELS.buildConfig.productId }}</label>
                 <n-input
                   v-model:value="localConfig.buildConfig.productId"
@@ -213,6 +220,7 @@ interface AuthConfig {
   buildConfig: {
     secretKey: string
     source: string
+    bid: string
     productId: string
     productPlatformId: string
     landingUrl: string
@@ -251,6 +259,7 @@ const createEmptyConfig = (): AuthConfig => ({
   buildConfig: {
     secretKey: '',
     source: '',
+    bid: '2',
     productId: '',
     productPlatformId: '',
     landingUrl: '',
@@ -289,6 +298,7 @@ const normalizeConfig = (config: any): AuthConfig => ({
     secretKey:
       typeof config?.buildConfig?.secretKey === 'string' ? config.buildConfig.secretKey : '',
     source: typeof config?.buildConfig?.source === 'string' ? config.buildConfig.source : '',
+    bid: typeof config?.buildConfig?.bid === 'string' ? config.buildConfig.bid : '2',
     productId:
       typeof config?.buildConfig?.productId === 'string' ? config.buildConfig.productId : '',
     productPlatformId:

@@ -24,6 +24,7 @@ export interface AppConfig {
   buildConfig: {
     secretKey: string
     source: string
+    bid: string
     productId: string
     productPlatformId: string
     landingUrl: string
