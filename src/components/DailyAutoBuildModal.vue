@@ -1077,29 +1077,29 @@ async function executeAssetization(
 
   let microApp
 
-  // 1. 首先查询账户自己的已审核通过的小程序（search_type=1）
-  console.log('查询账户自己的小程序 (search_type=1)...')
-  const microAppResult = await dailyBuildApi.queryMicroApp(accountId)
+  // 1. 优先查询被共享的已审核通过小程序（search_type=2）
+  console.log('优先查询被共享的小程序 (search_type=2)...')
+  const approvedResult = await dailyBuildApi.queryApprovedMicroApp(accountId)
+  let ownMicroAppResult: Awaited<ReturnType<typeof dailyBuildApi.queryMicroApp>> | null = null
 
-  if (microAppResult.data?.micro_app && microAppResult.data.micro_app.length > 0) {
-    // 检查是否有已审核通过的小程序
-    const approvedMicroApp = microAppResult.data.micro_app.find(
-      (app: { status: number }) => app.status === 1
-    )
-    if (approvedMicroApp) {
-      microApp = approvedMicroApp
-      console.log('✓ 找到账户自己的已审核通过的小程序:', microApp.micro_app_instance_id)
-    }
+  if (approvedResult.data?.found && approvedResult.data.micro_app) {
+    microApp = approvedResult.data.micro_app
+    console.log('✓ 使用被共享的已审核通过的小程序:', microApp.micro_app_instance_id)
   }
 
-  // 2. 如果没有找到账户自己的已审核通过的小程序，查询被共享的小程序（search_type=2）
+  // 2. 共享不存在时，再查询账户自己的已审核通过小程序（search_type=1）
   if (!microApp) {
-    console.log('未找到账户自己的已审核通过的小程序，查询被共享的小程序 (search_type=2)...')
-    const approvedResult = await dailyBuildApi.queryApprovedMicroApp(accountId)
+    console.log('未找到被共享的已审核通过小程序，查询账户自己的小程序 (search_type=1)...')
+    ownMicroAppResult = await dailyBuildApi.queryMicroApp(accountId)
 
-    if (approvedResult.data?.found && approvedResult.data.micro_app) {
-      microApp = approvedResult.data.micro_app
-      console.log('✓ 找到被共享的已审核通过的小程序:', microApp.micro_app_instance_id)
+    if (ownMicroAppResult.data?.micro_app && ownMicroAppResult.data.micro_app.length > 0) {
+      const approvedMicroApp = ownMicroAppResult.data.micro_app.find(
+        (app: { status: number }) => app.status === 1
+      )
+      if (approvedMicroApp) {
+        microApp = approvedMicroApp
+        console.log('✓ 使用账户自己的已审核通过的小程序:', microApp.micro_app_instance_id)
+      }
     }
   }
 
@@ -1108,9 +1108,9 @@ async function executeAssetization(
     console.log('未找到任何已审核通过的小程序，检查是否需要创建...')
 
     // 检查是否有未审核通过的小程序
-    if (microAppResult.data?.micro_app && microAppResult.data.micro_app.length > 0) {
+    if (ownMicroAppResult?.data?.micro_app && ownMicroAppResult.data.micro_app.length > 0) {
       // 有小程序但都未审核通过，跳过搭建
-      const firstMicroApp = microAppResult.data.micro_app[0]
+      const firstMicroApp = ownMicroAppResult.data.micro_app[0]
       console.log('小程序存在但未审核通过，状态:', firstMicroApp.status)
       const error = new Error('小程序未审核通过，跳过此剧集的搭建') as any
       error.code = 'MICROAPP_NOT_APPROVED'
