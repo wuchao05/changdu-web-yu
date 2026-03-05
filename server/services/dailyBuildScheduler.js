@@ -8,7 +8,6 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import { FEISHU_CONFIG, getFeishuConfig } from '../config/feishu.js'
 import { DAILY_BUILD_CONFIG } from '../config/dailyBuild.js'
-import { JILIANG_CONFIG } from '../config/jiliang.js'
 import { buildChangduPostHeaders } from '../utils/changduSign.js'
 import FormData from 'form-data'
 import { readAuthConfig } from '../routes/auth.js'
@@ -25,6 +24,21 @@ import {
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
+
+async function getJiliangCookie() {
+  const authConfig = await readAuthConfig()
+  const cookie =
+    authConfig.platforms?.jiliang?.cookie ||
+    authConfig.juliangCookie ||
+    authConfig.platforms?.ocean?.mr ||
+    ''
+
+  if (!cookie) {
+    throw new Error('缺少巨量 Cookie 配置（auth.platforms.jiliang.cookie / auth.juliangCookie）')
+  }
+
+  return cookie
+}
 
 // 状态文件路径
 const isProduction = process.env.NODE_ENV === 'production'
@@ -410,7 +424,7 @@ async function queryMicroApp(accountId) {
     method: 'GET',
     headers: {
       'x-tt-hume-platform': 'bp',
-      Cookie: JILIANG_CONFIG.cookie,
+      Cookie: await getJiliangCookie(),
     },
   })
 
@@ -467,7 +481,7 @@ async function queryApprovedMicroApp(accountId) {
     method: 'GET',
     headers: {
       'x-tt-hume-platform': 'bp',
-      Cookie: JILIANG_CONFIG.cookie,
+      Cookie: await getJiliangCookie(),
     },
   })
 
@@ -550,7 +564,7 @@ async function createMicroApp(params) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Cookie: JILIANG_CONFIG.cookie,
+      Cookie: await getJiliangCookie(),
       'x-tt-hume-platform': 'bp',
     },
     body: JSON.stringify(requestBody),
@@ -576,7 +590,7 @@ async function listMicroAppAssets(accountId) {
       method: 'POST',
       headers: {
         platform: 'ad',
-        Cookie: JILIANG_CONFIG.cookie,
+        Cookie: await getJiliangCookie(),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -601,7 +615,7 @@ async function createMicroAppAsset(params) {
       method: 'POST',
       headers: {
         platform: 'ad',
-        Cookie: JILIANG_CONFIG.cookie,
+        Cookie: await getJiliangCookie(),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -636,7 +650,7 @@ async function checkEventStatus(params) {
       method: 'GET',
       headers: {
         platform: 'ad',
-        Cookie: JILIANG_CONFIG.cookie,
+        Cookie: await getJiliangCookie(),
       },
     }
   )
@@ -659,7 +673,7 @@ async function addPaymentEvent(params) {
       method: 'POST',
       headers: {
         platform: 'ad',
-        Cookie: JILIANG_CONFIG.cookie,
+        Cookie: await getJiliangCookie(),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -703,7 +717,7 @@ async function uploadAvatarImage(accountId) {
     {
       method: 'POST',
       headers: {
-        Cookie: JILIANG_CONFIG.cookie,
+        Cookie: await getJiliangCookie(),
         'content-type': formData.getHeaders()['content-type'],
       },
       body: formData.getBuffer(),
@@ -728,7 +742,7 @@ async function saveAvatar(params) {
     {
       method: 'POST',
       headers: {
-        Cookie: JILIANG_CONFIG.cookie,
+        Cookie: await getJiliangCookie(),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -759,7 +773,7 @@ async function uploadProductImage(accountId) {
     {
       method: 'POST',
       headers: {
-        Cookie: JILIANG_CONFIG.cookie,
+        Cookie: await getJiliangCookie(),
         'content-type': formData.getHeaders()['content-type'],
       },
       body: formData.getBuffer(),
@@ -841,7 +855,7 @@ async function createProject(params) {
     {
       method: 'POST',
       headers: {
-        Cookie: JILIANG_CONFIG.cookie,
+        Cookie: await getJiliangCookie(),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(requestBody),
@@ -877,7 +891,7 @@ async function getDouyinAccountInfo(params) {
     {
       method: 'POST',
       headers: {
-        Cookie: JILIANG_CONFIG.cookie,
+        Cookie: await getJiliangCookie(),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(requestBody),
@@ -913,7 +927,7 @@ async function getMaterialList(params) {
     `https://ad.oceanengine.com/superior/api/v2/video/list?${queryParams.toString()}`,
     {
       method: 'GET',
-      headers: { Cookie: JILIANG_CONFIG.cookie },
+      headers: { Cookie: await getJiliangCookie() },
     }
   )
 
@@ -1055,7 +1069,7 @@ async function createPromotion(params) {
     {
       method: 'POST',
       headers: {
-        Cookie: JILIANG_CONFIG.cookie,
+        Cookie: await getJiliangCookie(),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(requestBody),
