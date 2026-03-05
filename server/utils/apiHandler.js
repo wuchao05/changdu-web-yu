@@ -92,13 +92,13 @@ export default async function apiHandler(ctx, config) {
         }
       })
 
-      console.log('\n========== 【application_overview_list/v1 实际请求】 ==========')
-      console.log('⏰ 时间:', new Date().toLocaleString('zh-CN'))
-      console.log('🌐 请求URL:', targetUrl)
-      console.log('📋 请求方法:', ctx.method)
-      console.log('📥 请求参数:', actualParams)
-      console.log('📦 请求头:', headers)
-      console.log('============================================================\n')
+      // console.log('\n========== 【application_overview_list/v1 实际请求】 ==========')
+      // console.log('⏰ 时间:', new Date().toLocaleString('zh-CN'))
+      // console.log('🌐 请求URL:', targetUrl)
+      // console.log('📋 请求方法:', ctx.method)
+      // console.log('📥 请求参数:', actualParams)
+      // console.log('📦 请求头:', headers)
+      // console.log('============================================================\n')
     }
 
     // 📊 打印 data_overview 接口的请求前日志
